@@ -7,7 +7,7 @@ public class ServletInitializer extends SpringBootServletInitializer {
 
 	@Override
 	protected SpringApplicationBuilder configure(SpringApplicationBuilder application) {
-		return application.sources(IcleanApplication.class);
+		return application.sources(iclean.gfa23se46.IcleanApplication.IcleanApplication.class);
 	}
 
 }
