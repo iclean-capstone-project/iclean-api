@@ -32,14 +32,12 @@ public class AuthServiceImpl implements AuthService {
 
             if (authentication != null) {
                 UserPrinciple userPrinciple = (UserPrinciple) authentication.getPrincipal();
-                String accessToken = jwtUtils.createToken(userPrinciple);
-                String refreshToken = "";
+                String accessToken = jwtUtils.createAccessToken(userPrinciple);
+                String refreshToken = jwtUtils.createRefreshToken(userPrinciple);
                 return ResponseEntity.status(HttpStatus.ACCEPTED).body(new ResponseObject(HttpStatus.ACCEPTED.toString(), "Login success!", new JwtResponse(accessToken, refreshToken)));
             } else ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ResponseObject(HttpStatus.UNAUTHORIZED.toString(), "Wrong username or password.", null));
 
         } catch (Exception e) {
-
-
 
         }
 

@@ -17,8 +17,7 @@ public class AuthController {
     public ResponseEntity<ResponseObject> login(@RequestBody LoginForm form) {
         return authService.login(form);
     }
-
-    @PostMapping("/withIdToken")
+    @PostMapping("/token-firebase")
     public ResponseEntity<ResponseObject> login(@RequestBody String token) {
         return authService.loginWithIdToken(token);
     }
