@@ -24,6 +24,9 @@ public class SecurityConfig {
     CustomUserDetailService userDetailsService;
 
     @Autowired
+    private PhoneNumberOtpAuthenticationProvider phoneNumberOtpAuthenticationProvider;
+
+    @Autowired
     private JwtEntryPoint jwtEntryPoint;
 
     private final JwtAuthFilter jwtAuthFilter;
@@ -60,9 +63,9 @@ public class SecurityConfig {
                 .userDetailsService(userDetailsService)
                 .passwordEncoder(passwordEncoder())
                 .and()
+                .authenticationProvider(phoneNumberOtpAuthenticationProvider)
                 .build();
     }
-
 
     @Bean
     public PasswordEncoder passwordEncoder() {
