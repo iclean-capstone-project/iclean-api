@@ -14,7 +14,7 @@ import iclean.code.data.enumjava.Role;
 import iclean.code.data.repository.UserRepository;
 import iclean.code.exception.NotFoundException;
 import iclean.code.function.authentication.service.AuthService;
-import iclean.code.function.authentication.service.TwilioOTPService;
+import iclean.code.service.TwilioOTPService;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.ObjectUtils;
 import org.modelmapper.ModelMapper;

@@ -1,11 +1,11 @@
-package iclean.code.function.authentication.service.impl;
+package iclean.code.service.impl;
 
 import com.twilio.rest.api.v2010.account.Message;
 import com.twilio.type.PhoneNumber;
 import iclean.code.config.TwilioConfig;
 import iclean.code.data.dto.request.ValidateOTPRequest;
 import iclean.code.data.repository.SystemParameterRepository;
-import iclean.code.function.authentication.service.TwilioOTPService;
+import iclean.code.service.TwilioOTPService;
 import iclean.code.utils.Utils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
