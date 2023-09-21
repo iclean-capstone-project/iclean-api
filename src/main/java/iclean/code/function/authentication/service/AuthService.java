@@ -1,16 +1,21 @@
 package iclean.code.function.authentication.service;
 
 import iclean.code.data.dto.common.ResponseObject;
-import iclean.code.data.dto.request.LoginForm;
+import iclean.code.data.dto.request.LoginUsernamePassword;
 import iclean.code.data.dto.request.LoginFormMobile;
+import iclean.code.data.dto.request.RegisterUserForm;
 import org.springframework.http.ResponseEntity;
 
 public interface AuthService {
-    ResponseEntity<ResponseObject> login(LoginForm form);
+    ResponseEntity<ResponseObject> loginUsingUsernameAndPassword(LoginUsernamePassword form);
 
-    ResponseEntity<ResponseObject> loginWithIdToken(String token);
+    ResponseEntity<ResponseObject> loginWithGoogle(String googleToken);
 
-    ResponseEntity<ResponseObject> loginPhoneNumber(String phoneNumber);
+    ResponseEntity<ResponseObject> loginWithFacebook(String facebookToken);
 
-    ResponseEntity<ResponseObject> loginWithOtp(LoginFormMobile formMobile);
+    ResponseEntity<ResponseObject> loginUsingPhoneNumber(String phoneNumber);
+
+    ResponseEntity<ResponseObject> loginUsingPhoneNumberAndOTP(LoginFormMobile formMobile);
+
+    ResponseEntity<ResponseObject> updateInformationFirstLogin(RegisterUserForm form);
 }

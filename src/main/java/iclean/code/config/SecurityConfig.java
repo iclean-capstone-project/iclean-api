@@ -24,9 +24,6 @@ public class SecurityConfig {
     CustomUserDetailService userDetailsService;
 
     @Autowired
-    private PhoneNumberOtpAuthenticationProvider phoneNumberOtpAuthenticationProvider;
-
-    @Autowired
     private JwtEntryPoint jwtEntryPoint;
 
     private final JwtAuthFilter jwtAuthFilter;
@@ -39,8 +36,6 @@ public class SecurityConfig {
                 .authorizeRequests()
                 .antMatchers("/swagger-ui/**", "/login/**")
                 .permitAll()
-//                .anyRequest()
-//                .authenticated()
                 .and()
                 .sessionManagement()
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
@@ -63,7 +58,6 @@ public class SecurityConfig {
                 .userDetailsService(userDetailsService)
                 .passwordEncoder(passwordEncoder())
                 .and()
-                .authenticationProvider(phoneNumberOtpAuthenticationProvider)
                 .build();
     }
 

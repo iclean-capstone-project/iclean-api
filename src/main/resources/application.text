@@ -1,0 +1,9 @@
+spring.datasource.url=
+spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
+spring.datasource.username=
+spring.datasource.password=
+spring.jpa.hibernate.ddl-auto=update
+twilio.account_sid=
+twilio.auth_token=
+twilio.trial_number=
+twilio.default_message=
