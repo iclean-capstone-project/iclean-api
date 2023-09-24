@@ -3,11 +3,15 @@ package iclean.code.data.domain;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 import javax.persistence.*;
+import java.util.List;
 
 @Entity
-@Data
+@Getter
+@Setter
 @JsonIgnoreProperties({"hibernateLazyInitializer"})
 public class User {
     @Id
@@ -37,4 +41,14 @@ public class User {
     @JsonIgnore
     @JoinColumn(name = "role_id")
     private Role role;
+
+    @OneToMany(mappedBy = "renter")
+    @JsonIgnoreProperties("renter")
+    @JsonIgnore
+    private List<Booking> renterBookingList;
+
+    @OneToMany(mappedBy = "staff")
+    @JsonIgnoreProperties("staff")
+    @JsonIgnore
+    private List<Booking> staffBookingList;
 }
