@@ -13,7 +13,7 @@ public interface BookingService {
 
     ResponseEntity<ResponseObject> addBooking(AddBookingRequest bookingRequest);
 
-    ResponseEntity<ResponseObject> updateStatusBooking(UpdateStatusBookingRequest bookingRequest);
+    ResponseEntity<ResponseObject> updateStatusBooking(int bookingId, UpdateStatusBookingRequest bookingRequest);
 
     ResponseEntity<ResponseObject> deleteBooking(int bookingId);
 }

@@ -15,9 +15,6 @@ import javax.validation.constraints.Pattern;
 @AllArgsConstructor
 public class UpdateJobRequest {
 
-    @Range(min = 1, message = "Mã công việc phải lớn hơn 1")
-    private Integer jobId;
-
     @NotNull(message = "Chi tiết công việc không được để trống")
     @NotBlank(message = "Chi tiết công việc không được để rỗng")
     @Length(max = 200, message = "Tối đa 200 từ")

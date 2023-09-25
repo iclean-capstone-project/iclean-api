@@ -17,23 +17,24 @@ public class BookingController {
     @Autowired
     private BookingService bookingService;
 
-    @GetMapping(value = "/get")
+    @GetMapping
     public ResponseEntity<ResponseObject> getAllBooking() {
         return bookingService.getAllBooking();
     }
 
-    @GetMapping(value = "/getId")
-    public ResponseEntity<ResponseObject> getBookingByBookingId(@RequestParam @Valid int bookingId) {
+    @GetMapping(value = "{bookingId}")
+    public ResponseEntity<ResponseObject> getBookingByBookingId(@PathVariable("bookingId") @Valid int bookingId) {
         return bookingService.getBookingById(bookingId);
     }
 
-    @PostMapping(value = "/post")
+    @PostMapping
     public ResponseEntity<ResponseObject> addBooking(@RequestBody @Valid AddBookingRequest request) {
         return bookingService.addBooking(request);
     }
 
-    @PutMapping(value = "/updateStatus")
-    public ResponseEntity<ResponseObject> updateStatusBooking(@RequestBody @Valid UpdateStatusBookingRequest request) {
-        return bookingService.updateStatusBooking(request);
+    @PutMapping(value = "status/{bookingId}")
+    public ResponseEntity<ResponseObject> updateStatusBooking(@PathVariable("bookingId") int bookingId,
+                                                              @RequestBody @Valid UpdateStatusBookingRequest request) {
+        return bookingService.updateStatusBooking(bookingId, request);
     }
 }

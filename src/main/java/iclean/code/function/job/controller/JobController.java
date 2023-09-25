@@ -16,23 +16,24 @@ public class JobController {
     @Autowired
     private JobService jobService;
 
-    @GetMapping(value = "/get")
+    @GetMapping
     public ResponseEntity<ResponseObject> getAllJob() {
         return jobService.getAllJob();
     }
 
-    @PostMapping(value = "/post")
+    @PostMapping
     public ResponseEntity<ResponseObject> addJob(@RequestBody @Valid AddJobRequest request) {
         return jobService.addJob(request);
     }
 
-    @PutMapping(value = "/put")
-    public ResponseEntity<ResponseObject> updateJob(@RequestBody @Valid UpdateJobRequest request) {
-        return jobService.updateJob(request);
+    @PutMapping(value = "{jobId}")
+    public ResponseEntity<ResponseObject> updateJob(@PathVariable("jobId") int jobId,
+                                                    @RequestBody @Valid UpdateJobRequest request) {
+        return jobService.updateJob(jobId, request);
     }
 
-    @DeleteMapping(value = "/delete")
-    public ResponseEntity<ResponseObject> deleteJob(@RequestParam @Valid int jobId) {
+    @DeleteMapping(value = "{jobId}")
+    public ResponseEntity<ResponseObject> deleteJob(@PathVariable("jobId") int jobId) {
         return jobService.deleteJob(jobId);
     }
 }
