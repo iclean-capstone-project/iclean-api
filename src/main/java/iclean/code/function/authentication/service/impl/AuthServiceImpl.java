@@ -103,8 +103,8 @@ public class AuthServiceImpl implements AuthService {
                 String refreshToken = jwtUtils.createRefreshToken(userPrinciple);
                 UserInformationDto userInformationDto = modelMapper.map(user, UserInformationDto.class);
                 if (ObjectUtils.anyNull(user.getFullName(), user.getRole())) {
-                    return ResponseEntity.status(HttpStatus.CREATED)
-                            .body(new ResponseObject(HttpStatus.CREATED.toString(),
+                    return ResponseEntity.status(HttpStatus.OK)
+                            .body(new ResponseObject(HttpStatus.OK.toString(),
                                     "Need Update Information!", new JwtResponse(accessToken, refreshToken, userInformationDto)));
                 }
                 return ResponseEntity.status(HttpStatus.OK)
@@ -121,28 +121,15 @@ public class AuthServiceImpl implements AuthService {
                 String refreshToken = jwtUtils.createRefreshToken(userPrinciple);
                 UserInformationDto userInformationDto = modelMapper.map(user, UserInformationDto.class);
 
-                return ResponseEntity.status(HttpStatus.CREATED)
-                        .body(new ResponseObject(HttpStatus.CREATED.toString(),
+                return ResponseEntity.status(HttpStatus.OK)
+                        .body(new ResponseObject(HttpStatus.OK.toString(),
                                 "Need Update Information!", new JwtResponse(accessToken, refreshToken, userInformationDto)));
 
             }
         } catch (Exception e) {
-            if (e instanceof DisabledException) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(new ResponseObject(HttpStatus.UNAUTHORIZED.toString(),
-                                "Account has been locked. Please contact " + "companyEmail" + " for more information", null));
-            } else if (e instanceof AccountExpiredException) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body(new ResponseObject(HttpStatus.UNAUTHORIZED.toString(),
-                                "The account has expired. Please contact " + "companyEmail" + " for more information", null));
-            } else if (e instanceof AuthenticationException) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body(new ResponseObject(HttpStatus.UNAUTHORIZED.toString(),
-                                "Wrong username or password.", null));
-            } else
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body(new ResponseObject(HttpStatus.UNAUTHORIZED.toString(),
-                                "Account is not NULL.", null));
+                                "Access Token is not valid.", null));
         }
     }
 
@@ -223,8 +210,8 @@ public class AuthServiceImpl implements AuthService {
                 user.setOtpToken(otpHashToken);
                 userRepository.save(user);
 
-                return ResponseEntity.status(HttpStatus.CREATED)
-                        .body(new ResponseObject(HttpStatus.CREATED.toString(),
+                return ResponseEntity.status(HttpStatus.OK)
+                        .body(new ResponseObject(HttpStatus.OK.toString(),
                                 "New Account Created",
                                 null));
             }
@@ -232,8 +219,8 @@ public class AuthServiceImpl implements AuthService {
             user.setOtpToken(otpHashToken);
             userRepository.save(user);
 
-            return ResponseEntity.status(HttpStatus.ACCEPTED)
-                    .body(new ResponseObject(HttpStatus.ACCEPTED.toString(),
+            return ResponseEntity.status(HttpStatus.OK)
+                    .body(new ResponseObject(HttpStatus.OK.toString(),
                             "Founded Account",
                             null));
         } catch (Exception e) {
@@ -268,13 +255,13 @@ public class AuthServiceImpl implements AuthService {
                                     new JwtResponse(accessToken, refreshToken, userInformationDto)));
                 }
 
-                return ResponseEntity.status(HttpStatus.CREATED)
-                        .body(new ResponseObject(HttpStatus.CREATED.toString(),
+                return ResponseEntity.status(HttpStatus.OK)
+                        .body(new ResponseObject(HttpStatus.OK.toString(),
                                 "Need Update Information",
                                 new JwtResponse(accessToken, refreshToken, userInformationDto)));
             } else {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString(),
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(new ResponseObject(HttpStatus.UNAUTHORIZED.toString(),
                                 "Invalid OTP",
                                 null));
             }
@@ -319,8 +306,8 @@ public class AuthServiceImpl implements AuthService {
                         .body(new ResponseObject(HttpStatus.OK.toString(),
                                 "Update Information Successful", null));
             } catch (Exception e) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString(),
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body(new ResponseObject(HttpStatus.INTERNAL_SERVER_ERROR.toString(),
                                 "Something wrong occur.", null));
             }
     }

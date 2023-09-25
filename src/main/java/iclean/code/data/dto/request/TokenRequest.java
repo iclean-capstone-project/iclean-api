@@ -1,5 +1,6 @@
 package iclean.code.data.dto.request;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -14,5 +15,6 @@ public class TokenRequest {
 
     @NotNull(message = "Access Token cannot be null")
     @NotBlank(message = "Access Token is empty")
+    @Schema(example = "abcxyz")
     private String accessToken;
 }
