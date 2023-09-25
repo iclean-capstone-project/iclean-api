@@ -96,7 +96,7 @@ public class BookingServiceImpl implements BookingService {
                             , "Create Booking Successfully!", null));
 
         } catch (Exception e) {
-            if (e instanceof NotFoundException){
+            if (e instanceof NotFoundException) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString()
                                 , "Something wrong occur!", e.getMessage()));
@@ -109,7 +109,7 @@ public class BookingServiceImpl implements BookingService {
 
 
     @Override
-    public ResponseEntity<ResponseObject> updateStatusBooking(UpdateStatusBookingRequest request) {
+    public ResponseEntity<ResponseObject> updateStatusBooking(int bookingId, UpdateStatusBookingRequest request) {
         try {
             Set<ConstraintViolation<UpdateStatusBookingRequest>> violations = validator.validate(request);
 
@@ -118,7 +118,7 @@ public class BookingServiceImpl implements BookingService {
                 throw new IllegalArgumentException("Validation error: " + violations.iterator().next().getMessage());
             }
 
-            Booking booking = mappingBookingForUpdateStatus(request);
+            Booking booking = mappingBookingForUpdateStatus(bookingId, request);
             bookingRepository.save(booking);
 
             return ResponseEntity.status(HttpStatus.CREATED)
@@ -126,7 +126,7 @@ public class BookingServiceImpl implements BookingService {
                             , "Update Status Booking Successfully!", null));
 
         } catch (Exception e) {
-            if (e instanceof NotFoundException){
+            if (e instanceof NotFoundException) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString()
                                 , "Something wrong occur!", e.getMessage()));
@@ -160,17 +160,17 @@ public class BookingServiceImpl implements BookingService {
         return booking;
     }
 
-    private Booking mappingBookingForUpdateStatus(UpdateStatusBookingRequest request) {
+    private Booking mappingBookingForUpdateStatus(int bookingId, UpdateStatusBookingRequest request) {
 
         BookingStatus optionalBookingStatus = findStatus(request.getBookingStatusId());
-        Booking optionalBooking = finBooking(request.getBookingId());
+        Booking optionalBooking = finBooking(bookingId);
 
         Booking booking = modelMapper.map(request, Booking.class);
         booking.setRequestCount(booking.getRequestCount() + 1);
         booking.setBookingStatus(optionalBookingStatus);
         booking.setUpdateAt(LocalDateTime.now());
 
-        if (BookingStatusEnum.IN_PROCESS.getValue() == optionalBookingStatus.getBookingStatusId()){
+        if (BookingStatusEnum.IN_PROCESS.getValue() == optionalBookingStatus.getBookingStatusId()) {
             booking.setWorkStart(LocalDateTime.now());
 
         } else if (BookingStatusEnum.DONE.getValue() == optionalBookingStatus.getBookingStatusId()) {

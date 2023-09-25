@@ -64,7 +64,7 @@ public class JobServiceImpl implements JobService {
     }
 
     @Override
-    public ResponseEntity<ResponseObject> updateJob(UpdateJobRequest newJob) {
+    public ResponseEntity<ResponseObject> updateJob(int jobId, UpdateJobRequest newJob) {
         try {
             Set<ConstraintViolation<UpdateJobRequest>> violations = validator.validate(newJob);
 
@@ -73,7 +73,7 @@ public class JobServiceImpl implements JobService {
                 throw new IllegalArgumentException("Validation error: " + violations.iterator().next().getMessage());
             }
 
-            Optional<Job> optionalJob = jobRepository.findById(newJob.getJobId());
+            Optional<Job> optionalJob = jobRepository.findById(jobId);
             if (optionalJob.isEmpty())
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString(), "Job is not exist", null));

@@ -11,7 +11,7 @@ public interface JobService {
 
     ResponseEntity<ResponseObject> addJob(AddJobRequest service);
 
-    ResponseEntity<ResponseObject> updateJob(UpdateJobRequest newService);
+    ResponseEntity<ResponseObject> updateJob(int jobId, UpdateJobRequest newService);
 
     ResponseEntity<ResponseObject> deleteJob(int jobId);
 }

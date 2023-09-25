@@ -14,9 +14,6 @@ import javax.validation.constraints.NotNull;
 @AllArgsConstructor
 public class UpdateStatusBookingRequest {
 
-    @Range(min = 1, message = "Mã đơn phải lớn hơn 1")
-    private int bookingId;
-
     @Range(min = 1, max = 4, message = "bookingStatusId Nhập trong khoảng 1-4")
     private int bookingStatusId;
 }
