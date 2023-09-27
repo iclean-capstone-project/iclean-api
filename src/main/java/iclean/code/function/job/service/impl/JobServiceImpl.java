@@ -5,6 +5,7 @@ import iclean.code.data.dto.common.ResponseObject;
 import iclean.code.data.dto.request.job.AddJobRequest;
 import iclean.code.data.dto.request.job.UpdateJobRequest;
 import iclean.code.data.repository.JobRepository;
+import iclean.code.exception.NotFoundException;
 import iclean.code.function.job.service.JobService;
 import lombok.extern.log4j.Log4j2;
 import org.modelmapper.ModelMapper;
@@ -29,11 +30,12 @@ public class JobServiceImpl implements JobService {
     @Autowired
     private ModelMapper modelMapper;
 
-    @Autowired
-    private Validator validator;
-
     @Override
     public ResponseEntity<ResponseObject> getAllJob() {
+        if (jobRepository.findAll().isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new ResponseObject(HttpStatus.NOT_FOUND.toString(), "All Job", "Job list is empty"));
+        }
         return ResponseEntity.status(HttpStatus.ACCEPTED)
                 .body(new ResponseObject(HttpStatus.ACCEPTED.toString(), "All Job", jobRepository.finAll()));
     }
@@ -41,19 +43,12 @@ public class JobServiceImpl implements JobService {
     @Override
     public ResponseEntity<ResponseObject> addJob(AddJobRequest request) {
         try {
-            Set<ConstraintViolation<AddJobRequest>> violations = validator.validate(request);
-
-            if (!violations.isEmpty()) {
-                // Handle validation errors (e.g., return error response)
-                throw new IllegalArgumentException("Validation error: " + violations.iterator().next().getMessage());
-            }
-
             Job job = modelMapper.map(request, Job.class);
             job.setCreateAt(LocalDateTime.now());
 
             jobRepository.save(job);
-            return ResponseEntity.status(HttpStatus.CREATED)
-                    .body(new ResponseObject(HttpStatus.ACCEPTED.toString()
+            return ResponseEntity.status(HttpStatus.OK)
+                    .body(new ResponseObject(HttpStatus.OK.toString()
                             , "Create Job Successfully!", null));
 
         } catch (Exception e) {
@@ -66,13 +61,6 @@ public class JobServiceImpl implements JobService {
     @Override
     public ResponseEntity<ResponseObject> updateJob(int jobId, UpdateJobRequest newJob) {
         try {
-            Set<ConstraintViolation<UpdateJobRequest>> violations = validator.validate(newJob);
-
-            if (!violations.isEmpty()) {
-                // Handle validation errors (e.g., return error response)
-                throw new IllegalArgumentException("Validation error: " + violations.iterator().next().getMessage());
-            }
-
             Optional<Job> optionalJob = jobRepository.findById(jobId);
             if (optionalJob.isEmpty())
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
@@ -87,11 +75,16 @@ public class JobServiceImpl implements JobService {
             Job job = modelMapper.map(jobToUpdate, Job.class);
 
             jobRepository.save(job);
-            return ResponseEntity.status(HttpStatus.CREATED)
-                    .body(new ResponseObject(HttpStatus.ACCEPTED.toString()
+            return ResponseEntity.status(HttpStatus.OK)
+                    .body(new ResponseObject(HttpStatus.OK.toString()
                             , "Update Job Successfully!", null));
 
         } catch (Exception e) {
+            if (e instanceof NotFoundException) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new ResponseObject(HttpStatus.NOT_FOUND.toString()
+                                , "Something wrong occur!", e.getMessage()));
+            }
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString()
                             , "Something wrong occur!", null));
@@ -103,8 +96,8 @@ public class JobServiceImpl implements JobService {
         try {
             Optional<Job> optionalJob = jobRepository.findById(jobId);
             if (optionalJob.isEmpty())
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString(), "Job is not exist", null));
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new ResponseObject(HttpStatus.NOT_FOUND.toString(), "Job is not exist", null));
 
             Job jobToDelete = optionalJob.get();
             jobRepository.delete(jobToDelete);
@@ -113,6 +106,11 @@ public class JobServiceImpl implements JobService {
                             , "Delete Job Successfully!", null));
 
         } catch (Exception e) {
+            if (e instanceof NotFoundException) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new ResponseObject(HttpStatus.NOT_FOUND.toString()
+                                , "Something wrong occur!", e.getMessage()));
+            }
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString()
                             , "Something wrong occur!", null));

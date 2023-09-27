@@ -16,7 +16,7 @@ public class ImgBooking {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "img_booking_id")
-    private int imgBookingId;
+    private Integer imgBookingId;
 
     @Column(name = "img_booking_link")
     private String imgBookingLink;

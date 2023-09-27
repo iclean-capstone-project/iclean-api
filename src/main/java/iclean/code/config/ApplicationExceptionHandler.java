@@ -1,7 +1,8 @@
 package iclean.code.config;
 
-import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import iclean.code.data.dto.common.ResponseObject;
+import iclean.code.exception.InvalidJsonFormatException;
 import iclean.code.exception.UserNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -51,13 +52,27 @@ public class ApplicationExceptionHandler {
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ResponseObject> handleJsonParseException(HttpMessageNotReadableException ex) {
-        JsonParseException jsonParseException = (JsonParseException) ex.getCause();
+        InvalidFormatException invalidFormatException = (InvalidFormatException) ex.getCause();
+        String message = "Invalid JSON format: " + invalidFormatException.getMessage();
 
         Map<String, String> errorMap = new HashMap<>();
-        errorMap.put("errorMessage", "Invalid JSON");
+        // Extract the field name from the path
+        String fieldName = invalidFormatException.getPath().get(0).getFieldName();
+        errorMap.put(fieldName, message);
+
+        // Map the field name to the list of errors
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString(),
                         "Invalid JSON format", errorMap));
+    }
 
+    @ExceptionHandler(InvalidJsonFormatException.class)
+    public ResponseEntity<ResponseObject> handleInvalidJsonFormatException(InvalidJsonFormatException ex) {
+        String message = "Invalid JSON format: " + ex.getMessage();
+        Map<String, String> errorMap = new HashMap<>();
+        errorMap.put("errorMessage", message);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString(),
+                        "Invalid JSON format", errorMap));
     }
 }

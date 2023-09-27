@@ -17,7 +17,7 @@ public class BookingStatus {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "booking_status_id")
-    private int bookingStatusId;
+    private Integer bookingStatusId;
 
     @OneToMany(mappedBy = "bookingStatus")
     @JsonIgnoreProperties("bookingStatus")

@@ -15,7 +15,7 @@ public class RejectReasion {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "rj_reason_id")
-    private int rjReasonId;
+    private Integer rjReasonId;
 
     @Column(name = "rj_content")
     private String rjContent;
