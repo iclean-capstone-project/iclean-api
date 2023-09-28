@@ -1,14 +1,15 @@
 package iclean.code.data.dto.request.booking;
 
 import lombok.*;
+import org.checkerframework.checker.formatter.qual.InvalidFormat;
 import org.hibernate.validator.constraints.Length;
 import org.hibernate.validator.constraints.Range;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 
-import javax.persistence.Column;
-import javax.validation.constraints.Max;
+import javax.annotation.RegEx;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
-import java.time.LocalDateTime;
 
 @Getter
 @Setter
@@ -17,10 +18,10 @@ import java.time.LocalDateTime;
 public class AddBookingRequest {
 
     @NotNull(message = "Kinh độ không được để trống")
-    private double longitude;
+    private Double longitude;
 
     @NotNull(message = "Vĩ độ không được để trống")
-    private double latitude;
+    private Double latitude;
 
     @NotNull(message = "Vị trí không được để trống")
     @NotBlank(message = "Vị trí không được để trống")
@@ -30,21 +31,25 @@ public class AddBookingRequest {
     private String locationDescription;
 
     @Range(min = 1, max = 8, message = "Giờ làm không được lớn hơn 8 tiếng")
-    private double workHour;
+    @NotNull(message = "Vị trí không được để trống")
+    private Double workHour;
 
     @Range(min = 1, max = 8, message = "Giờ làm thực tế không được lớn hơn 8 tiếng")
-    private double workHourActual;
+    @NotNull(message = "Vị trí không được để trống")
+    private Double workHourActual;
 
     @Range(min = 1000, message = "Giá tiền phải lớn hơn 1000 VNĐ")
-    private double totalPrice;
+    @NotNull(message = "Vị trí không được để trống")
+    @RegEx
+    private Double totalPrice;
 
     @Range(min = 1, message = "Mã nhân viên phải lớn hơn 1")
-    private int staffId;
+    private Integer staffId;
 
     @Range(min = 1, message = "Mã khách hàng phải lớn hơn 1")
-    private int renterId;
+    private Integer renterId;
 
     @Range(min = 1, message = "Mã công việc phải lớn hơn 1")
-    private int jobId;
+    private Integer jobId;
 
 }

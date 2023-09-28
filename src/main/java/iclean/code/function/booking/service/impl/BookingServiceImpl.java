@@ -1,5 +1,7 @@
 package iclean.code.function.booking.service.impl;
 
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import iclean.code.data.domain.Booking;
 import iclean.code.data.domain.BookingStatus;
 import iclean.code.data.domain.Job;
@@ -13,6 +15,7 @@ import iclean.code.data.repository.BookingRepository;
 import iclean.code.data.repository.BookingStatusRepository;
 import iclean.code.data.repository.JobRepository;
 import iclean.code.data.repository.UserRepository;
+import iclean.code.exception.InvalidJsonFormatException;
 import iclean.code.exception.NotFoundException;
 import iclean.code.function.booking.service.BookingService;
 import org.modelmapper.ModelMapper;
@@ -44,33 +47,25 @@ public class BookingServiceImpl implements BookingService {
     @Autowired
     private ModelMapper modelMapper;
 
-    @Autowired
-    private Validator validator;
-
     @Override
     public ResponseEntity<ResponseObject> getAllBooking() {
         if (bookingRepository.findAll().isEmpty()) {
-            return ResponseEntity.status(HttpStatus.ACCEPTED)
-                    .body(new ResponseObject(HttpStatus.ACCEPTED.toString(), "All Booking", "Booking list is empty"));
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new ResponseObject(HttpStatus.NOT_FOUND.toString(), "All Booking", "Booking list is empty"));
         }
-        return ResponseEntity.status(HttpStatus.ACCEPTED)
-                .body(new ResponseObject(HttpStatus.ACCEPTED.toString(), "All Booking", bookingRepository.findAll()));
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(new ResponseObject(HttpStatus.OK.toString(), "All Booking", bookingRepository.findAll()));
     }
 
     @Override
     public ResponseEntity<ResponseObject> getBookingById(int bookingId) {
         try {
-            Set<ConstraintViolation<Integer>> violations = validator.validate(bookingId);
-            if (!violations.isEmpty()) {
-                // Handle validation errors (e.g., return error response)
-                throw new IllegalArgumentException("Validation error: " + violations.iterator().next().getMessage());
-            }
             if (bookingRepository.findById(bookingId).isEmpty()) {
-                return ResponseEntity.status(HttpStatus.ACCEPTED)
-                        .body(new ResponseObject(HttpStatus.ACCEPTED.toString(), "Booking", "Booking is not exist"));
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new ResponseObject(HttpStatus.NOT_FOUND.toString(), "Booking", "Booking is not exist"));
             }
-            return ResponseEntity.status(HttpStatus.ACCEPTED)
-                    .body(new ResponseObject(HttpStatus.ACCEPTED.toString(), "Booking", bookingRepository.findById(bookingId)));
+            return ResponseEntity.status(HttpStatus.OK)
+                    .body(new ResponseObject(HttpStatus.OK.toString(), "Booking", bookingRepository.findById(bookingId)));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString()
@@ -81,24 +76,17 @@ public class BookingServiceImpl implements BookingService {
     @Override
     public ResponseEntity<ResponseObject> addBooking(AddBookingRequest request) {
         try {
-            Set<ConstraintViolation<AddBookingRequest>> violations = validator.validate(request);
-
-            if (!violations.isEmpty()) {
-                // Handle validation errors (e.g., return error response)
-                throw new IllegalArgumentException("Validation error: " + violations.iterator().next().getMessage());
-            }
-
             Booking booking = mappingBookingForCreate(request);
             bookingRepository.save(booking);
 
-            return ResponseEntity.status(HttpStatus.CREATED)
-                    .body(new ResponseObject(HttpStatus.ACCEPTED.toString()
+            return ResponseEntity.status(HttpStatus.OK)
+                    .body(new ResponseObject(HttpStatus.OK.toString()
                             , "Create Booking Successfully!", null));
 
         } catch (Exception e) {
             if (e instanceof NotFoundException) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString()
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new ResponseObject(HttpStatus.NOT_FOUND.toString()
                                 , "Something wrong occur!", e.getMessage()));
             }
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
@@ -111,24 +99,17 @@ public class BookingServiceImpl implements BookingService {
     @Override
     public ResponseEntity<ResponseObject> updateStatusBooking(int bookingId, UpdateStatusBookingRequest request) {
         try {
-            Set<ConstraintViolation<UpdateStatusBookingRequest>> violations = validator.validate(request);
-
-            if (!violations.isEmpty()) {
-                // Handle validation errors (e.g., return error response)
-                throw new IllegalArgumentException("Validation error: " + violations.iterator().next().getMessage());
-            }
-
             Booking booking = mappingBookingForUpdateStatus(bookingId, request);
             bookingRepository.save(booking);
 
-            return ResponseEntity.status(HttpStatus.CREATED)
-                    .body(new ResponseObject(HttpStatus.ACCEPTED.toString()
+            return ResponseEntity.status(HttpStatus.OK)
+                    .body(new ResponseObject(HttpStatus.OK.toString()
                             , "Update Status Booking Successfully!", null));
 
         } catch (Exception e) {
             if (e instanceof NotFoundException) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString()
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new ResponseObject(HttpStatus.NOT_FOUND.toString()
                                 , "Something wrong occur!", e.getMessage()));
             }
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
@@ -165,10 +146,11 @@ public class BookingServiceImpl implements BookingService {
         BookingStatus optionalBookingStatus = findStatus(request.getBookingStatusId());
         Booking optionalBooking = finBooking(bookingId);
 
-        Booking booking = modelMapper.map(request, Booking.class);
-        booking.setRequestCount(booking.getRequestCount() + 1);
-        booking.setBookingStatus(optionalBookingStatus);
-        booking.setUpdateAt(LocalDateTime.now());
+        optionalBooking.setRequestCount(optionalBooking.getRequestCount() + 1);
+        optionalBooking.setBookingStatus(optionalBookingStatus);
+        optionalBooking.setUpdateAt(LocalDateTime.now());
+
+        Booking booking = modelMapper.map(optionalBooking, Booking.class);
 
         if (BookingStatusEnum.IN_PROCESS.getValue() == optionalBookingStatus.getBookingStatusId()) {
             booking.setWorkStart(LocalDateTime.now());

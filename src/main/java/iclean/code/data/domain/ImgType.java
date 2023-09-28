@@ -14,7 +14,7 @@ public class ImgType {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "img_type_id")
-    private int imgTypeId;
+    private Integer imgTypeId;
 
     @Column(name = "title_img_type")
     private String titleImgType;

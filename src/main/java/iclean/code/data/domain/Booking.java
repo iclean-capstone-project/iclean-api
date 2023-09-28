@@ -18,16 +18,16 @@ public class Booking {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "booking_id")
-    private int bookingId;
+    private Integer bookingId;
 
     private String location;
 
     @Column(name = "location_description")
     private String locationDescription;
 
-    private double longitude;
+    private Double longitude;
 
-    private double latitude;
+    private Double latitude;
 
     @Column(name = "order_date")
     private LocalDateTime orderDate;
@@ -42,13 +42,13 @@ public class Booking {
     private LocalDateTime workDate;
 
     @Column(name = "work_hour")
-    private double workHour;
+    private Double workHour;
 
     @Column(name = "work_hour_actual")
-    private double workHourActual;
+    private Double workHourActual;
 
     @Column(name = "request_count")
-    private double requestCount;
+    private Integer requestCount;
 
     @Column(name = "work_start")
     private LocalDateTime workStart;
@@ -56,7 +56,7 @@ public class Booking {
     @Column(name = "work_end")
     private LocalDateTime workEnd;
 
-    private double rate;
+    private Double rate;
 
     private String feedback;
 
@@ -64,7 +64,7 @@ public class Booking {
     private LocalDateTime feedbackTime;
 
     @Column(name = "total_price")
-    private double totalPrice;
+    private Double totalPrice;
 
     @Column(name = "update_at")
     private LocalDateTime updateAt;
