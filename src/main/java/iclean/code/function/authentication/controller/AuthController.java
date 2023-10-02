@@ -1,8 +1,7 @@
 package iclean.code.function.authentication.controller;
 
 import iclean.code.data.dto.common.ResponseObject;
-import iclean.code.data.dto.request.authentication.*;
-import iclean.code.data.dto.request.security.authentication.*;
+import iclean.code.data.dto.request.authen.*;
 import iclean.code.function.authentication.service.AuthService;
 import iclean.code.service.impl.TwilioOTPServiceImpl;
 import io.swagger.v3.oas.annotations.Operation;
@@ -16,13 +15,11 @@ import org.springframework.web.bind.annotation.*;
 import javax.validation.Valid;
 
 @RestController
-@RequestMapping("auth")
+@RequestMapping("api/v1/auth")
 @Tag(name = "Authentication API")
 public class AuthController {
     @Autowired
     private AuthService authService;
-    @Autowired
-    TwilioOTPServiceImpl twilioOTPServiceImpl;
     @PostMapping("")
     @Operation(summary = "Login into the system for admin and manager", description = "Return accessToken and user information")
     @ApiResponses(value = {

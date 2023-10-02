@@ -34,6 +34,8 @@ public class User {
 
     @Column(name = "otp_token")
     private String otpToken;
+    @Column(name = "is_locked")
+    private Boolean isLocked = false;
 
     private String email;
 

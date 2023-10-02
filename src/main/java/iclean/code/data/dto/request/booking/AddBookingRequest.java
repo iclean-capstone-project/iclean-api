@@ -5,9 +5,12 @@ import org.checkerframework.checker.formatter.qual.InvalidFormat;
 import org.hibernate.validator.constraints.Length;
 import org.hibernate.validator.constraints.Range;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
 import javax.annotation.RegEx;
+import javax.validation.Valid;
+import javax.validation.constraints.Min;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 
@@ -17,7 +20,8 @@ import javax.validation.constraints.NotNull;
 @AllArgsConstructor
 public class AddBookingRequest {
 
-    @NotNull(message = "Kinh độ không được để trống")
+    @NotNull(message = "Not valid")
+    @Min(value = 3)
     private Double longitude;
 
     @NotNull(message = "Vĩ độ không được để trống")

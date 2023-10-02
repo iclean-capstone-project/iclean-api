@@ -1,7 +1,7 @@
 package iclean.code.config;
 
 import iclean.code.data.domain.User;
-import iclean.code.data.dto.response.UserPrinciple;
+import iclean.code.data.dto.response.authen.UserPrinciple;
 import iclean.code.data.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.Cacheable;

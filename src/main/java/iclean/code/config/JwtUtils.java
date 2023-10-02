@@ -1,6 +1,6 @@
 package iclean.code.config;
 
-import iclean.code.data.dto.response.UserPrinciple;
+import iclean.code.data.dto.response.authen.UserPrinciple;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.SignatureException;
 import org.springframework.stereotype.Component;
