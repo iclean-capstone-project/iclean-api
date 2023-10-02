@@ -1,4 +1,4 @@
-package iclean.code.data.dto.request;
+package iclean.code.data.dto.request.authentication;
 import iclean.code.data.enumjava.Role;
 import lombok.AllArgsConstructor;
 import lombok.Data;

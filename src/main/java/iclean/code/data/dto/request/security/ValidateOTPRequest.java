@@ -1,4 +1,4 @@
-package iclean.code.data.dto.request;
+package iclean.code.data.dto.request.security;
 
 import lombok.Data;
 

@@ -1,7 +1,8 @@
 package iclean.code.function.authentication.controller;
 
 import iclean.code.data.dto.common.ResponseObject;
-import iclean.code.data.dto.request.*;
+import iclean.code.data.dto.request.authentication.*;
+import iclean.code.data.dto.request.security.authentication.*;
 import iclean.code.function.authentication.service.AuthService;
 import iclean.code.service.impl.TwilioOTPServiceImpl;
 import io.swagger.v3.oas.annotations.Operation;
@@ -50,7 +51,7 @@ public class AuthController {
             @ApiResponse(responseCode = "400", description = "Bad request - Missing some field required or not match pattern")
     })
     public ResponseEntity<ResponseObject> loginFacebook(@RequestBody @Valid TokenRequest token) {
-        return authService.loginWithGoogle(token.getAccessToken());
+        return authService.loginWithFacebook(token.getAccessToken());
     }
     @PostMapping("/phone-number")
     @Operation(summary = "Login into the system with OTP", description = "Return accessToken and user information")

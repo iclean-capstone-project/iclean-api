@@ -6,7 +6,11 @@ import com.google.firebase.auth.FirebaseToken;
 import iclean.code.config.JwtUtils;
 import iclean.code.data.domain.User;
 import iclean.code.data.dto.common.ResponseObject;
-import iclean.code.data.dto.request.*;
+import iclean.code.data.dto.request.authentication.LoginFormMobile;
+import iclean.code.data.dto.request.authentication.LoginUsernamePassword;
+import iclean.code.data.dto.request.authentication.RegisterUserForm;
+import iclean.code.data.dto.request.authentication.TokenRequest;
+import iclean.code.data.dto.request.security.OtpAuthentication;
 import iclean.code.data.dto.response.JwtResponse;
 import iclean.code.data.dto.response.UserInformationDto;
 import iclean.code.data.dto.response.UserPrinciple;
@@ -234,51 +238,41 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public ResponseEntity<ResponseObject> loginUsingPhoneNumberAndOTP(LoginFormMobile formMobile) {
         try {
-            User user = userRepository.findUserByPhoneNumber(formMobile.getPhoneNumber());
-            ValidateOTPRequest validateOTPRequest = new ValidateOTPRequest();
-            validateOTPRequest.setOtpToken(user.getOtpToken());
-            validateOTPRequest.setUserOtpInput(formMobile.getOtpToken());
+            Authentication authentication = authenticationManager.authenticate(
+                    new OtpAuthentication(formMobile.getPhoneNumber(), formMobile.getOtpToken()));
 
-            if (twilioOTPService.validateOTP(validateOTPRequest)) {
-
-                UserPrinciple userPrinciple = UserPrinciple.build(user);
+            if (authentication != null) {
+                UserPrinciple userPrinciple = (UserPrinciple) authentication.getPrincipal();
                 String accessToken = jwtUtils.createAccessToken(userPrinciple);
                 String refreshToken = jwtUtils.createRefreshToken(userPrinciple);
+                User user = userRepository.findUserByPhoneNumber(formMobile.getPhoneNumber());
                 UserInformationDto userInformationDto = modelMapper.map(user, UserInformationDto.class);
-
-                if (!ObjectUtils.anyNull(user.getFullName(), user.getRole())) {
-                    userRepository.save(user);
-
-                    return ResponseEntity.status(HttpStatus.OK)
-                            .body(new ResponseObject(HttpStatus.OK.toString(),
-                                    "Login Successful",
-                                    new JwtResponse(accessToken, refreshToken, userInformationDto)));
-                }
-
-                return ResponseEntity.status(HttpStatus.OK)
-                        .body(new ResponseObject(HttpStatus.OK.toString(),
-                                "Need Update Information",
+                return ResponseEntity.status(HttpStatus.ACCEPTED)
+                        .body(new ResponseObject(HttpStatus.ACCEPTED.toString(), "Login success!",
                                 new JwtResponse(accessToken, refreshToken, userInformationDto)));
-            } else {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body(new ResponseObject(HttpStatus.UNAUTHORIZED.toString(),
-                                "Invalid OTP",
-                                null));
-            }
 
+            } else ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new ResponseObject(HttpStatus.UNAUTHORIZED.toString(),
+                            "Wrong username or password.", null));
+
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new ResponseObject(HttpStatus.UNAUTHORIZED.toString(),
+                            "No username or password.", null));
         } catch (Exception e) {
             if (e instanceof DisabledException) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(new ResponseObject(HttpStatus.UNAUTHORIZED.toString(),
-                                "Account has been locked. Please contact " + "companyEmail" + " for more information", null));
+                                "Account has been locked. Please contact " +
+                                        "companyEmail" + " for more information", null));
             } else if (e instanceof AccountExpiredException) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(new ResponseObject(HttpStatus.UNAUTHORIZED.toString(),
-                                "The account has expired. Please contact " + "companyEmail" + " for more information", null));
+                                "The account has expired. Please contact "
+                                        + "companyEmail" + " for more information", null));
             } else if (e instanceof AuthenticationException) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(new ResponseObject(HttpStatus.UNAUTHORIZED.toString(),
-                                "Wrong username or password.", null));
+                                "Wrong OTP.", null));
             } else
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(new ResponseObject(HttpStatus.UNAUTHORIZED.toString(),

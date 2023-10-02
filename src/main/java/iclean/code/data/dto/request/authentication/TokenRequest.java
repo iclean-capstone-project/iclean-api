@@ -1,4 +1,4 @@
-package iclean.code.data.dto.request;
+package iclean.code.data.dto.request.authentication;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;

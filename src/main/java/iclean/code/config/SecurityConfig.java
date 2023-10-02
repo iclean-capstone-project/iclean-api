@@ -27,6 +27,9 @@ public class SecurityConfig {
     private JwtEntryPoint jwtEntryPoint;
 
     private final JwtAuthFilter jwtAuthFilter;
+
+    @Autowired
+    private OtpAuthenticationProvider otpAuthenticationProvider;
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
@@ -58,6 +61,7 @@ public class SecurityConfig {
                 .userDetailsService(userDetailsService)
                 .passwordEncoder(passwordEncoder())
                 .and()
+                .authenticationProvider(otpAuthenticationProvider)
                 .build();
     }
 
