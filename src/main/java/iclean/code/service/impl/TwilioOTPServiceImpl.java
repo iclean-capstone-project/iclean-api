@@ -3,7 +3,7 @@ package iclean.code.service.impl;
 import com.twilio.rest.api.v2010.account.Message;
 import com.twilio.type.PhoneNumber;
 import iclean.code.config.TwilioConfig;
-import iclean.code.data.dto.request.ValidateOTPRequest;
+import iclean.code.data.dto.request.security.ValidateOTPRequest;
 import iclean.code.data.repository.SystemParameterRepository;
 import iclean.code.service.TwilioOTPService;
 import iclean.code.utils.Utils;

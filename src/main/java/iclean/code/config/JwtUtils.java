@@ -14,7 +14,7 @@ public class JwtUtils {
     private final String jwtSecret = "wyk52dSUWe6vaMYOsdOrBlWwE0kyQjj6zzPMy4xWVzbRLzPqT31AQaYqpZy3q4w8RR6of0LKPHrr+wJc7NxelA==";
     public String createAccessToken(UserPrinciple userPrinciple) {
 
-        return Jwts.builder().setSubject(userPrinciple.getUsername())
+        return Jwts.builder().setSubject(String.valueOf(userPrinciple.getId()))
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(new Date().getTime() + 6000000))
                 .signWith(SignatureAlgorithm.HS512, jwtSecret)

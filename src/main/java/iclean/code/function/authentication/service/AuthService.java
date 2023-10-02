@@ -1,9 +1,9 @@
 package iclean.code.function.authentication.service;
 
 import iclean.code.data.dto.common.ResponseObject;
-import iclean.code.data.dto.request.LoginUsernamePassword;
-import iclean.code.data.dto.request.LoginFormMobile;
-import iclean.code.data.dto.request.RegisterUserForm;
+import iclean.code.data.dto.request.authentication.LoginUsernamePassword;
+import iclean.code.data.dto.request.authentication.LoginFormMobile;
+import iclean.code.data.dto.request.authentication.RegisterUserForm;
 import org.springframework.http.ResponseEntity;
 
 public interface AuthService {
