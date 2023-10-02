@@ -7,7 +7,7 @@ import iclean.code.data.dto.request.address.UpdateAddressRequestDTO;
 import org.springframework.http.ResponseEntity;
 
 public interface AddressService {
-    ResponseEntity<ResponseObject> getAddresses(GetAddressRequestDTO request);
+    ResponseEntity<ResponseObject> getAddresses();
 
     ResponseEntity<ResponseObject> getAddress(Integer id);
 
