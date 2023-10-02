@@ -3,7 +3,7 @@ package iclean.code.config;
 import iclean.code.data.domain.User;
 import iclean.code.data.dto.request.security.ValidateOTPRequest;
 import iclean.code.data.dto.request.security.OtpAuthentication;
-import iclean.code.data.dto.response.UserPrinciple;
+import iclean.code.data.dto.response.authen.UserPrinciple;
 import iclean.code.data.repository.UserRepository;
 import iclean.code.service.TwilioOTPService;
 import org.springframework.beans.factory.annotation.Autowired;

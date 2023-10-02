@@ -1,6 +1,6 @@
 package iclean.code.service;
 
-import iclean.code.data.dto.request.NotificationRequestDto;
+import iclean.code.data.dto.request.authen.NotificationRequestDto;
 
 public interface FCMService {
     public void subscribeToTopic();

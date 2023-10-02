@@ -93,7 +93,7 @@ public class Booking {
     @ManyToOne
     @JsonIgnore
     @JoinColumn(name = "rj_reason_id", insertable = false, updatable = false)
-    private RejectReasion rejectReasion;
+    private RejectReason rejectReason;
 
     @OneToMany(mappedBy = "booking")
     @JsonIgnoreProperties("booking")

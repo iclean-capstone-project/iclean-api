@@ -6,7 +6,7 @@ import com.google.firebase.FirebaseOptions;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.messaging.Message;
 import com.google.firebase.messaging.Notification;
-import iclean.code.data.dto.request.NotificationRequestDto;
+import iclean.code.data.dto.request.authen.NotificationRequestDto;
 import iclean.code.service.FCMService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
