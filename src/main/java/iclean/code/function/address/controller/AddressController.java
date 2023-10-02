@@ -11,6 +11,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
@@ -29,11 +30,13 @@ public class AddressController {
             @ApiResponse(responseCode = "401", description = "Unauthorized - Login please"),
             @ApiResponse(responseCode = "400", description = "Bad request - Missing some field required")
     })
-    public ResponseEntity<ResponseObject> getAddresses(@RequestParam @Valid GetAddressRequestDTO request) {
-        return addressService.getAddresses(request);
+    @PreAuthorize("hasAnyAuthority('admin', 'renter')")
+    public ResponseEntity<ResponseObject> getAddresses() {
+        return addressService.getAddresses();
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyAuthority('manager', 'employee')")
     @Operation(summary = "Get a address of a user by id", description = "Return address information")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Address Information"),

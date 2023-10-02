@@ -32,7 +32,7 @@ public class AddressServiceImpl implements AddressService {
     private ModelMapper modelMapper;
 
     @Override
-    public ResponseEntity<ResponseObject> getAddresses(GetAddressRequestDTO request) {
+    public ResponseEntity<ResponseObject> getAddresses() {
         try {
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseObject(HttpStatus.OK.toString(),

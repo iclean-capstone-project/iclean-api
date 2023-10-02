@@ -21,4 +21,9 @@ public class CustomUserDetailService implements UserDetailsService {
         User user = userRepository.findByUsername(username);
         return UserPrinciple.build(user);
     }
+
+    public UserDetails loadUserById(Integer id) throws UsernameNotFoundException {
+        User user = userRepository.findByUserId(id);
+        return UserPrinciple.build(user);
+    }
 }
