@@ -8,4 +8,6 @@ public class UserInformationDto {
     private String fullName;
 
     private String phoneNumber;
+
+    private Boolean isNewUser = false;
 }

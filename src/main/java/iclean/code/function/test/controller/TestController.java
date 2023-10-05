@@ -25,6 +25,11 @@ public class TestController {
         return new ResponseEntity<>(storageService.uploadFile(file), HttpStatus.CREATED);
     }
 
+    @GetMapping
+    public String wish() {
+        return "new ResponseEntity<>(storageService.uploadFile(file), HttpStatus.CREATED);";
+    }
+
     @DeleteMapping(value = "/file")
     public ResponseEntity<Boolean> delete(@RequestParam String url) {
         return new ResponseEntity<>(storageService.deleteFile(url), HttpStatus.CREATED);

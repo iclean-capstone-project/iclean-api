@@ -1,5 +1,6 @@
 package iclean.code.function.authentication.controller;
 
+import iclean.code.config.JwtUtils;
 import iclean.code.data.dto.common.ResponseObject;
 import iclean.code.data.dto.request.authen.*;
 import iclean.code.function.authentication.service.AuthService;
@@ -10,6 +11,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
@@ -80,5 +83,33 @@ public class AuthController {
     })
     public ResponseEntity<ResponseObject> loginUsernamePassword(@RequestBody @Valid RegisterUserForm form) {
         return authService.updateInformationFirstLogin(form);
+    }
+
+    @PostMapping("/fcm-token")
+    @PreAuthorize("hasAnyAuthority('renter', 'employee', 'admin', 'manager')")
+    @Operation(summary = "Add fcm token for push notification", description = "Return status add new successful")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Add new Successful"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - Login please"),
+            @ApiResponse(responseCode = "403", description = "Forbidden - You don't have permission to access on this api"),
+            @ApiResponse(responseCode = "400", description = "Bad request - Missing some field required")
+    })
+    public ResponseEntity<ResponseObject> addFcmToken(@RequestBody @Valid FcmTokenDto dto,
+                                                      Authentication authentication) {
+        return authService.addFcmToken(dto, JwtUtils.decodeToAccountId(authentication));
+    }
+
+    @DeleteMapping("/fcm-token")
+    @PreAuthorize("hasAnyAuthority('renter', 'employee', 'admin', 'manager')")
+    @Operation(summary = "Login into the system with OTP", description = "Return status delete successful")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Delete FCM Token Successful"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - Login please"),
+            @ApiResponse(responseCode = "403", description = "Forbidden - You don't have permission to access on this api"),
+            @ApiResponse(responseCode = "400", description = "Bad request - Missing some field required")
+    })
+    public ResponseEntity<ResponseObject> deleteFcmToken(@RequestBody @Valid FcmTokenDto dto,
+                                                      Authentication authentication) {
+        return authService.deleteFcmToken(dto, JwtUtils.decodeToAccountId(authentication));
     }
 }

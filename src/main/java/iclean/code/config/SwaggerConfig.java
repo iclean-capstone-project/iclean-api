@@ -17,7 +17,7 @@ public class SwaggerConfig {
     public OpenAPI customizeOpenAPI() {
 
         List<Server> servers = new ArrayList<>();
-//        servers.add(new Server().url("https://clatt-api.monoinfinity.net"));
+        servers.add(new Server().url("https://iclean.azurewebsites.net"));
         servers.add(new Server().url("http://localhost:8080"));
         final String securitySchemeName = "bearerAuth";
         return new OpenAPI()

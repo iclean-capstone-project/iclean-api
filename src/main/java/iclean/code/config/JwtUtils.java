@@ -3,6 +3,8 @@ package iclean.code.config;
 import iclean.code.data.dto.response.authen.UserPrinciple;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.SignatureException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 
 import javax.servlet.http.HttpServletRequest;
@@ -19,6 +21,24 @@ public class JwtUtils {
                 .setExpiration(new Date(new Date().getTime() + 6000000))
                 .signWith(SignatureAlgorithm.HS512, jwtSecret)
                 .compact();
+    }
+
+    public static Integer decodeToAccountId(Authentication authentication) {
+        Integer userId = null;
+        if (authentication instanceof UsernamePasswordAuthenticationToken) {
+            UserPrinciple userPrinciple = (UserPrinciple) authentication.getPrincipal();
+            userId = userPrinciple.getId();
+        }
+        return userId;
+    }
+
+    public static String decodeToAccountRole(Authentication authentication) {
+        String role = null;
+        if (authentication instanceof UsernamePasswordAuthenticationToken) {
+            UserPrinciple userPrinciple = (UserPrinciple) authentication.getPrincipal();
+            role = userPrinciple.getGrantedAuthorities().toString();
+        }
+        return role;
     }
 
     public String createRefreshToken(UserPrinciple userPrinciple) {

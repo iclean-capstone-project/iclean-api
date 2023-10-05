@@ -11,6 +11,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
@@ -23,6 +24,7 @@ public class MoneyRequestController {
     private MoneyRequestService moneyRequestService;
 
     @GetMapping
+    @PreAuthorize("hasAnyAuthority('renter', 'employee')")
     @Operation(summary = "Get all money requests of a user", description = "Return all money requests information")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Money Requests Information"),
@@ -34,6 +36,7 @@ public class MoneyRequestController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyAuthority('renter', 'employee')")
     @Operation(summary = "Get a money request of a user by id", description = "Return money request information")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Money Request Information"),
@@ -45,7 +48,8 @@ public class MoneyRequestController {
     }
 
     @PostMapping
-    @Operation(summary = "Create new address of a user", description = "Return message fail or successful")
+    @PreAuthorize("hasAnyAuthority('renter', 'employee')")
+    @Operation(summary = "Create new money request of a user", description = "Return message fail or successful")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Create new Money Request Successful"),
             @ApiResponse(responseCode = "401", description = "Unauthorized - Login please"),
@@ -56,7 +60,8 @@ public class MoneyRequestController {
     }
 
     @PutMapping("/{id}")
-    @Operation(summary = "Update a address of a user", description = "Return message fail or successful")
+    @PreAuthorize("hasAnyAuthority('renter', 'employee')")
+    @Operation(summary = "Update a money request of a user", description = "Return message fail or successful")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Update a Money Request Successful"),
             @ApiResponse(responseCode = "401", description = "Unauthorized - Login please"),
@@ -68,7 +73,7 @@ public class MoneyRequestController {
     }
 
     @DeleteMapping("/{id}")
-    @Operation(summary = "Delete a address of a user by id", description = "Return message fail or successful")
+    @Operation(summary = "Delete a money request of a user by id", description = "Return message fail or successful")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Delete a Money Request Successful"),
             @ApiResponse(responseCode = "401", description = "Unauthorized - Login please"),
