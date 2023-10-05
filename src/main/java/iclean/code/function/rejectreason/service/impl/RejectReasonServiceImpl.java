@@ -1,16 +1,14 @@
 package iclean.code.function.rejectreason.service.impl;
 
 import iclean.code.data.domain.RejectReason;
-import iclean.code.data.domain.User;
 import iclean.code.data.dto.common.ResponseObject;
 import iclean.code.data.dto.request.rejectreason.CreateRejectReasonRequestDTO;
-import iclean.code.data.dto.request.rejectreason.GetRejectReasonRequestDTO;
 import iclean.code.data.dto.request.rejectreason.UpdateRejectReasonRequestDTO;
 import iclean.code.data.dto.response.rejectreason.GetRejectReasonResponseDTO;
 import iclean.code.data.repository.RejectReasonRepository;
-import iclean.code.data.repository.UserRepository;
 import iclean.code.exception.NotFoundException;
 import iclean.code.function.rejectreason.service.RejectReasonService;
+import iclean.code.utils.Utils;
 import lombok.extern.log4j.Log4j2;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,7 +17,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -28,11 +25,9 @@ public class RejectReasonServiceImpl implements RejectReasonService {
     @Autowired
     private RejectReasonRepository rejectReasonRepository;
     @Autowired
-    private UserRepository userRepository;
-    @Autowired
     private ModelMapper modelMapper;
     @Override
-    public ResponseEntity<ResponseObject> getRejectReasons(GetRejectReasonRequestDTO request) {
+    public ResponseEntity<ResponseObject> getRejectReasons() {
         try {
             List<RejectReason> rejectReasons = rejectReasonRepository.findAll();
             List<GetRejectReasonResponseDTO> responses = rejectReasons
@@ -82,6 +77,7 @@ public class RejectReasonServiceImpl implements RejectReasonService {
     public ResponseEntity<ResponseObject> createRejectReason(CreateRejectReasonRequestDTO request) {
         try {
             RejectReason rejectReason = modelMapper.map(request, RejectReason.class);
+            rejectReason.setCreateAt(Utils.getDateTimeNow());
             rejectReasonRepository.save(rejectReason);
 
             return ResponseEntity.status(HttpStatus.OK)
@@ -106,7 +102,7 @@ public class RejectReasonServiceImpl implements RejectReasonService {
     public ResponseEntity<ResponseObject> updateRejectReason(Integer id, UpdateRejectReasonRequestDTO request) {
         try {
             RejectReason rejectReason = findRejectReasonById(id);
-            rejectReason = modelMapper.map(request, RejectReason.class);
+            modelMapper.map(request, rejectReason);
             rejectReasonRepository.save(rejectReason);
 
             return ResponseEntity.status(HttpStatus.OK)
@@ -150,15 +146,10 @@ public class RejectReasonServiceImpl implements RejectReasonService {
                             null));
         }
     }
+
     private RejectReason findRejectReasonById(Integer id) {
         return rejectReasonRepository
                 .findById(id)
                 .orElseThrow(() -> new NotFoundException(String.format("Reject Reason ID: %s is not exist", id)));
-    }
-
-    private User findUserById(Integer id) {
-        return userRepository
-                .findById(id)
-                .orElseThrow(() -> new NotFoundException(String.format("User ID: %s is not exist", id)));
     }
 }

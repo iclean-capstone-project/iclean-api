@@ -32,4 +32,9 @@ public class RegisterEmployee {
     @JoinColumn(name = "user_id")
     private User user;
 
+    @OneToMany(mappedBy = "registerEmployee")
+    @JsonIgnoreProperties("registerEmployee")
+    @JsonIgnore
+    private List<JobApplication> jobApplications;
+
 }

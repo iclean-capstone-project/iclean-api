@@ -7,12 +7,18 @@ import iclean.code.data.dto.request.jobapplication.UpdateJobApplicationRequestDT
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
+
 public interface JobApplicationService {
-    ResponseEntity<ResponseObject> getJobApplications(GetJobApplicationRequestDTO request);
+    ResponseEntity<ResponseObject> getJobApplications();
 
     ResponseEntity<ResponseObject> getJobApplication(Integer id);
 
-    ResponseEntity<ResponseObject> createJobApplication(CreateJobApplicationRequestDTO request, MultipartFile file);
+    ResponseEntity<ResponseObject> createJobApplication(CreateJobApplicationRequestDTO request,
+                                                        MultipartFile frontIdCard,
+                                                        MultipartFile backIdCard,
+                                                        MultipartFile avatar,
+                                                        List<MultipartFile> others);
 
     ResponseEntity<ResponseObject> updateJobApplication(Integer id, UpdateJobApplicationRequestDTO request, MultipartFile file);
 

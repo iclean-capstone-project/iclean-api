@@ -2,6 +2,7 @@ package iclean.code.data.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import iclean.code.utils.Utils;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -31,13 +32,13 @@ public class Address {
     private String locationName;
 
     @Column(name = "is_default")
-    private Boolean isDefault;
+    private Boolean isDefault = false;
 
     @Column(name = "create_at")
     private LocalDateTime createAt;
 
     @Column(name = "update_at")
-    private LocalDateTime updateAt;
+    private LocalDateTime updateAt = Utils.getDateTimeNow();
 
     @ManyToOne
     @JsonIgnore

@@ -11,7 +11,7 @@
 	<groupId>iclean.gfa23se46</groupId>
 	<artifactId>ICleanApplication</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<packaging>war</packaging>
+	<packaging>jar</packaging>
 	<name>ICleanApplication</name>
 	<description>Fall2023_Helping Hands Hub Platform</description>
 	<properties>
@@ -95,7 +95,7 @@
 		<dependency>
 			<groupId>com.mysql</groupId>
 			<artifactId>mysql-connector-j</artifactId>
-			<scope>runtime</scope>
+			<version>8.0.31</version>
 		</dependency>
 		<dependency>
 			<groupId>com.twilio.sdk</groupId>
@@ -140,6 +140,7 @@
 				</configuration>
 			</plugin>
 		</plugins>
+		<finalName>springboot-hhh-i-clean</finalName>
 	</build>
 
 </project>

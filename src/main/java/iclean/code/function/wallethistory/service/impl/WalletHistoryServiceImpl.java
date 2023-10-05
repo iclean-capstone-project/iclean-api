@@ -4,8 +4,8 @@ import iclean.code.data.domain.User;
 import iclean.code.data.domain.WalletHistory;
 import iclean.code.data.dto.common.ResponseObject;
 import iclean.code.data.dto.request.wallethistory.CreateWalletHistoryRequestDTO;
-import iclean.code.data.dto.request.wallethistory.GetWalletHistoryRequestDTO;
 import iclean.code.data.dto.request.wallethistory.UpdateWalletHistoryRequestDTO;
+import iclean.code.data.dto.response.wallethistory.GetWalletHistoryDetailResponseDto;
 import iclean.code.data.dto.response.wallethistory.GetWalletHistoryResponseDTO;
 import iclean.code.data.repository.UserRepository;
 import iclean.code.data.repository.WalletHistoryRepository;
@@ -21,6 +21,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -33,9 +34,9 @@ public class WalletHistoryServiceImpl implements WalletHistoryService {
     @Autowired
     private ModelMapper modelMapper;
     @Override
-    public ResponseEntity<ResponseObject> getWalletHistories(GetWalletHistoryRequestDTO request) {
+    public ResponseEntity<ResponseObject> getWalletHistories(Integer userId) {
         try {
-            List<WalletHistory> walletHistories = walletHistoryRepository.findAll();
+            List<WalletHistory> walletHistories = walletHistoryRepository.findByUserUserId(userId);
             List<GetWalletHistoryResponseDTO> responses = walletHistories
                     .stream()
                     .map(walletHistory -> modelMapper.map(walletHistory, GetWalletHistoryResponseDTO.class))
@@ -55,10 +56,14 @@ public class WalletHistoryServiceImpl implements WalletHistoryService {
     }
 
     @Override
-    public ResponseEntity<ResponseObject> getWalletHistory(Integer id) {
+    public ResponseEntity<ResponseObject> getWalletHistory(Integer id,
+                                                           Integer userId) {
         try {
             WalletHistory walletHistory = findWalletHistoryById(id);
-            GetWalletHistoryRequestDTO responses = modelMapper.map(walletHistory, GetWalletHistoryRequestDTO.class);
+            if (!Objects.equals(userId, walletHistory.getUser().getUserId()))
+                throw new UserNotHavePermissionException();
+
+            GetWalletHistoryDetailResponseDto responses = modelMapper.map(walletHistory, GetWalletHistoryDetailResponseDto.class);
 
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseObject(HttpStatus.OK.toString(),
@@ -66,10 +71,16 @@ public class WalletHistoryServiceImpl implements WalletHistoryService {
                             responses));
         } catch (Exception e) {
             log.error(e.getMessage());
+            if (e instanceof UserNotHavePermissionException) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(new ResponseObject(HttpStatus.FORBIDDEN.toString(),
+                                e.getMessage(),
+                                null));
+            }
             if (e instanceof NotFoundException) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body(new ResponseObject(HttpStatus.NOT_FOUND.toString(),
-                                e.toString(),
+                                e.getMessage(),
                                 null));
             }
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -80,10 +91,11 @@ public class WalletHistoryServiceImpl implements WalletHistoryService {
     }
 
     @Override
-    public ResponseEntity<ResponseObject> createWalletHistory(CreateWalletHistoryRequestDTO request) {
+    public ResponseEntity<ResponseObject> createWalletHistory(CreateWalletHistoryRequestDTO request,
+                                                              Integer userId) {
         try {
             WalletHistory walletHistory = modelMapper.map(request, WalletHistory.class);
-            User user = findUserById(request.getUserId());
+            User user = findUserById(userId);
             walletHistory.setUser(user);
             walletHistory.setCreateAt(Utils.getDateTimeNow());
             walletHistoryRepository.save(walletHistory);
@@ -107,12 +119,15 @@ public class WalletHistoryServiceImpl implements WalletHistoryService {
     }
 
     @Override
-    public ResponseEntity<ResponseObject> updateWalletHistory(Integer id, UpdateWalletHistoryRequestDTO request) {
+    public ResponseEntity<ResponseObject> updateWalletHistory(Integer id,
+                                                              UpdateWalletHistoryRequestDTO request,
+                                                              Integer userId) {
         try {
             WalletHistory walletHistory = findWalletHistoryById(id);
-            walletHistory = modelMapper.map(request, WalletHistory.class);
-            User user = findUserById(request.getUserId());
-            walletHistory.setUser(user);
+            if (!Objects.equals(walletHistory.getUser().getUserId(), userId))
+                throw new UserNotHavePermissionException();
+
+            modelMapper.map(request, walletHistory);
             walletHistoryRepository.save(walletHistory);
 
             return ResponseEntity.status(HttpStatus.OK)
@@ -122,8 +137,8 @@ public class WalletHistoryServiceImpl implements WalletHistoryService {
         } catch (Exception e) {
             log.error(e.getMessage());
             if (e instanceof UserNotHavePermissionException) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body(new ResponseObject(HttpStatus.UNAUTHORIZED.toString(),
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(new ResponseObject(HttpStatus.FORBIDDEN.toString(),
                                 e.getMessage(),
                                 null));
             }
@@ -140,9 +155,13 @@ public class WalletHistoryServiceImpl implements WalletHistoryService {
     }
 
     @Override
-    public ResponseEntity<ResponseObject> deleteWalletHistory(Integer id) {
+    public ResponseEntity<ResponseObject> deleteWalletHistory(Integer id,
+                                                              Integer userId) {
         try {
             WalletHistory walletHistory = findWalletHistoryById(id);
+            if (!Objects.equals(walletHistory.getUser().getUserId(), userId))
+                throw new UserNotHavePermissionException();
+
             walletHistoryRepository.delete(walletHistory);
 
             return ResponseEntity.status(HttpStatus.OK)
@@ -151,6 +170,12 @@ public class WalletHistoryServiceImpl implements WalletHistoryService {
                             null));
         } catch (Exception e) {
             log.error(e.getMessage());
+            if (e instanceof UserNotHavePermissionException)
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(new ResponseObject(HttpStatus.FORBIDDEN.toString(),
+                                e.getMessage(),
+                                null));
+
             if (e instanceof NotFoundException)
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body(new ResponseObject(HttpStatus.NOT_FOUND.toString(),
