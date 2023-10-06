@@ -26,6 +26,6 @@ public class JobApplication {
 
     @ManyToOne
     @JsonIgnore
-    @JoinColumn(name = "register_id", insertable = false, updatable = false)
+    @JoinColumn(name = "register_id")
     private RegisterEmployee registerEmployee;
 }

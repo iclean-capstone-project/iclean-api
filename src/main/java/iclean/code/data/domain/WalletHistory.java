@@ -28,8 +28,11 @@ public class WalletHistory {
     @Column(name = "transaction_status")
     private String transactionStatus;
 
+    @Column(name = "user_id")
+    private Integer userId;
+
     @ManyToOne
     @JsonIgnore
-    @JoinColumn(name = "user_id")
+    @JoinColumn(name = "user_id", insertable = false, updatable = false)
     private User user;
 }

@@ -38,9 +38,12 @@ public class User {
 
     private String email;
 
+    @Column(name = "role_id")
+    private Integer roleId;
+
     @ManyToOne
     @JsonIgnore
-    @JoinColumn(name = "role_id")
+    @JoinColumn(name = "role_id", insertable = false, updatable = false)
     private Role role;
 
     @OneToMany(mappedBy = "renter")
@@ -56,5 +59,15 @@ public class User {
     @OneToMany(mappedBy = "user")
     @JsonIgnoreProperties("user")
     @JsonIgnore
-    private List<Notification> notificationList;
+    private List<Notification> notifications;
+
+    @OneToMany(mappedBy = "user")
+    @JsonIgnoreProperties("user")
+    @JsonIgnore
+    private List<MoneyRequest> moneyRequests;
+
+    @OneToOne(mappedBy = "user")
+    @JsonIgnoreProperties("user")
+    @JsonIgnore
+    private MoneyPoint moneyPoints;
 }
