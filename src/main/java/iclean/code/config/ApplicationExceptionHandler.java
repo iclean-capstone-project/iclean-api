@@ -1,5 +1,6 @@
 package iclean.code.config;
 
+import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import iclean.code.data.dto.common.ResponseObject;
 import iclean.code.exception.InvalidJsonFormatException;
@@ -68,6 +69,16 @@ public class ApplicationExceptionHandler {
 
     @ExceptionHandler(InvalidJsonFormatException.class)
     public ResponseEntity<ResponseObject> handleInvalidJsonFormatException(InvalidJsonFormatException ex) {
+        String message = "Invalid JSON format: " + ex.getMessage();
+        Map<String, String> errorMap = new HashMap<>();
+        errorMap.put("errorMessage", message);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString(),
+                        "Invalid JSON format", errorMap));
+    }
+
+    @ExceptionHandler(JsonParseException.class)
+    public ResponseEntity<ResponseObject> handleJsonParseException(JsonParseException ex) {
         String message = "Invalid JSON format: " + ex.getMessage();
         Map<String, String> errorMap = new HashMap<>();
         errorMap.put("errorMessage", message);

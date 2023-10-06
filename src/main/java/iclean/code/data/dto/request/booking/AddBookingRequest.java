@@ -1,11 +1,8 @@
 package iclean.code.data.dto.request.booking;
 
 import lombok.*;
-import org.checkerframework.checker.formatter.qual.InvalidFormat;
 import org.hibernate.validator.constraints.Length;
 import org.hibernate.validator.constraints.Range;
-import org.springframework.http.converter.HttpMessageNotReadableException;
-import org.springframework.web.bind.annotation.ExceptionHandler;
 
 import javax.annotation.RegEx;
 import javax.validation.constraints.NotBlank;

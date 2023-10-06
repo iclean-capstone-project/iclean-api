@@ -1,13 +1,16 @@
 package iclean.code.data.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Data
+@Getter
+@Setter
 @JsonIgnoreProperties({"hibernateLazyInitializer"})
 public class Report {
     @Id
@@ -33,9 +36,13 @@ public class Report {
     @Column(name = "process_at")
     private LocalDateTime processAt;
 
-    @OneToOne(cascade = CascadeType.ALL)
+    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JsonIgnoreProperties("report")
     @JoinColumn(name = "booking_id")
     private Booking booking;
 
+    @ManyToOne
+    @JsonIgnore
+    @JoinColumn(name = "report_type_id", insertable = true, updatable = true)
+    private ReportType reportType;
 }

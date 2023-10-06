@@ -1,7 +1,5 @@
 package iclean.code.function.booking.service.impl;
 
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import iclean.code.data.domain.Booking;
 import iclean.code.data.domain.BookingStatus;
 import iclean.code.data.domain.Job;
@@ -15,7 +13,6 @@ import iclean.code.data.repository.BookingRepository;
 import iclean.code.data.repository.BookingStatusRepository;
 import iclean.code.data.repository.JobRepository;
 import iclean.code.data.repository.UserRepository;
-import iclean.code.exception.InvalidJsonFormatException;
 import iclean.code.exception.NotFoundException;
 import iclean.code.function.booking.service.BookingService;
 import org.modelmapper.ModelMapper;
@@ -24,10 +21,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
-import javax.validation.ConstraintViolation;
-import javax.validation.Validator;
 import java.time.LocalDateTime;
-import java.util.Set;
 
 @Service
 public class BookingServiceImpl implements BookingService {
