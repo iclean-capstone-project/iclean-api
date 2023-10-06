@@ -1,10 +1,7 @@
 package iclean.code.function.authentication.service;
 
 import iclean.code.data.dto.common.ResponseObject;
-import iclean.code.data.dto.request.authen.FcmTokenDto;
-import iclean.code.data.dto.request.authen.LoginUsernamePassword;
-import iclean.code.data.dto.request.authen.LoginFormMobile;
-import iclean.code.data.dto.request.authen.RegisterUserForm;
+import iclean.code.data.dto.request.authen.*;
 import org.springframework.http.ResponseEntity;
 
 public interface AuthService {
@@ -23,4 +20,6 @@ public interface AuthService {
     ResponseEntity<ResponseObject> addFcmToken(FcmTokenDto dto, Integer userId);
 
     ResponseEntity<ResponseObject> deleteFcmToken(FcmTokenDto dto, Integer userId);
+
+    ResponseEntity<ResponseObject> getNewAccessToken(TokenRefreshRequest form);
 }

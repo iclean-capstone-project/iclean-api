@@ -1,21 +1,26 @@
 package iclean.code.function.address.controller;
 
 import iclean.code.config.JwtUtils;
+import iclean.code.data.dto.common.PageRequestBuilder;
 import iclean.code.data.dto.common.ResponseObject;
 import iclean.code.data.dto.request.address.CreateAddressRequestDTO;
 import iclean.code.data.dto.request.address.UpdateAddressRequestDTO;
+import iclean.code.data.dto.response.address.GetAddressResponseDto;
 import iclean.code.function.address.service.AddressService;
+import iclean.code.utils.validator.ValidSortFields;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
+import java.util.List;
 
 @RestController
 @RequestMapping("api/v1/address")
@@ -33,8 +38,17 @@ public class AddressController {
             @ApiResponse(responseCode = "400", description = "Bad request - Missing some field required")
     })
     @PreAuthorize("hasAnyAuthority('renter', 'employee')")
-    public ResponseEntity<ResponseObject> getAddresses(Authentication authentication) {
-        return addressService.getAddresses(JwtUtils.decodeToAccountId(authentication));
+    public ResponseEntity<ResponseObject> getAddresses(
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "10") int size,
+            @RequestParam(name = "sort", required = false) @ValidSortFields(value = GetAddressResponseDto.class) List<String> sortFields,
+            Authentication authentication) {
+        Pageable pageable = PageRequestBuilder.buildPageRequest(page, size);
+
+        if (sortFields != null && !sortFields.isEmpty()) {
+            pageable = PageRequestBuilder.buildPageRequest(page, size, sortFields);
+        }
+        return addressService.getAddresses(JwtUtils.decodeToAccountId(authentication), pageable);
     }
 
     @GetMapping("/{id}")

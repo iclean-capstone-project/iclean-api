@@ -4,13 +4,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseToken;
 import iclean.code.config.JwtUtils;
-import iclean.code.data.domain.Address;
 import iclean.code.data.domain.FcmToken;
+import iclean.code.data.domain.RefreshToken;
 import iclean.code.data.domain.User;
 import iclean.code.data.dto.common.ResponseObject;
 import iclean.code.data.dto.request.authen.*;
 import iclean.code.data.dto.request.security.OtpAuthentication;
 import iclean.code.data.dto.response.authen.JwtResponse;
+import iclean.code.data.dto.response.authen.TokenRefreshResponse;
 import iclean.code.data.dto.response.authen.UserInformationDto;
 import iclean.code.data.dto.response.authen.UserPrinciple;
 import iclean.code.data.enumjava.Role;
@@ -19,8 +20,8 @@ import iclean.code.data.repository.UserRepository;
 import iclean.code.exception.NotFoundException;
 import iclean.code.exception.UserNotHavePermissionException;
 import iclean.code.function.authentication.service.AuthService;
+import iclean.code.function.authentication.service.RefreshTokenService;
 import iclean.code.service.TwilioOTPService;
-import iclean.code.utils.Utils;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.ObjectUtils;
 import org.modelmapper.ModelMapper;
@@ -50,9 +51,12 @@ public class AuthServiceImpl implements AuthService {
     @Autowired
     private ModelMapper modelMapper;
     @Autowired
+    private RefreshTokenService refreshTokenService;
+    @Autowired
     private JwtUtils jwtUtils;
     @Autowired
     private AuthenticationManager authenticationManager;
+
     @Override
     public ResponseEntity<ResponseObject> loginUsingUsernameAndPassword(LoginUsernamePassword form) {
         try {
@@ -62,7 +66,7 @@ public class AuthServiceImpl implements AuthService {
             if (authentication != null) {
                 UserPrinciple userPrinciple = (UserPrinciple) authentication.getPrincipal();
                 String accessToken = jwtUtils.createAccessToken(userPrinciple);
-                String refreshToken = jwtUtils.createRefreshToken(userPrinciple);
+                String refreshToken = refreshTokenService.createRefreshToken(userPrinciple.getId()).getToken();
                 User user = userRepository.findByUsername(form.getUsername());
                 UserInformationDto userInformationDto = modelMapper.map(user, UserInformationDto.class);
                 return ResponseEntity.status(HttpStatus.OK)
@@ -111,7 +115,7 @@ public class AuthServiceImpl implements AuthService {
             if (user != null) {
                 UserPrinciple userPrinciple = UserPrinciple.build(user);
                 String accessToken = jwtUtils.createAccessToken(userPrinciple);
-                String refreshToken = jwtUtils.createRefreshToken(userPrinciple);
+                String refreshToken = refreshTokenService.createRefreshToken(userPrinciple.getId()).getToken();
                 UserInformationDto userInformationDto = modelMapper.map(user, UserInformationDto.class);
                 if (ObjectUtils.anyNull(user.getFullName(), user.getRole())) {
                     userInformationDto.setIsNewUser(true);
@@ -131,7 +135,7 @@ public class AuthServiceImpl implements AuthService {
                 userRepository.save(user);
                 UserPrinciple userPrinciple = UserPrinciple.build(user);
                 String accessToken = jwtUtils.createAccessToken(userPrinciple);
-                String refreshToken = jwtUtils.createRefreshToken(userPrinciple);
+                String refreshToken = refreshTokenService.createRefreshToken(userPrinciple.getId()).getToken();
                 UserInformationDto userInformationDto = modelMapper.map(user, UserInformationDto.class);
 
                 userInformationDto.setIsNewUser(true);
@@ -143,8 +147,8 @@ public class AuthServiceImpl implements AuthService {
         } catch (Exception e) {
             log.error(e.getMessage());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body(new ResponseObject(HttpStatus.UNAUTHORIZED.toString(),
-                                "Access Token is not valid.", null));
+                    .body(new ResponseObject(HttpStatus.UNAUTHORIZED.toString(),
+                            "Access Token is not valid.", null));
         }
     }
 
@@ -160,7 +164,7 @@ public class AuthServiceImpl implements AuthService {
             if (user != null) {
                 UserPrinciple userPrinciple = UserPrinciple.build(user);
                 String accessToken = jwtUtils.createAccessToken(userPrinciple);
-                String refreshToken = jwtUtils.createRefreshToken(userPrinciple);
+                String refreshToken = refreshTokenService.createRefreshToken(userPrinciple.getId()).getToken();
                 UserInformationDto userInformationDto = modelMapper.map(user, UserInformationDto.class);
 
                 if (!ObjectUtils.anyNull(userInformationDto.getFullName())) {
@@ -186,7 +190,7 @@ public class AuthServiceImpl implements AuthService {
                 userRepository.save(user);
                 UserPrinciple userPrinciple = UserPrinciple.build(user);
                 String accessToken = jwtUtils.createAccessToken(userPrinciple);
-                String refreshToken = jwtUtils.createRefreshToken(userPrinciple);
+                String refreshToken = refreshTokenService.createRefreshToken(userPrinciple.getId()).getToken();
                 UserInformationDto userInformationDto = modelMapper.map(user, UserInformationDto.class);
                 userInformationDto.setIsNewUser(true);
                 return ResponseEntity.status(HttpStatus.OK)
@@ -258,7 +262,7 @@ public class AuthServiceImpl implements AuthService {
             if (authentication != null) {
                 UserPrinciple userPrinciple = (UserPrinciple) authentication.getPrincipal();
                 String accessToken = jwtUtils.createAccessToken(userPrinciple);
-                String refreshToken = jwtUtils.createRefreshToken(userPrinciple);
+                String refreshToken = refreshTokenService.createRefreshToken(userPrinciple.getId()).getToken();
                 User user = userRepository.findUserByPhoneNumber(formMobile.getPhoneNumber());
                 UserInformationDto userInformationDto = modelMapper.map(user, UserInformationDto.class);
                 return ResponseEntity.status(HttpStatus.OK)
@@ -294,6 +298,7 @@ public class AuthServiceImpl implements AuthService {
                                 "Account is not NULL.", null));
         }
     }
+
     private FcmToken findFcmToken(String fcmToken) {
         return fcmTokenRepository.findByToken(fcmToken).orElseThrow(() -> new NotFoundException("FcmToken not found"));
     }
@@ -301,27 +306,28 @@ public class AuthServiceImpl implements AuthService {
     private User findUser(Integer id) {
         return userRepository.findById(id).orElseThrow(() -> new NotFoundException("User not found"));
     }
+
     @Override
     public ResponseEntity<ResponseObject> updateInformationFirstLogin(RegisterUserForm form) {
-            try {
-                User user = findUser(form.getUserId());
+        try {
+            User user = findUser(form.getUserId());
 
-                if (form.getRole().equals(Role.RENTER)) {
-                    user = modelMapper.map(form, User.class);
+            if (form.getRole().equals(Role.RENTER)) {
+                user = modelMapper.map(form, User.class);
 
-                } else if (form.getRole().equals(Role.EMPLOYEE)) {
-                    user = modelMapper.map(form, User.class);
+            } else if (form.getRole().equals(Role.EMPLOYEE)) {
+                user = modelMapper.map(form, User.class);
 
-                }
-                userRepository.save(user);
-                return ResponseEntity.status(HttpStatus.OK)
-                        .body(new ResponseObject(HttpStatus.OK.toString(),
-                                "Update Information Successful", null));
-            } catch (Exception e) {
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                        .body(new ResponseObject(HttpStatus.INTERNAL_SERVER_ERROR.toString(),
-                                "Something wrong occur.", null));
             }
+            userRepository.save(user);
+            return ResponseEntity.status(HttpStatus.OK)
+                    .body(new ResponseObject(HttpStatus.OK.toString(),
+                            "Update Information Successful", null));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ResponseObject(HttpStatus.INTERNAL_SERVER_ERROR.toString(),
+                            "Something wrong occur.", null));
+        }
     }
 
     @Override
@@ -375,6 +381,37 @@ public class AuthServiceImpl implements AuthService {
                         .body(new ResponseObject(HttpStatus.NOT_FOUND.toString(),
                                 e.getMessage(),
                                 null));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ResponseObject(HttpStatus.INTERNAL_SERVER_ERROR.toString(),
+                            "Internal System Error",
+                            null));
+        }
+    }
+
+    @Override
+    public ResponseEntity<ResponseObject> getNewAccessToken(TokenRefreshRequest request) {
+        try {
+
+            String requestRefreshToken = request.getRefreshToken();
+            RefreshToken refreshToken = refreshTokenService.findByToken(requestRefreshToken);
+            RefreshToken refreshTokenVerify = refreshTokenService.verifyExpiration(refreshToken);
+            User user = findUser(refreshToken.getUserId());
+            String accessToken = jwtUtils.createAccessToken(UserPrinciple.build(user));
+            TokenRefreshResponse response = new TokenRefreshResponse(accessToken, refreshTokenVerify.getToken());
+
+            return ResponseEntity.status(HttpStatus.OK)
+                    .body(new ResponseObject(HttpStatus.OK.toString(),
+                            "Access Token are created",
+                            response));
+
+        } catch (Exception e) {
+            log.error(e.getMessage());
+            if (e instanceof NotFoundException) {
+                ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new ResponseObject(HttpStatus.NOT_FOUND.toString(),
+                                e.getMessage(),
+                                null));
+            }
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new ResponseObject(HttpStatus.INTERNAL_SERVER_ERROR.toString(),
                             "Internal System Error",
