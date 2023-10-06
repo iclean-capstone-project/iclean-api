@@ -2,15 +2,14 @@ package iclean.code.data.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import javax.persistence.*;
-import java.util.Date;
+import java.time.LocalDateTime;
 
 @Entity
-@Data
+@Getter
+@Setter
 @JsonIgnoreProperties({"hibernateLazyInitializer"})
 public class ImgBooking {
     @Id
@@ -22,7 +21,7 @@ public class ImgBooking {
     private String imgBookingLink;
 
     @Column(name = "create_at")
-    private Date createAt;
+    private LocalDateTime createAt;
 
     @ManyToOne
     @JsonIgnore

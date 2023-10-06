@@ -2,7 +2,6 @@ package iclean.code.data.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -53,4 +52,9 @@ public class User {
     @JsonIgnoreProperties("staff")
     @JsonIgnore
     private List<Booking> staffBookingList;
+
+    @OneToMany(mappedBy = "user")
+    @JsonIgnoreProperties("user")
+    @JsonIgnore
+    private List<Notification> notificationList;
 }

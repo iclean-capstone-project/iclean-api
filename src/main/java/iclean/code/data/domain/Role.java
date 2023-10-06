@@ -3,12 +3,14 @@ package iclean.code.data.domain;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import javax.persistence.*;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.util.List;
 
 @Entity
-@Data
+@Getter
+@Setter
 @JsonIgnoreProperties({"hibernateLazyInitializer"})
 public class Role {
     @Id

@@ -1,11 +1,14 @@
 package iclean.code.data.domain;
 
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 import javax.persistence.*;
+import java.time.LocalDateTime;
 
 @Entity
-@Data
+@Getter
+@Setter
 @Table(name = "System_Parameter")
 public class SystemParameter {
     @Id
@@ -18,4 +21,10 @@ public class SystemParameter {
 
     @Column(name = "parameter_value")
     private String parameterValue;
+
+    @Column(name = "update_at")
+    private LocalDateTime updateAt;
+
+    @Column(name = "update_version")
+    private String updateVersion;
 }
