@@ -3,6 +3,8 @@ package iclean.code.config;
 import iclean.code.data.dto.response.authen.UserPrinciple;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.SignatureException;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
@@ -11,14 +13,20 @@ import javax.servlet.http.HttpServletRequest;
 import java.util.Date;
 
 @Component
+@Slf4j
 public class JwtUtils {
 
-    private final String jwtSecret = "wyk52dSUWe6vaMYOsdOrBlWwE0kyQjj6zzPMy4xWVzbRLzPqT31AQaYqpZy3q4w8RR6of0LKPHrr+wJc7NxelA==";
+    @Value("${iclean.app.jwt-secret}")
+    private String jwtSecret;
+
+    @Value("${iclean.app.jwt-expiration-ms}")
+    private int jwtExpirationMs;
+
     public String createAccessToken(UserPrinciple userPrinciple) {
 
         return Jwts.builder().setSubject(String.valueOf(userPrinciple.getId()))
                 .setIssuedAt(new Date())
-                .setExpiration(new Date(new Date().getTime() + 6000000))
+                .setExpiration(new Date(new Date().getTime() + jwtExpirationMs))
                 .signWith(SignatureAlgorithm.HS512, jwtSecret)
                 .compact();
     }
@@ -32,24 +40,6 @@ public class JwtUtils {
         return userId;
     }
 
-    public static String decodeToAccountRole(Authentication authentication) {
-        String role = null;
-        if (authentication instanceof UsernamePasswordAuthenticationToken) {
-            UserPrinciple userPrinciple = (UserPrinciple) authentication.getPrincipal();
-            role = userPrinciple.getGrantedAuthorities().toString();
-        }
-        return role;
-    }
-
-    public String createRefreshToken(UserPrinciple userPrinciple) {
-
-        return Jwts.builder().setSubject(userPrinciple.getUsername())
-                .setIssuedAt(new Date())
-                .setExpiration(new Date(new Date().getTime() + 6000000 * 7))
-                .signWith(SignatureAlgorithm.HS512, jwtSecret)
-                .compact();
-    }
-
     public String getJwt(HttpServletRequest request){
         String authHeader = request.getHeader("Authorization");
         if(authHeader != null && authHeader.startsWith("Bearer")){
@@ -61,8 +51,16 @@ public class JwtUtils {
         try {
             Jwts.parser().setSigningKey(jwtSecret).parseClaimsJws(token);
             return true;
-        }catch (SignatureException | ExpiredJwtException | MalformedJwtException | UnsupportedJwtException |
-                IllegalArgumentException e){
+        } catch (SignatureException e) {
+            log.error("Invalid JWT signature: {}", e.getMessage());
+        } catch (MalformedJwtException e) {
+            log.error("Invalid JWT token: {}", e.getMessage());
+        } catch (ExpiredJwtException e) {
+            log.error("JWT token is expired: {}", e.getMessage());
+        } catch (UnsupportedJwtException e) {
+            log.error("JWT token is unsupported: {}", e.getMessage());
+        } catch (IllegalArgumentException e) {
+            log.error("JWT claims string is empty: {}", e.getMessage());
         }
         return false;
     }

@@ -5,6 +5,7 @@ import iclean.code.data.domain.User;
 import iclean.code.data.dto.common.ResponseObject;
 import iclean.code.data.dto.request.address.CreateAddressRequestDTO;
 import iclean.code.data.dto.request.address.UpdateAddressRequestDTO;
+import iclean.code.data.dto.response.PageResponseObject;
 import iclean.code.data.dto.response.address.GetAddressResponseDetailDto;
 import iclean.code.data.dto.response.address.GetAddressResponseDto;
 import iclean.code.data.repository.AddressRepository;
@@ -16,6 +17,8 @@ import iclean.code.utils.Utils;
 import lombok.extern.log4j.Log4j2;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -35,18 +38,21 @@ public class AddressServiceImpl implements AddressService {
     private ModelMapper modelMapper;
 
     @Override
-    public ResponseEntity<ResponseObject> getAddresses(Integer userId) {
+    public ResponseEntity<ResponseObject> getAddresses(Integer userId, Pageable pageable) {
         try {
-            List<Address> addresses = addressRepository.findByUserId(userId);
-            List<GetAddressResponseDto> responses = addresses
+            Page<Address> addresses = addressRepository.findByUserId(userId, pageable);
+
+            List<GetAddressResponseDto> dtoList = addresses
                     .stream()
                     .map(address -> modelMapper.map(address, GetAddressResponseDto.class))
                     .collect(Collectors.toList());
 
+            PageResponseObject pageResponseObject = Utils.convertToPageResponse(addresses);
+
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseObject(HttpStatus.OK.toString(),
                             "Addresses List",
-                            responses));
+                            pageResponseObject));
         } catch (Exception e) {
             log.error(e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)

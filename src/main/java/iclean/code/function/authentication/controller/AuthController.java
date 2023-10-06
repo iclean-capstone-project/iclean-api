@@ -33,6 +33,16 @@ public class AuthController {
     public ResponseEntity<ResponseObject> loginUsernamePassword(@RequestBody @Valid LoginUsernamePassword form) {
         return authService.loginUsingUsernameAndPassword(form);
     }
+    @PostMapping("/refresh-token")
+    @Operation(summary = "Login into the system for admin and manager", description = "Return accessToken and user information")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Login Successful"),
+            @ApiResponse(responseCode = "401", description = "Wrong username or password"),
+            @ApiResponse(responseCode = "400", description = "Bad request - Missing some field required")
+    })
+    public ResponseEntity<ResponseObject> refreshToken(@RequestBody @Valid TokenRefreshRequest form) {
+        return authService.getNewAccessToken(form);
+    }
     @PostMapping("/google")
     @Operation(summary = "Login into the system with Google", description = "Return accessToken and user information")
     @ApiResponses(value = {
