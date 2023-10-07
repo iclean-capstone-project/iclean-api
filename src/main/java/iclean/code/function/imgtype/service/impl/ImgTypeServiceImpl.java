@@ -1,10 +1,9 @@
 package iclean.code.function.imgtype.service.impl;
 
-import iclean.code.data.domain.BookingStatus;
 import iclean.code.data.domain.ImgType;
 import iclean.code.data.dto.common.ResponseObject;
-import iclean.code.data.dto.request.imgType.AddImgTypeRequest;
-import iclean.code.data.dto.request.imgType.UpdateImgTypeRequest;
+import iclean.code.data.dto.request.imgtype.AddImgTypeRequest;
+import iclean.code.data.dto.request.imgtype.UpdateImgTypeRequest;
 import iclean.code.data.repository.ImgTypeRepository;
 import iclean.code.exception.NotFoundException;
 import iclean.code.function.imgtype.service.ImgTypeService;

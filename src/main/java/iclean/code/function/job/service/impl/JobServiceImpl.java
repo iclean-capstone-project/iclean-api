@@ -2,19 +2,22 @@ package iclean.code.function.job.service.impl;
 
 import iclean.code.data.domain.Job;
 import iclean.code.data.dto.common.ResponseObject;
-import iclean.code.data.dto.request.job.AddJobRequest;
+import iclean.code.data.dto.request.job.CreateJobRequest;
 import iclean.code.data.dto.request.job.UpdateJobRequest;
 import iclean.code.data.repository.JobRepository;
+import iclean.code.data.repository.JobUnitRepository;
 import iclean.code.exception.NotFoundException;
 import iclean.code.function.job.service.JobService;
+import iclean.code.service.StorageService;
+import iclean.code.utils.Utils;
 import lombok.extern.log4j.Log4j2;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
-import java.time.LocalDateTime;
 import java.util.Optional;
 
 @Service
@@ -25,10 +28,16 @@ public class JobServiceImpl implements JobService {
     private JobRepository jobRepository;
 
     @Autowired
+    private JobUnitRepository jobUnitRepository;
+
+    @Autowired
+    private StorageService storageService;
+
+    @Autowired
     private ModelMapper modelMapper;
 
     @Override
-    public ResponseEntity<ResponseObject> getAllJob() {
+    public ResponseEntity<ResponseObject> getJobs() {
         if (jobRepository.findAll().isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(new ResponseObject(HttpStatus.NOT_FOUND.toString(), "All Job", "Job list is empty"));
@@ -38,10 +47,12 @@ public class JobServiceImpl implements JobService {
     }
 
     @Override
-    public ResponseEntity<ResponseObject> addJob(AddJobRequest request) {
+    public ResponseEntity<ResponseObject> createJob(CreateJobRequest request, MultipartFile imgJob) {
         try {
             Job job = modelMapper.map(request, Job.class);
-            job.setCreateAt(LocalDateTime.now());
+            String jobImgLink = storageService.uploadFile(imgJob);
+            job.setJobImage(jobImgLink);
+            job.setCreateAt(Utils.getDateTimeNow());
 
             jobRepository.save(job);
             return ResponseEntity.status(HttpStatus.OK)
@@ -67,7 +78,7 @@ public class JobServiceImpl implements JobService {
             jobToUpdate.setJobName(newJob.getJobName());
             jobToUpdate.setJobImage(newJob.getJobImage());
             jobToUpdate.setDescription(newJob.getDescription());
-            jobToUpdate.setUpdateAt(LocalDateTime.now());
+            jobToUpdate.setUpdateAt(Utils.getDateTimeNow());
 
             Job job = modelMapper.map(jobToUpdate, Job.class);
 

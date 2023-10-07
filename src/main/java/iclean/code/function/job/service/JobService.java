@@ -1,15 +1,16 @@
 package iclean.code.function.job.service;
 
 import iclean.code.data.dto.common.ResponseObject;
-import iclean.code.data.dto.request.job.AddJobRequest;
+import iclean.code.data.dto.request.job.CreateJobRequest;
 import iclean.code.data.dto.request.job.UpdateJobRequest;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.multipart.MultipartFile;
 
 public interface JobService {
 
-    ResponseEntity<ResponseObject> getAllJob();
+    ResponseEntity<ResponseObject> getJobs();
 
-    ResponseEntity<ResponseObject> addJob(AddJobRequest service);
+    ResponseEntity<ResponseObject> createJob(CreateJobRequest service, MultipartFile imgJob);
 
     ResponseEntity<ResponseObject> updateJob(int jobId, UpdateJobRequest newService);
 

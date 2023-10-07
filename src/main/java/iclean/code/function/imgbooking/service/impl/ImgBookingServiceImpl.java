@@ -9,6 +9,7 @@ import iclean.code.data.repository.ImgBookingRepository;
 import iclean.code.data.repository.ImgTypeRepository;
 import iclean.code.exception.NotFoundException;
 import iclean.code.function.imgbooking.service.ImgBookingService;
+import iclean.code.utils.Utils;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -152,7 +153,7 @@ public class ImgBookingServiceImpl implements ImgBookingService {
         ImgBooking imgBooking = modelMapper.map(request, ImgBooking.class);
         imgBooking.setImgBookingLink(request.getImgBookingLink());
         imgBooking.setImgType(optionalImgType);
-        imgBooking.setCreateAt(LocalDateTime.now());
+        imgBooking.setCreateAt(Utils.getDateTimeNow());
         imgBooking.setBooking(optionalBooking);
 
         return imgBooking;

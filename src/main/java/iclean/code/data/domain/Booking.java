@@ -78,19 +78,18 @@ public class Booking {
     @JoinColumn(name = "staff_id")
     private User staff;
 
-    @Column(name = "rj_reason_id")
+    @Column(name = "rj_reason_id", insertable = false, updatable = false)
     private Integer rjReasonId;
 
     @ManyToOne
     @JsonIgnore
-    @JoinColumn(name = "job_id")
-    private Job job;
+    @JoinColumn(name = "rj_reason_id")
+    private RejectReason rejectReason;
 
-    @OneToMany(mappedBy = "booking")
-    @JsonIgnoreProperties("booking")
+    @ManyToOne
     @JsonIgnore
-    @JoinColumn(name = "booking_status_id")
-    private BookingStatus bookingStatus;
+    @JoinColumn(name = "job_unit_id")
+    private JobUnit jobUnit;
 
     @OneToMany(mappedBy = "booking")
     @JsonIgnoreProperties("booking")
