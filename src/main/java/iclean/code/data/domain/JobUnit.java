@@ -21,8 +21,8 @@ public class JobUnit {
     @Column(name = "price_default")
     private Double priceDefault;
 
-    @Column(name = "staff_commission")
-    private Double staffCommission; //tien hoa hong cho nhan vien
+    @Column(name = "employee_commission")
+    private Double employeeCommission;
 
     @Column(name = "unit_value")
     private String unitValue;
@@ -36,8 +36,11 @@ public class JobUnit {
     @Column(name = "update_at")
     private LocalDateTime updateAt;
 
+    @Column(name = "job_id")
+    private Integer jobId;
+
     @ManyToOne
     @JsonIgnore
-    @JoinColumn(name = "job_id", insertable = true, updatable = true)
+    @JoinColumn(name = "job_id")
     private Job job;
 }

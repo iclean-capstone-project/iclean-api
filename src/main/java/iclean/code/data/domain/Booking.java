@@ -79,15 +79,18 @@ public class Booking {
     @JoinColumn(name = "staff_id", insertable = true, updatable = true)
     private User staff;
 
+    @Column(name = "rj_reason_id")
+    private Integer rjReasonId;
+
     @ManyToOne
     @JsonIgnore
-    @JoinColumn(name = "rj_reason_id", insertable = false, updatable = false)
+    @JoinColumn(name = "rj_reason_id")
     private RejectReason rejectReason;
 
     @OneToMany(mappedBy = "booking")
     @JsonIgnoreProperties("booking")
     @JsonIgnore
-    private List<ImgBooking> imgBookingList;
+    private List<ImgBooking> imgBookings;
 
     @OneToMany(mappedBy = "booking")
     @JsonIgnoreProperties("booking")

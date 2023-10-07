@@ -21,13 +21,19 @@ public class BookingStatusHistory {
     @Column(name = "create_at")
     private LocalDateTime createAt;
 
+    @Column(name = "booking_id")
+    private Integer bookingId;
+
+    @Column(name = "booking_status_id")
+    private Integer bookingStatusId;
+
     @ManyToOne
     @JsonIgnore
-    @JoinColumn(name = "booking_id", insertable = true, updatable = true)
+    @JoinColumn(name = "booking_id")
     private Booking booking;
 
     @ManyToOne
     @JsonIgnore
-    @JoinColumn(name = "booking_status_id", insertable = true, updatable = true)
+    @JoinColumn(name = "booking_status_id")
     private BookingStatus bookingStatus;
 }
