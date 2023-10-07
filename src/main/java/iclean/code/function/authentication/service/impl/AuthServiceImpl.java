@@ -26,12 +26,10 @@ import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.ObjectUtils;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.AccountExpiredException;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.DisabledException;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.authentication.*;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.stereotype.Service;
@@ -42,6 +40,8 @@ import java.util.Objects;
 @Log4j2
 public class AuthServiceImpl implements AuthService {
 
+    @Value("${spring.mail.username}")
+    private String companyEmail;
     @Autowired
     private UserRepository userRepository;
     @Autowired
@@ -85,19 +85,30 @@ public class AuthServiceImpl implements AuthService {
             if (e instanceof DisabledException) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(new ResponseObject(HttpStatus.UNAUTHORIZED.toString(),
-                                "Account has been locked. Please contact " +
-                                        "companyEmail" + " for more information", null));
-            } else if (e instanceof AccountExpiredException) {
+                                String.format("Account has been disabled. Please contact %s for more information", companyEmail)
+                                , null));
+            }
+
+            if (e instanceof AccountExpiredException) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(new ResponseObject(HttpStatus.UNAUTHORIZED.toString(),
                                 "The account has expired. Please contact "
                                         + "companyEmail" + " for more information", null));
-            } else if (e instanceof AuthenticationException) {
+            }
+
+            if (e instanceof LockedException)
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(new ResponseObject(HttpStatus.UNAUTHORIZED.toString(),
+                                String.format("Account has been locked. Please contact %s for more information", companyEmail),
+                                null));
+
+            if (e instanceof AuthenticationException) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(new ResponseObject(HttpStatus.UNAUTHORIZED.toString(),
                                 "Wrong username or password.", null));
-            } else
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+            }
+
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(new ResponseObject(HttpStatus.UNAUTHORIZED.toString(),
                                 "Account is not NULL.", null));
         }

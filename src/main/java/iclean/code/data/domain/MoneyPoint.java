@@ -19,8 +19,11 @@ public class MoneyPoint {
 
     @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JsonIgnoreProperties("moneyPoint")
-    @JoinColumn(name = "user_id")
+    @JoinColumn(name = "user_id", insertable = false, updatable = false)
     private User user;
+
+    @Column(name = "user_id")
+    private Integer userId;
 
     @Column(name = "current_point")
     private Integer currentPoint;

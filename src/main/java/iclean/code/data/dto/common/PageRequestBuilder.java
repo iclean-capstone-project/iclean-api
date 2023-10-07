@@ -25,10 +25,10 @@ public class PageRequestBuilder {
             orders.add(new Sort.Order(direction, sortBy));
         }
 
-        return PageRequest.of(page, size, Sort.by(orders));
+        return PageRequest.of(page - 1, size, Sort.by(orders));
     }
     public static Pageable buildPageRequest(int page, int size) {
-        return PageRequest.of(page, size);
+        return PageRequest.of(page - 1, size);
     }
 }
 

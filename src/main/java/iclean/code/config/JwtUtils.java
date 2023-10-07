@@ -3,7 +3,7 @@ package iclean.code.config;
 import iclean.code.data.dto.response.authen.UserPrinciple;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.SignatureException;
-import lombok.extern.slf4j.Slf4j;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -13,7 +13,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.util.Date;
 
 @Component
-@Slf4j
+@Log4j2
 public class JwtUtils {
 
     @Value("${iclean.app.jwt-secret}")

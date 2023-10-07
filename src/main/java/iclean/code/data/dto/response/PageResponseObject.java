@@ -14,5 +14,5 @@ public class PageResponseObject {
     private Integer totalPages;
     private Integer numberOfElements;
     private List<SortResponse> sortBy;
-    private List<Object> content;
+    private List<?> content;
 }

@@ -25,9 +25,8 @@ public class RejectReason {
     @Column(name = "create_at")
     private LocalDateTime createAt;
 
-    @OneToMany(mappedBy = "booking")
-    @JsonIgnoreProperties("booking")
+    @OneToMany(mappedBy = "rejectReason")
+    @JsonIgnoreProperties("rejectReason")
     @JsonIgnore
     private List<Booking> bookings;
-
 }

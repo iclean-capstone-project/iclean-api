@@ -23,6 +23,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -38,16 +39,16 @@ public class AddressServiceImpl implements AddressService {
     private ModelMapper modelMapper;
 
     @Override
-    public ResponseEntity<ResponseObject> getAddresses(Integer userId, Pageable pageable) {
+    public ResponseEntity<ResponseObject> getAddresses(Integer userId, Pageable pageable, String search) {
         try {
-            Page<Address> addresses = addressRepository.findByUserId(userId, pageable);
+            Page<Address> addresses = addressRepository.findByUserId(userId, Utils.removeAccentMarksForSearching(search), pageable);
 
             List<GetAddressResponseDto> dtoList = addresses
                     .stream()
                     .map(address -> modelMapper.map(address, GetAddressResponseDto.class))
                     .collect(Collectors.toList());
 
-            PageResponseObject pageResponseObject = Utils.convertToPageResponse(addresses);
+            PageResponseObject pageResponseObject = Utils.convertToPageResponse(addresses, Collections.singletonList(dtoList));
 
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseObject(HttpStatus.OK.toString(),

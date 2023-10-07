@@ -20,6 +20,9 @@ public class FcmToken {
     @Column(unique = true)
     private String fcmToken;
 
+    @Column(name = "user_id")
+    private Integer userId;
+
     @ManyToOne
     @JsonIgnore
     @JoinColumn(name = "user_id", insertable = false, updatable = false)

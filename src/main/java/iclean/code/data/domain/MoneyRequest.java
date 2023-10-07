@@ -33,6 +33,9 @@ public class MoneyRequest {
     @Column(name = "is_withdrawal")
     private Boolean isWithDrawl = false;
 
+    @Column(name = "user_id")
+    private Integer userId;
+
     @ManyToOne
     @JsonIgnore
     @JoinColumn(name = "employee_id", insertable = false, updatable = false)

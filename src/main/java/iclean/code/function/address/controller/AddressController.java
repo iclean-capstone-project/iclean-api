@@ -17,12 +17,15 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
+import javax.validation.constraints.Min;
 import java.util.List;
 
 @RestController
+@Validated
 @RequestMapping("api/v1/address")
 @Tag(name = "Address API")
 public class AddressController {
@@ -39,8 +42,9 @@ public class AddressController {
     })
     @PreAuthorize("hasAnyAuthority('renter', 'employee')")
     public ResponseEntity<ResponseObject> getAddresses(
-            @RequestParam(name = "page", defaultValue = "0") int page,
-            @RequestParam(name = "size", defaultValue = "10") int size,
+            @RequestParam(name = "search", defaultValue = "ví dụ", required = false) String search,
+            @RequestParam(name = "page", defaultValue = "1", required = false) @Min(value = 1, message = "Page cannot be smaller 1") Integer page,
+            @RequestParam(name = "size", defaultValue = "10", required = false) @Min(value = 1, message = "Size cannot be smaller 1") Integer size,
             @RequestParam(name = "sort", required = false) @ValidSortFields(value = GetAddressResponseDto.class) List<String> sortFields,
             Authentication authentication) {
         Pageable pageable = PageRequestBuilder.buildPageRequest(page, size);
@@ -48,7 +52,7 @@ public class AddressController {
         if (sortFields != null && !sortFields.isEmpty()) {
             pageable = PageRequestBuilder.buildPageRequest(page, size, sortFields);
         }
-        return addressService.getAddresses(JwtUtils.decodeToAccountId(authentication), pageable);
+        return addressService.getAddresses(JwtUtils.decodeToAccountId(authentication), pageable, search);
     }
 
     @GetMapping("/{id}")

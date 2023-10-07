@@ -30,8 +30,11 @@ public class Notification {
 
     private Integer status;
 
+    @Column(name = "user_id")
+    private Integer userId;
+
     @ManyToOne
     @JsonIgnore
-    @JoinColumn(name = "user_id", insertable = true, updatable = true)
+    @JoinColumn(name = "user_id", insertable = false, updatable = false)
     private User user;
 }

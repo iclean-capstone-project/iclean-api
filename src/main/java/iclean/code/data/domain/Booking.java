@@ -2,7 +2,6 @@ package iclean.code.data.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -71,12 +70,12 @@ public class Booking {
 
     @ManyToOne
     @JsonIgnore
-    @JoinColumn(name = "renter_id", insertable = true, updatable = true)
+    @JoinColumn(name = "renter_id")
     private User renter;
 
     @ManyToOne
     @JsonIgnore
-    @JoinColumn(name = "staff_id", insertable = true, updatable = true)
+    @JoinColumn(name = "staff_id")
     private User staff;
 
     @Column(name = "rj_reason_id")
@@ -84,13 +83,14 @@ public class Booking {
 
     @ManyToOne
     @JsonIgnore
-    @JoinColumn(name = "rj_reason_id")
-    private RejectReason rejectReason;
+    @JoinColumn(name = "job_id")
+    private Job job;
 
     @OneToMany(mappedBy = "booking")
     @JsonIgnoreProperties("booking")
     @JsonIgnore
-    private List<ImgBooking> imgBookings;
+    @JoinColumn(name = "booking_status_id")
+    private BookingStatus bookingStatus;
 
     @OneToMany(mappedBy = "booking")
     @JsonIgnoreProperties("booking")

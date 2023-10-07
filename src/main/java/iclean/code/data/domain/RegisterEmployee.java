@@ -27,9 +27,12 @@ public class RegisterEmployee {
     @Column(name = "nation_id")
     private String nationId;
 
+    @Column(name = "user_id")
+    private Integer userId;
+
     @OneToOne
     @JsonIgnore
-    @JoinColumn(name = "user_id")
+    @JoinColumn(name = "user_id", insertable = false, updatable = false)
     private User user;
 
     @OneToMany(mappedBy = "registerEmployee")
