@@ -79,17 +79,6 @@ public class Booking {
     @JoinColumn(name = "staff_id", insertable = true, updatable = true)
     private User staff;
 
-
-    @ManyToOne
-    @JsonIgnore
-    @JoinColumn(name = "job_id", insertable = true, updatable = true)
-    private Job job;
-
-    @ManyToOne
-    @JsonIgnore
-    @JoinColumn(name = "booking_status_id", insertable = true, updatable = true)
-    private BookingStatus bookingStatus;
-
     @ManyToOne
     @JsonIgnore
     @JoinColumn(name = "rj_reason_id", insertable = false, updatable = false)
@@ -100,6 +89,10 @@ public class Booking {
     @JsonIgnore
     private List<ImgBooking> imgBookingList;
 
+    @OneToMany(mappedBy = "booking")
+    @JsonIgnoreProperties("booking")
+    @JsonIgnore
+    private List<BookingStatusHistory> bookingStatusHistories;
 
     @OneToOne(mappedBy = "booking")
     @JsonIgnoreProperties("booking")
