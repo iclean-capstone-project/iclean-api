@@ -79,27 +79,23 @@ public class Booking {
     @JoinColumn(name = "staff_id", insertable = true, updatable = true)
     private User staff;
 
+    @Column(name = "rj_reason_id")
+    private Integer rjReasonId;
 
     @ManyToOne
     @JsonIgnore
-    @JoinColumn(name = "job_id", insertable = true, updatable = true)
-    private Job job;
-
-    @ManyToOne
-    @JsonIgnore
-    @JoinColumn(name = "booking_status_id", insertable = true, updatable = true)
-    private BookingStatus bookingStatus;
-
-    @ManyToOne
-    @JsonIgnore
-    @JoinColumn(name = "rj_reason_id", insertable = false, updatable = false)
+    @JoinColumn(name = "rj_reason_id")
     private RejectReason rejectReason;
 
     @OneToMany(mappedBy = "booking")
     @JsonIgnoreProperties("booking")
     @JsonIgnore
-    private List<ImgBooking> imgBookingList;
+    private List<ImgBooking> imgBookings;
 
+    @OneToMany(mappedBy = "booking")
+    @JsonIgnoreProperties("booking")
+    @JsonIgnore
+    private List<BookingStatusHistory> bookingStatusHistories;
 
     @OneToOne(mappedBy = "booking")
     @JsonIgnoreProperties("booking")

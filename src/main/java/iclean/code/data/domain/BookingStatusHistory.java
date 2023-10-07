@@ -2,42 +2,38 @@ package iclean.code.data.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Entity
 @Getter
 @Setter
 @JsonIgnoreProperties({"hibernateLazyInitializer"})
-public class Job {
+public class BookingStatusHistory {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "job_id")
-    private Integer jobId;
-
-    @Column(name = "job_name")
-    private String jobName;
-
-    private String description;
-
-    @Column(name = "job_image")
-    private String jobImage;
+    @Column(name = "status_history_id")
+    private Integer statusHistoryId;
 
     @Column(name = "create_at")
     private LocalDateTime createAt;
 
-    @Column(name = "update_at")
-    private LocalDateTime  updateAt;
+    @Column(name = "booking_id")
+    private Integer bookingId;
 
-    @OneToMany(mappedBy = "job")
-    @JsonIgnoreProperties("job")
+    @Column(name = "booking_status_id")
+    private Integer bookingStatusId;
+
+    @ManyToOne
     @JsonIgnore
-    private List<JobUnit> jobUnits;
+    @JoinColumn(name = "booking_id")
+    private Booking booking;
 
+    @ManyToOne
+    @JsonIgnore
+    @JoinColumn(name = "booking_status_id")
+    private BookingStatus bookingStatus;
 }
-

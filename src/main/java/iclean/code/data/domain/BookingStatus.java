@@ -22,7 +22,7 @@ public class BookingStatus {
     @OneToMany(mappedBy = "bookingStatus")
     @JsonIgnoreProperties("bookingStatus")
     @JsonIgnore
-    private List<Booking> bookings;
+    private List<BookingStatusHistory> bookingStatusHistories;
 
     @Column(name = "title_status")
     private String titleStatus;
