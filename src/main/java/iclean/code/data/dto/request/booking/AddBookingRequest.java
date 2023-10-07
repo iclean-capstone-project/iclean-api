@@ -5,7 +5,6 @@ import org.hibernate.validator.constraints.Length;
 import org.hibernate.validator.constraints.Range;
 
 import javax.annotation.RegEx;
-import javax.validation.Valid;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
@@ -50,6 +49,6 @@ public class AddBookingRequest {
     private Integer renterId;
 
     @Range(min = 1, message = "Mã công việc phải lớn hơn 1")
-    private Integer jobId;
+    private Integer jobUnitId;
 
 }

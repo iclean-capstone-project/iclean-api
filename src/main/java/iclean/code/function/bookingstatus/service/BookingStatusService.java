@@ -1,8 +1,8 @@
 package iclean.code.function.bookingstatus.service;
 
 import iclean.code.data.dto.common.ResponseObject;
-import iclean.code.data.dto.request.bookingStatus.AddBookingStatusRequest;
-import iclean.code.data.dto.request.bookingStatus.UpdateBookingStatusRequest;
+import iclean.code.data.dto.request.bookingstatus.AddBookingStatusRequest;
+import iclean.code.data.dto.request.bookingstatus.UpdateBookingStatusRequest;
 import org.springframework.http.ResponseEntity;
 
 public interface BookingStatusService {

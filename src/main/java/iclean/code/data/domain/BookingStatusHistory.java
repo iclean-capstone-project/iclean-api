@@ -21,10 +21,10 @@ public class BookingStatusHistory {
     @Column(name = "create_at")
     private LocalDateTime createAt;
 
-    @Column(name = "booking_id")
+    @Column(name = "booking_id", insertable = false, updatable = false)
     private Integer bookingId;
 
-    @Column(name = "booking_status_id")
+    @Column(name = "booking_status_id", insertable = false, updatable = false)
     private Integer bookingStatusId;
 
     @ManyToOne

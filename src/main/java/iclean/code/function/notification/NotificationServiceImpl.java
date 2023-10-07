@@ -8,6 +8,7 @@ import iclean.code.data.repository.NotificationRepository;
 import iclean.code.data.repository.UserRepository;
 import iclean.code.exception.NotFoundException;
 import iclean.code.function.notification.service.NotificationService;
+import iclean.code.utils.Utils;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -149,7 +150,7 @@ public class NotificationServiceImpl implements NotificationService {
         Notification notification = modelMapper.map(request, Notification.class);
         notification.setContent(request.getContent());
         notification.setTitle(request.getTitle());
-        notification.setCreateAt(LocalDateTime.now());
+        notification.setCreateAt(Utils.getDateTimeNow());
         notification.setUser(optionalUser);
         notification.setStatus(StatusNotification.NOT_READ.getValue());
         notification.setNotificationImgLink(request.getNotificationImgLink());

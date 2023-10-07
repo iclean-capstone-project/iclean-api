@@ -9,6 +9,7 @@ import iclean.code.data.repository.ReportRepository;
 import iclean.code.data.repository.ReportTypeRepository;
 import iclean.code.exception.NotFoundException;
 import iclean.code.function.report.service.ReportService;
+import iclean.code.utils.Utils;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -140,7 +141,7 @@ public class ReportServiceImpl implements ReportService {
         Report report = modelMapper.map(request, Report.class);
         report.setDetail(request.getDetail());
         report.setReportStatus(request.getReportStatus());
-        report.setCreateAt(LocalDateTime.now());
+        report.setCreateAt(Utils.getDateTimeNow());
         report.setBooking(optionalBooking);
         report.setReportType(optionalReportType);
 
@@ -155,7 +156,7 @@ public class ReportServiceImpl implements ReportService {
         optionalReport.setRefundPercent(request.getRefundPercent());
         optionalReport.setReportStatus(request.getReportStatus());
         optionalReport.setRefund(request.getRefund());
-        optionalReport.setProcessAt(LocalDateTime.now());
+        optionalReport.setProcessAt(Utils.getDateTimeNow());
 
 
         return modelMapper.map(optionalReport, Report.class);

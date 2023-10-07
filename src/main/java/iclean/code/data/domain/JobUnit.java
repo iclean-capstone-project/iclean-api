@@ -7,6 +7,7 @@ import lombok.Setter;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Getter
@@ -36,8 +37,13 @@ public class JobUnit {
     @Column(name = "update_at")
     private LocalDateTime updateAt;
 
-    @Column(name = "job_id")
+    @Column(name = "job_id", insertable = false, updatable = false)
     private Integer jobId;
+
+    @OneToMany(mappedBy = "jobUnit")
+    @JsonIgnoreProperties("jobUnit")
+    @JsonIgnore
+    private List<Booking> bookings;
 
     @ManyToOne
     @JsonIgnore

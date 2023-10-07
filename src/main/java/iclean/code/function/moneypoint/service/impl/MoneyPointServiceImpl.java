@@ -11,6 +11,7 @@ import iclean.code.data.repository.MoneyPointRepository;
 import iclean.code.data.repository.UserRepository;
 import iclean.code.exception.NotFoundException;
 import iclean.code.function.moneypoint.service.MoneyPointService;
+import iclean.code.utils.Utils;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -148,7 +149,7 @@ public class MoneyPointServiceImpl implements MoneyPointService {
 
         optionalMoneyPoint.setCurrentMoney(moneyPoint.getCurrentMoney());
         optionalMoneyPoint.setCurrentPoint(moneyPoint.getCurrentPoint());
-        optionalMoneyPoint.setUpdateAt(LocalDateTime.now());
+        optionalMoneyPoint.setUpdateAt(Utils.getDateTimeNow());
 
 
         return modelMapper.map(optionalMoneyPoint, MoneyPoint.class);

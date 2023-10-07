@@ -1,27 +1,20 @@
 package iclean.code.function.booking.service.impl;
 
-import iclean.code.data.domain.Booking;
-import iclean.code.data.domain.BookingStatus;
-import iclean.code.data.domain.Job;
-import iclean.code.data.domain.User;
+import iclean.code.data.domain.*;
 import iclean.code.data.dto.common.ResponseObject;
 import iclean.code.data.dto.request.booking.AddBookingRequest;
 import iclean.code.data.dto.request.booking.UpdateStatusBookingRequest;
 import iclean.code.data.enumjava.BookingStatusEnum;
 import iclean.code.data.enumjava.Role;
-import iclean.code.data.repository.BookingRepository;
-import iclean.code.data.repository.BookingStatusRepository;
-import iclean.code.data.repository.JobRepository;
-import iclean.code.data.repository.UserRepository;
+import iclean.code.data.repository.*;
 import iclean.code.exception.NotFoundException;
 import iclean.code.function.booking.service.BookingService;
+import iclean.code.utils.Utils;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-
-import java.time.LocalDateTime;
 
 @Service
 public class BookingServiceImpl implements BookingService {
@@ -33,7 +26,7 @@ public class BookingServiceImpl implements BookingService {
     private UserRepository userRepository;
 
     @Autowired
-    private JobRepository jobRepository;
+    private JobUnitRepository jobUnitRepository;
 
     @Autowired
     private BookingStatusRepository bookingStatusRepository;
@@ -121,15 +114,15 @@ public class BookingServiceImpl implements BookingService {
 
         User optionalRenter = findAccount(request.getRenterId(), Role.RENTER.name());
         User optionalStaff = findAccount(request.getStaffId(), Role.EMPLOYEE.name());
-        Job optionalJob = finJob(request.getJobId());
+        JobUnit jobUnit = findJobUnit(request.getJobUnitId());
         BookingStatus optionalBookingStatus = findStatus(BookingStatusEnum.WAITING.getValue());
 
         Booking booking = modelMapper.map(request, Booking.class);
         booking.setRenter(optionalRenter);
         booking.setStaff(optionalStaff);
-        booking.setJob(optionalJob);
-        booking.setBookingStatus(optionalBookingStatus);
-        booking.setOrderDate(LocalDateTime.now());
+        booking.setJobUnit(jobUnit);
+//        booking.setBookingStatus(optionalBookingStatus);
+        booking.setOrderDate(Utils.getDateTimeNow());
         booking.setRequestCount(1);
 
         return booking;
@@ -141,16 +134,16 @@ public class BookingServiceImpl implements BookingService {
         Booking optionalBooking = finBooking(bookingId);
 
         optionalBooking.setRequestCount(optionalBooking.getRequestCount() + 1);
-        optionalBooking.setBookingStatus(optionalBookingStatus);
-        optionalBooking.setUpdateAt(LocalDateTime.now());
+//        optionalBooking.setBookingStatusHistories(optionalBookingStatus);
+        optionalBooking.setUpdateAt(Utils.getDateTimeNow());
 
         Booking booking = modelMapper.map(optionalBooking, Booking.class);
 
         if (BookingStatusEnum.IN_PROCESS.getValue() == optionalBookingStatus.getBookingStatusId()) {
-            booking.setWorkStart(LocalDateTime.now());
+            booking.setWorkStart(Utils.getDateTimeNow());
 
         } else if (BookingStatusEnum.DONE.getValue() == optionalBookingStatus.getBookingStatusId()) {
-            booking.setWorkEnd(LocalDateTime.now());
+            booking.setWorkEnd(Utils.getDateTimeNow());
         }
         return booking;
     }
@@ -170,8 +163,8 @@ public class BookingServiceImpl implements BookingService {
                 .orElseThrow(() -> new NotFoundException("Status is not exist"));
     }
 
-    private Job finJob(int jobId) {
-        return jobRepository.findById(jobId)
-                .orElseThrow(() -> new NotFoundException("Job is not exist"));
+    private JobUnit findJobUnit(Integer jobUnitId) {
+        return jobUnitRepository.findById(jobUnitId)
+                .orElseThrow(() -> new NotFoundException("Job Unit is not exist"));
     }
 }

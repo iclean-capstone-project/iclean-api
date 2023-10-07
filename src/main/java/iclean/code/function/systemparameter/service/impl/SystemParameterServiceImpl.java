@@ -7,6 +7,7 @@ import iclean.code.data.dto.request.systemparameter.UpdateSystemParameter;
 import iclean.code.data.repository.SystemParameterRepository;
 import iclean.code.exception.NotFoundException;
 import iclean.code.function.systemparameter.service.SystemParameterService;
+import iclean.code.utils.Utils;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -78,7 +79,7 @@ public class SystemParameterServiceImpl implements SystemParameterService {
         try {
             SystemParameter systemParameterForUpdate = finSystemParameter(systemId);
                     //modelMapper.map(systemParameter, SystemParameter.class);
-            systemParameterForUpdate.setUpdateAt(LocalDateTime.now());
+            systemParameterForUpdate.setUpdateAt(Utils.getDateTimeNow());
             systemParameterForUpdate.setUpdateVersion(systemParameter.getUpdateVersion());
 
             SystemParameter update = modelMapper.map(systemParameterForUpdate, SystemParameter.class);

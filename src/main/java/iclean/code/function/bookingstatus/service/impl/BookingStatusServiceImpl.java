@@ -2,8 +2,8 @@ package iclean.code.function.bookingstatus.service.impl;
 
 import iclean.code.data.domain.BookingStatus;
 import iclean.code.data.dto.common.ResponseObject;
-import iclean.code.data.dto.request.bookingStatus.AddBookingStatusRequest;
-import iclean.code.data.dto.request.bookingStatus.UpdateBookingStatusRequest;
+import iclean.code.data.dto.request.bookingstatus.AddBookingStatusRequest;
+import iclean.code.data.dto.request.bookingstatus.UpdateBookingStatusRequest;
 import iclean.code.data.repository.BookingStatusRepository;
 import iclean.code.exception.NotFoundException;
 import iclean.code.function.bookingstatus.service.BookingStatusService;

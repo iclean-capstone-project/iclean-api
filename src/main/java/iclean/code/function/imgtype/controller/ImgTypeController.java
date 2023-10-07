@@ -1,8 +1,8 @@
 package iclean.code.function.imgtype.controller;
 
 import iclean.code.data.dto.common.ResponseObject;
-import iclean.code.data.dto.request.imgType.AddImgTypeRequest;
-import iclean.code.data.dto.request.imgType.UpdateImgTypeRequest;
+import iclean.code.data.dto.request.imgtype.AddImgTypeRequest;
+import iclean.code.data.dto.request.imgtype.UpdateImgTypeRequest;
 import iclean.code.function.imgtype.service.ImgTypeService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
