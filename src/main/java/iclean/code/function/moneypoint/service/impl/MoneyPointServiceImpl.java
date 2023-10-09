@@ -1,18 +1,20 @@
 package iclean.code.function.moneypoint.service.impl;
 
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import iclean.code.data.domain.MoneyPoint;
 import iclean.code.data.domain.User;
 import iclean.code.data.dto.common.ResponseObject;
 import iclean.code.data.dto.request.moneypoint.CreateMoneyPoint;
 import iclean.code.data.dto.request.moneypoint.UpdateMoneyPoint;
+import iclean.code.data.dto.response.PageResponseObject;
 import iclean.code.data.repository.MoneyPointRepository;
 import iclean.code.data.repository.UserRepository;
 import iclean.code.exception.NotFoundException;
 import iclean.code.function.moneypoint.service.MoneyPointService;
+import iclean.code.utils.Utils;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -31,24 +33,13 @@ public class MoneyPointServiceImpl implements MoneyPointService {
     private ModelMapper modelMapper;
 
     @Override
-    public ResponseEntity<ResponseObject> getAllMoneyPoint() {
-        if (moneyPointRepository.findAll().isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(new ResponseObject(HttpStatus.NOT_FOUND.toString(), "All Money Point", "Money Point list is empty"));
-        }
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(new ResponseObject(HttpStatus.OK.toString(), "All Money Point", moneyPointRepository.findAll()));
-    }
-
-    @Override
-    public ResponseEntity<ResponseObject> getMoneyPointById(int moneyPointById) {
+    public ResponseEntity<ResponseObject> getAllMoneyPoint(Pageable pageable) {
         try {
-            if (moneyPointRepository.findById(moneyPointById).isEmpty()) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(new ResponseObject(HttpStatus.NOT_FOUND.toString(), "Money Point", "Money Point is not exist"));
-            }
+            Page<MoneyPoint> moneyPoints = moneyPointRepository.findAllMoneyPointAsAdminOrManager(pageable);
+            PageResponseObject pageResponseObject = Utils.convertToPageResponse(moneyPoints);
+
             return ResponseEntity.status(HttpStatus.OK)
-                    .body(new ResponseObject(HttpStatus.OK.toString(), "Money Point", moneyPointRepository.findById(moneyPointById)));
+                    .body(new ResponseObject(HttpStatus.OK.toString(), "All Money Point", pageResponseObject));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString()
@@ -57,20 +48,35 @@ public class MoneyPointServiceImpl implements MoneyPointService {
     }
 
     @Override
-    public ResponseEntity<ResponseObject> getMoneyPointByUserId(int userId) {
+    public ResponseEntity<ResponseObject> getMoneyPointByRenter(Integer userId, Pageable pageable) {
         try {
-            if (moneyPointRepository.findMoneyPointByUserUserId(userId).isEmpty()) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(new ResponseObject(HttpStatus.NOT_FOUND.toString(), "Money Point", "Money Point is not exist"));
-            }
+            Page<MoneyPoint> moneyPoints = moneyPointRepository.findByUserIdPageable(userId, pageable);
+            PageResponseObject pageResponseObject = Utils.convertToPageResponse(moneyPoints);
+
             return ResponseEntity.status(HttpStatus.OK)
-                    .body(new ResponseObject(HttpStatus.OK.toString(), "Money Point", moneyPointRepository.findMoneyPointByUserUserId(userId)));
+                    .body(new ResponseObject(HttpStatus.OK.toString(), "Money Point", pageResponseObject));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString()
                             , "Something wrong occur!", null));
         }
     }
+
+//    @Override
+//    public ResponseEntity<ResponseObject> getMoneyPointByUserId(int userId) {
+//        try {
+//            if (moneyPointRepository.findMoneyPointByUserUserId(userId).isEmpty()) {
+//                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+//                        .body(new ResponseObject(HttpStatus.NOT_FOUND.toString(), "Money Point", "Money Point is not exist"));
+//            }
+//            return ResponseEntity.status(HttpStatus.OK)
+//                    .body(new ResponseObject(HttpStatus.OK.toString(), "Money Point", moneyPointRepository.findMoneyPointByUserUserId(userId)));
+//        } catch (Exception e) {
+//            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+//                    .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString()
+//                            , "Something wrong occur!", null));
+//        }
+//    }
 
     @Override
     public ResponseEntity<ResponseObject> addNewMoneyPoint(CreateMoneyPoint moneyPoint) {
@@ -86,7 +92,7 @@ public class MoneyPointServiceImpl implements MoneyPointService {
                     .body(new ResponseObject(HttpStatus.OK.toString()
                             , "Create MoneyPoint Successfully!", null));
 
-        }  catch (Exception e) {
+        } catch (Exception e) {
             if (e instanceof NotFoundException) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body(new ResponseObject(HttpStatus.NOT_FOUND.toString()

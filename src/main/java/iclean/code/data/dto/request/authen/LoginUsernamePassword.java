@@ -19,7 +19,7 @@ public class LoginUsernamePassword {
 
     @NotNull(message = "Mật khẩu bắt buộc")
     @NotBlank(message = "Mật khẩu không được bỏ trống")
-    @Schema(example = "123")
+    @Schema(example = "$2y$10$PjxrokalgyXaABBMQhmbJeO9z87cXDmnrJedmOBELlP7dImfhFwe6")
     private String password;
 
 }

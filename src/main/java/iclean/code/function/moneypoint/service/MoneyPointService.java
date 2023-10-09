@@ -3,14 +3,15 @@ package iclean.code.function.moneypoint.service;
 import iclean.code.data.dto.common.ResponseObject;
 import iclean.code.data.dto.request.moneypoint.CreateMoneyPoint;
 import iclean.code.data.dto.request.moneypoint.UpdateMoneyPoint;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 
 public interface MoneyPointService {
-    ResponseEntity<ResponseObject> getAllMoneyPoint();
+    ResponseEntity<ResponseObject> getAllMoneyPoint(Pageable pageable);
 
-    ResponseEntity<ResponseObject> getMoneyPointById(int moneyPointId);
+    ResponseEntity<ResponseObject> getMoneyPointByRenter(Integer userId, Pageable pageable);
 
-    ResponseEntity<ResponseObject> getMoneyPointByUserId(int userId);
+//    ResponseEntity<ResponseObject> getMoneyPointByUserId(int userId);
 
     ResponseEntity<ResponseObject> addNewMoneyPoint(CreateMoneyPoint moneyPoint);
 
