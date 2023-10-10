@@ -4,14 +4,19 @@ import iclean.code.data.domain.*;
 import iclean.code.data.dto.common.ResponseObject;
 import iclean.code.data.dto.request.booking.AddBookingRequest;
 import iclean.code.data.dto.request.booking.UpdateStatusBookingRequest;
+import iclean.code.data.dto.response.PageResponseObject;
+import iclean.code.data.dto.response.address.GetAddressResponseDto;
 import iclean.code.data.enumjava.BookingStatusEnum;
 import iclean.code.data.enumjava.Role;
 import iclean.code.data.repository.*;
 import iclean.code.exception.NotFoundException;
+import iclean.code.exception.UserNotHavePermissionException;
 import iclean.code.function.booking.service.BookingService;
 import iclean.code.utils.Utils;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -35,25 +40,38 @@ public class BookingServiceImpl implements BookingService {
     private ModelMapper modelMapper;
 
     @Override
-    public ResponseEntity<ResponseObject> getAllBooking() {
-        if (bookingRepository.findAll().isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(new ResponseObject(HttpStatus.NOT_FOUND.toString(), "All Booking", "Booking list is empty"));
+    public ResponseEntity<ResponseObject> getAllBooking(Integer userId, Pageable pageable) {
+        Page<Booking> bookings = null;
+        if (Role.EMPLOYEE.toString().equals(userRepository.findByUserId(userId).getRole().getTitle())) {
+            bookings = bookingRepository.findByStaffId(userId, pageable);
+        } else {
+            bookings = bookingRepository.findByRenterId(userId, pageable);
         }
+
+        PageResponseObject pageResponseObject = Utils.convertToPageResponse(bookings);
         return ResponseEntity.status(HttpStatus.OK)
-                .body(new ResponseObject(HttpStatus.OK.toString(), "All Booking", bookingRepository.findAll()));
+                .body(new ResponseObject(HttpStatus.OK.toString(), "All Booking", pageResponseObject));
     }
 
     @Override
-    public ResponseEntity<ResponseObject> getBookingById(int bookingId) {
+    public ResponseEntity<ResponseObject> getBookingById(Integer bookingId, Integer userId, Pageable pageable) {
         try {
-            if (bookingRepository.findById(bookingId).isEmpty()) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(new ResponseObject(HttpStatus.NOT_FOUND.toString(), "Booking", "Booking is not exist"));
-            }
+            Booking booking = finBooking(bookingId);
+            if (!Objects.equals(booking.getRenter().getUserId(), userId) ||
+                    !Objects.equals(booking.getStaff().getUserId(), userId))
+                throw new UserNotHavePermissionException();
+
+            Page<Booking> bookings = bookingRepository.findBookingByBookingId(bookingId, userId, pageable);
+            PageResponseObject pageResponseObject = Utils.convertToPageResponse(bookings);
+
             return ResponseEntity.status(HttpStatus.OK)
-                    .body(new ResponseObject(HttpStatus.OK.toString(), "Booking", bookingRepository.findById(bookingId)));
+                    .body(new ResponseObject(HttpStatus.OK.toString(), "Booking", pageResponseObject));
         } catch (Exception e) {
+            if (e instanceof UserNotHavePermissionException)
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(new ResponseObject(HttpStatus.FORBIDDEN.toString(),
+                                e.getMessage(),
+                                null));
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString()
                             , "Something wrong occur!", null));
@@ -61,9 +79,9 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    public ResponseEntity<ResponseObject> addBooking(AddBookingRequest request) {
+    public ResponseEntity<ResponseObject> addBooking(AddBookingRequest request, Integer userId) {
         try {
-            Booking booking = mappingBookingForCreate(request);
+            Booking booking = mappingBookingForCreate(userId, request);
             bookingRepository.save(booking);
 
             return ResponseEntity.status(HttpStatus.OK)
@@ -84,10 +102,14 @@ public class BookingServiceImpl implements BookingService {
 
 
     @Override
-    public ResponseEntity<ResponseObject> updateStatusBooking(int bookingId, UpdateStatusBookingRequest request) {
+    public ResponseEntity<ResponseObject> updateStatusBooking(Integer bookingId, Integer userId, UpdateStatusBookingRequest request) {
         try {
-            Booking booking = mappingBookingForUpdateStatus(bookingId, request);
-            bookingRepository.save(booking);
+            Booking booking = finBooking(bookingId);
+            if (!Objects.equals(booking.getRenter().getUserId(), userId))
+                throw new UserNotHavePermissionException();
+
+            Booking bookingForUpdateStatus = mappingBookingForUpdateStatus(booking, request);
+            bookingRepository.save(bookingForUpdateStatus);
 
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseObject(HttpStatus.OK.toString()
@@ -110,9 +132,9 @@ public class BookingServiceImpl implements BookingService {
         return null;
     }
 
-    private Booking mappingBookingForCreate(AddBookingRequest request) {
+    private Booking mappingBookingForCreate(Integer userId, AddBookingRequest request) {
 
-        User optionalRenter = findAccount(request.getRenterId(), Role.RENTER.name());
+        User optionalRenter = findAccount(userId, Role.RENTER.name());
         User optionalStaff = findAccount(request.getStaffId(), Role.EMPLOYEE.name());
         JobUnit jobUnit = findJobUnit(request.getJobUnitId());
         BookingStatus optionalBookingStatus = findStatus(BookingStatusEnum.WAITING.getValue());
@@ -128,10 +150,9 @@ public class BookingServiceImpl implements BookingService {
         return booking;
     }
 
-    private Booking mappingBookingForUpdateStatus(int bookingId, UpdateStatusBookingRequest request) {
+    private Booking mappingBookingForUpdateStatus(Booking optionalBooking, UpdateStatusBookingRequest request) {
 
         BookingStatus optionalBookingStatus = findStatus(request.getBookingStatusId());
-        Booking optionalBooking = finBooking(bookingId);
 
         optionalBooking.setRequestCount(optionalBooking.getRequestCount() + 1);
 //        optionalBooking.setBookingStatusHistories(optionalBookingStatus);

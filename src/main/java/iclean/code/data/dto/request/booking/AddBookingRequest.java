@@ -45,9 +45,6 @@ public class AddBookingRequest {
     @Range(min = 1, message = "Mã nhân viên phải lớn hơn 1")
     private Integer staffId;
 
-    @Range(min = 1, message = "Mã khách hàng phải lớn hơn 1")
-    private Integer renterId;
-
     @Range(min = 1, message = "Mã công việc phải lớn hơn 1")
     private Integer jobUnitId;
 
