@@ -4,19 +4,29 @@ import iclean.code.data.domain.*;
 import iclean.code.data.dto.common.ResponseObject;
 import iclean.code.data.dto.request.booking.AddBookingRequest;
 import iclean.code.data.dto.request.booking.UpdateStatusBookingRequest;
+import iclean.code.data.dto.response.PageResponseObject;
+import iclean.code.data.dto.response.booking.GetBookingResponse;
 import iclean.code.data.enumjava.BookingStatusEnum;
 import iclean.code.data.enumjava.Role;
 import iclean.code.data.repository.*;
 import iclean.code.exception.NotFoundException;
 import iclean.code.function.booking.service.BookingService;
 import iclean.code.utils.Utils;
+import lombok.extern.log4j.Log4j2;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
+
 @Service
+@Log4j2
 public class BookingServiceImpl implements BookingService {
 
     @Autowired
@@ -35,13 +45,31 @@ public class BookingServiceImpl implements BookingService {
     private ModelMapper modelMapper;
 
     @Override
-    public ResponseEntity<ResponseObject> getAllBooking() {
-        if (bookingRepository.findAll().isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(new ResponseObject(HttpStatus.NOT_FOUND.toString(), "All Booking", "Booking list is empty"));
+    public ResponseEntity<ResponseObject> getBookingsForManager(Integer managerId, Pageable pageable, String search) {
+
+        try {
+            Page<Booking> bookings = bookingRepository.findAllByManagerIdAndStatusAndSearchByName(
+                    Utils.removeAccentMarksForSearching(search), BookingStatusEnum.WAITING.name(),
+                    managerId, pageable);
+
+            List<GetBookingResponse> dtoList = bookings
+                    .stream()
+                    .map(address -> modelMapper.map(bookings, GetBookingResponse.class))
+                    .collect(Collectors.toList());
+
+            PageResponseObject pageResponseObject = Utils.convertToPageResponse(bookings, Collections.singletonList(dtoList));
+
+            return ResponseEntity.status(HttpStatus.OK)
+                    .body(new ResponseObject(HttpStatus.OK.toString(),
+                            "Addresses List",
+                            pageResponseObject));
+        } catch (Exception e) {
+            log.error(e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ResponseObject(HttpStatus.INTERNAL_SERVER_ERROR.toString(),
+                            "Internal System Error",
+                            null));
         }
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(new ResponseObject(HttpStatus.OK.toString(), "All Booking", bookingRepository.findAll()));
     }
 
     @Override

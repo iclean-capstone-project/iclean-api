@@ -1,17 +1,14 @@
 package iclean.code.data.dto.request.job;
 
-import iclean.code.data.dto.request.jobunit.CreateJobUnitRequest;
 import lombok.*;
 import org.hibernate.validator.constraints.Length;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
 
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
+@Data
 public class CreateJobRequest {
 
     @NotNull(message = "Description cannot be null")
@@ -25,6 +22,6 @@ public class CreateJobRequest {
     @Length(max = 200, message = "Tối đa 200 từ")
     private String jobName;
 
-    @NotNull(message = "Job Unit Request cannot be null")
-    private CreateJobUnitRequest jobUnitRequest;
+    @NotNull
+    private MultipartFile imgJob;
 }

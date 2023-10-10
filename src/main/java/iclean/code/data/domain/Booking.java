@@ -78,6 +78,11 @@ public class Booking {
     @JoinColumn(name = "staff_id")
     private User staff;
 
+    @ManyToOne
+    @JsonIgnore
+    @JoinColumn(name = "manager_id")
+    private User manager;
+
     @Column(name = "rj_reason_id", insertable = false, updatable = false)
     private Integer rjReasonId;
 

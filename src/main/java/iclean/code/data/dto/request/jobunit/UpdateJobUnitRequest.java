@@ -8,8 +8,7 @@ import org.springframework.web.multipart.MultipartFile;
 import javax.validation.constraints.*;
 
 @Data
-public class CreateJobUnitRequest {
-
+public class UpdateJobUnitRequest {
     @NotNull(message = "Price Default is required")
     @Schema(example = "10000")
     @Min(value = 20000, message = "Price Default cannot be smaller than 20000")

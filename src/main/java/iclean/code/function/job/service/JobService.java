@@ -10,9 +10,11 @@ public interface JobService {
 
     ResponseEntity<ResponseObject> getJobs();
 
-    ResponseEntity<ResponseObject> createJob(CreateJobRequest service, MultipartFile imgJob);
+    ResponseEntity<ResponseObject> createJob(CreateJobRequest service);
 
     ResponseEntity<ResponseObject> updateJob(int jobId, UpdateJobRequest newService);
 
     ResponseEntity<ResponseObject> deleteJob(int jobId);
+
+    ResponseEntity<ResponseObject> getJobActives();
 }

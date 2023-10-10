@@ -27,6 +27,9 @@ public class Job {
     @Column(name = "job_image")
     private String jobImage;
 
+    @Column(name = "is_delete")
+    private Boolean isDelete = false;
+
     @Column(name = "create_at")
     private LocalDateTime createAt;
 

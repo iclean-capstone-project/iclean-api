@@ -10,8 +10,8 @@ import java.util.List;
 @Repository
 public interface JobRepository extends JpaRepository<Job, Integer> {
 
-    @Query("SELECT t FROM Job t")
-    List<Job> finAll();
+    @Query("SELECT t FROM Job t WHERE t.isDelete = FALSE AND t.jobUnits.size > 0")
+    List<Job> findAllActive();
 
     Job findByJobId(int jobId);
 }

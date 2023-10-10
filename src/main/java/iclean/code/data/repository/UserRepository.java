@@ -4,6 +4,8 @@ import iclean.code.data.domain.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
+import java.util.List;
+
 public interface UserRepository extends JpaRepository<User, Integer> {
 
     @Query("SELECT t FROM User t WHERE t.username = ?1")
@@ -15,4 +17,7 @@ public interface UserRepository extends JpaRepository<User, Integer> {
     User findUserByPhoneNumber(String phoneNumber);
 
     User findByUserId(int id);
+
+    @Query("SELECT t FROM User t WHERE t.role.title LIKE 'manager'")
+    List<User> findAllManager();
 }

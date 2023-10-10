@@ -1,13 +1,13 @@
-package iclean.code.function.job.service.impl;
+package iclean.code.function.jobunit.service.impl;
 
-import iclean.code.data.domain.Job;
+import iclean.code.data.domain.JobUnit;
 import iclean.code.data.dto.common.ResponseObject;
-import iclean.code.data.dto.request.job.CreateJobRequest;
-import iclean.code.data.dto.request.job.UpdateJobRequest;
+import iclean.code.data.dto.request.jobunit.CreateJobUnitRequest;
+import iclean.code.data.dto.request.jobunit.UpdateJobUnitRequest;
 import iclean.code.data.enumjava.DeleteStatusEnum;
-import iclean.code.data.repository.JobRepository;
+import iclean.code.data.repository.JobUnitRepository;
 import iclean.code.exception.NotFoundException;
-import iclean.code.function.job.service.JobService;
+import iclean.code.function.jobunit.service.JobUnitService;
 import iclean.code.service.StorageService;
 import iclean.code.utils.Utils;
 import lombok.extern.log4j.Log4j2;
@@ -18,14 +18,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
 @Log4j2
-public class JobServiceImpl implements JobService {
+public class JobUnitServiceImpl implements JobUnitService {
 
     @Autowired
-    private JobRepository jobRepository;
+    private JobUnitRepository jobUnitRepository;
 
     @Autowired
     private StorageService storageService;
@@ -34,11 +33,25 @@ public class JobServiceImpl implements JobService {
     private ModelMapper modelMapper;
 
     @Override
-    public ResponseEntity<ResponseObject> getJobs() {
+    public ResponseEntity<ResponseObject> getJobUnitActives() {
         try {
-            List<Job> jobs = jobRepository.findAll();
+            List<JobUnit> jobUnits = jobUnitRepository.findAllActive();
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseObject(HttpStatus.OK.toString(),
+                            "All Job", jobUnits));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ResponseObject(HttpStatus.INTERNAL_SERVER_ERROR.toString(),
+                            "Something wrong occur!", null));
+        }
+    }
+
+    @Override
+    public ResponseEntity<ResponseObject> getJobUnits() {
+        try {
+            List<JobUnit> jobs = jobUnitRepository.findAll();
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new ResponseObject(HttpStatus.NOT_FOUND.toString(),
                             "All Job", jobs));
         } catch (Exception e) {
             log.error(e.getMessage());
@@ -49,14 +62,14 @@ public class JobServiceImpl implements JobService {
     }
 
     @Override
-    public ResponseEntity<ResponseObject> createJob(CreateJobRequest request) {
+    public ResponseEntity<ResponseObject> createJobUnits(CreateJobUnitRequest request) {
         try {
-            Job job = modelMapper.map(request, Job.class);
-            String jobImgLink = storageService.uploadFile(request.getImgJob());
-            job.setJobImage(jobImgLink);
+            JobUnit job = modelMapper.map(request, JobUnit.class);
+            String jobImgLink = storageService.uploadFile(request.getImgUnitFile());
+            job.setImgJobUnit(jobImgLink);
             job.setCreateAt(Utils.getDateTimeNow());
 
-            jobRepository.save(job);
+            jobUnitRepository.save(job);
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseObject(HttpStatus.OK.toString(),
                             "Create Job Successfully!", null));
@@ -70,22 +83,17 @@ public class JobServiceImpl implements JobService {
     }
 
     @Override
-    public ResponseEntity<ResponseObject> updateJob(int jobId, UpdateJobRequest request) {
+    public ResponseEntity<ResponseObject> updateJobUnit(int jobUnitId, UpdateJobUnitRequest request) {
         try {
-            Optional<Job> optionalJob = jobRepository.findById(jobId);
-            if (optionalJob.isEmpty())
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(new ResponseObject(HttpStatus.NOT_FOUND.toString(), "Job is not exist", null));
+            JobUnit jobUnit = findJobUnitById(jobUnitId);
 
-            Job jobToUpdate = optionalJob.get();
-            storageService.deleteFile(jobToUpdate.getJobImage());
-            String jobImgLink = storageService.uploadFile(request.getJobImageFile());
-            jobToUpdate.setJobImage(jobImgLink);
-            jobToUpdate.setUpdateAt(Utils.getDateTimeNow());
+            storageService.deleteFile(jobUnit.getImgJobUnit());
+            String jobImgLink = storageService.uploadFile(request.getImgUnitFile());
+            jobUnit.setImgJobUnit(jobImgLink);
+            jobUnit.setUpdateAt(Utils.getDateTimeNow());
+            modelMapper.map(request, jobUnit);
 
-            modelMapper.map(request, jobToUpdate);
-
-            jobRepository.save(jobToUpdate);
+            jobUnitRepository.save(jobUnit);
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseObject(HttpStatus.OK.toString(),
                             "Update Job Successfully!", null));
@@ -97,26 +105,22 @@ public class JobServiceImpl implements JobService {
                         .body(new ResponseObject(HttpStatus.NOT_FOUND.toString(),
                                 e.getMessage(), null));
             }
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString(),
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ResponseObject(HttpStatus.INTERNAL_SERVER_ERROR.toString(),
                             "Something wrong occur!", null));
         }
     }
 
     @Override
-    public ResponseEntity<ResponseObject> deleteJob(int jobId) {
+    public ResponseEntity<ResponseObject> deleteJobUnit(int jobUnitId) {
         try {
-            Optional<Job> optionalJob = jobRepository.findById(jobId);
-            if (optionalJob.isEmpty())
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(new ResponseObject(HttpStatus.NOT_FOUND.toString(), "Job is not exist", null));
+            JobUnit jobUnit = findJobUnitById(jobUnitId);
 
-            Job jobToDelete = optionalJob.get();
-            jobToDelete.setIsDelete(DeleteStatusEnum.INACTIVE.getValue());
-            jobRepository.save(jobToDelete);
+            jobUnit.setIsDelete(DeleteStatusEnum.INACTIVE.getValue());
+            jobUnitRepository.save(jobUnit);
             return ResponseEntity.status(HttpStatus.OK)
-                    .body(new ResponseObject(HttpStatus.OK.toString()
-                            , "Delete Job Successfully!", null));
+                    .body(new ResponseObject(HttpStatus.OK.toString(),
+                            "Delete Job Successfully!", null));
 
         } catch (Exception e) {
             log.error(e.getMessage());
@@ -131,17 +135,7 @@ public class JobServiceImpl implements JobService {
         }
     }
 
-    @Override
-    public ResponseEntity<ResponseObject> getJobActives() {
-        try {
-            List<Job> jobs = jobRepository.findAllActive();
-            return ResponseEntity.status(HttpStatus.OK)
-                    .body(new ResponseObject(HttpStatus.OK.toString(),
-                            "All Job", jobs));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new ResponseObject(HttpStatus.INTERNAL_SERVER_ERROR.toString(),
-                            "Something wrong occur!", null));
-        }
+    private JobUnit findJobUnitById(int id) {
+        return jobUnitRepository.findById(id).orElseThrow(() -> new NotFoundException(String.format("Job Unit ID %s are not exist", "id")));
     }
 }
