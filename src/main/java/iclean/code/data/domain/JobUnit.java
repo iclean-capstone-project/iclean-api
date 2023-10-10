@@ -31,6 +31,9 @@ public class JobUnit {
     @Column(name = "is_delete")
     private Boolean isDelete;
 
+    @Column(name = "img_job_unit")
+    private String imgJobUnit;
+
     @Column(name = "create_at")
     private LocalDateTime createAt;
 

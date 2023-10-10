@@ -45,7 +45,7 @@ public class AddressController {
             @RequestParam(name = "search", defaultValue = "ví dụ", required = false) String search,
             @RequestParam(name = "page", defaultValue = "1", required = false) @Min(value = 1, message = "Page cannot be smaller 1") Integer page,
             @RequestParam(name = "size", defaultValue = "10", required = false) @Min(value = 1, message = "Size cannot be smaller 1") Integer size,
-            @RequestParam(name = "sort", required = false) @ValidSortFields(value = GetAddressResponseDto.class) List<String> sortFields,
+            @RequestParam(name = "sort", defaultValue = "sortField_asc", required = false) @ValidSortFields(value = GetAddressResponseDto.class) List<String> sortFields,
             Authentication authentication) {
         Pageable pageable = PageRequestBuilder.buildPageRequest(page, size);
 

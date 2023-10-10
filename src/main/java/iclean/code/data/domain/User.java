@@ -56,6 +56,11 @@ public class User {
     @JsonIgnore
     private List<Booking> staffBookingList;
 
+    @OneToMany(mappedBy = "manager")
+    @JsonIgnoreProperties("manager")
+    @JsonIgnore
+    private List<Booking> managerBookingList;
+
     @OneToMany(mappedBy = "user")
     @JsonIgnoreProperties("user")
     @JsonIgnore

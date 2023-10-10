@@ -8,6 +8,7 @@ import org.springframework.data.domain.Sort;
 import java.text.Normalizer;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,6 +20,12 @@ public class Utils {
     public static LocalDateTime getDateTimeNow() {
         ZoneId gmtPlus7Zone = ZoneId.of("GMT+7");
         return LocalDateTime.now(gmtPlus7Zone);
+    }
+
+    public static String getDateTimeNowAsString() {
+        ZoneId gmtPlus7Zone = ZoneId.of("GMT+7");
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
+        return LocalDateTime.now(gmtPlus7Zone).format(formatter);
     }
 
     public static String removeSpace(String value) {
