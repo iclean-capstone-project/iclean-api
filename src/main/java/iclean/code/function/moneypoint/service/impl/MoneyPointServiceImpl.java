@@ -36,7 +36,7 @@ public class MoneyPointServiceImpl implements MoneyPointService {
     public ResponseEntity<ResponseObject> getAllMoneyPoint(Pageable pageable) {
         try {
             Page<MoneyPoint> moneyPoints = moneyPointRepository.findAllMoneyPointAsAdminOrManager(pageable);
-            PageResponseObject pageResponseObject = Utils.convertToPageResponse(moneyPoints);
+            PageResponseObject pageResponseObject = Utils.convertToPageResponse(moneyPoints, null);
 
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseObject(HttpStatus.OK.toString(), "All Money Point", pageResponseObject));
@@ -51,7 +51,7 @@ public class MoneyPointServiceImpl implements MoneyPointService {
     public ResponseEntity<ResponseObject> getMoneyPointByRenter(Integer userId, Pageable pageable) {
         try {
             Page<MoneyPoint> moneyPoints = moneyPointRepository.findByUserIdPageable(userId, pageable);
-            PageResponseObject pageResponseObject = Utils.convertToPageResponse(moneyPoints);
+            PageResponseObject pageResponseObject = Utils.convertToPageResponse(moneyPoints, null);
 
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseObject(HttpStatus.OK.toString(), "Money Point", pageResponseObject));

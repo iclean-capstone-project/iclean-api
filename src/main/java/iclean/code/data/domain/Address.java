@@ -40,12 +40,12 @@ public class Address {
     @Column(name = "update_at")
     private LocalDateTime updateAt = Utils.getDateTimeNow();
 
-    @Column(name = "user_id")
+    @Column(name = "user_id", insertable = false, updatable = false)
     private Integer userId;
 
     @ManyToOne
     @JsonIgnore
-    @JoinColumn(name = "user_id", insertable = true, updatable = true)
+    @JoinColumn(name = "user_id")
     private User user;
 
 }

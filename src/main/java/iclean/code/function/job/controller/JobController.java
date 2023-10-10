@@ -29,11 +29,10 @@ public class JobController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Job Information"),
             @ApiResponse(responseCode = "401", description = "Unauthorized - Login please"),
-//            @ApiResponse(responseCode = "403", description = "Forbidden - You don't have permission to access on this api"),
             @ApiResponse(responseCode = "400", description = "Bad request - Missing some field required")
     })
     public ResponseEntity<ResponseObject> getAllJob() {
-        return jobService.getAllJob();
+        return jobService.getJobs();
     }
 
     @PostMapping
@@ -45,8 +44,8 @@ public class JobController {
             @ApiResponse(responseCode = "400", description = "Bad request - Missing some field required")
     })
     @PreAuthorize("hasAnyAuthority('admin', 'manager')")
-    public ResponseEntity<ResponseObject> addJob(@RequestBody @Valid AddJobRequest request) {
-        return jobService.addJob(request);
+    public ResponseEntity<ResponseObject> addJob(@RequestBody @Valid CreateJobRequest request) {
+        return jobService.createJob(request);
     }
 
     @PutMapping(value = "{jobId}")
