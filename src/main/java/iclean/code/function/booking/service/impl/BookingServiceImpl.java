@@ -40,11 +40,14 @@ public class BookingServiceImpl implements BookingService {
     private BookingStatusRepository bookingStatusRepository;
 
     @Autowired
+    private BookingStatusHistoryRepository bookingStatusHistoryRepository;
+
+    @Autowired
     private ModelMapper modelMapper;
 
     @Override
     public ResponseEntity<ResponseObject> getAllBooking(Integer userId, Pageable pageable) {
-        Page<Booking> bookings = null;
+        Page<Booking> bookings;
         if (Role.EMPLOYEE.toString().equals(userRepository.findByUserId(userId).getRole().getTitle())) {
             bookings = bookingRepository.findByStaffId(userId, pageable);
         } else {
@@ -85,7 +88,14 @@ public class BookingServiceImpl implements BookingService {
     public ResponseEntity<ResponseObject> addBooking(AddBookingRequest request, Integer userId) {
         try {
             Booking booking = mappingBookingForCreate(userId, request);
-            bookingRepository.save(booking);
+            Booking newBooking = bookingRepository.save(booking);
+
+            BookingStatus optionalBookingStatus = findStatus(BookingStatusEnum.WAITING.getValue());
+            BookingStatusHistory bookingStatusHistory = new BookingStatusHistory();
+            bookingStatusHistory.setBooking(newBooking);
+            bookingStatusHistory.setBookingStatus(optionalBookingStatus);
+            bookingStatusHistory.setCreateAt(Utils.getDateTimeNow());
+            bookingStatusHistoryRepository.save(bookingStatusHistory);
 
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseObject(HttpStatus.OK.toString()
@@ -140,13 +150,11 @@ public class BookingServiceImpl implements BookingService {
         User optionalRenter = findAccount(userId, Role.RENTER.name());
         User optionalStaff = findAccount(request.getStaffId(), Role.EMPLOYEE.name());
         JobUnit jobUnit = findJobUnit(request.getJobUnitId());
-        BookingStatus optionalBookingStatus = findStatus(BookingStatusEnum.WAITING.getValue());
 
         Booking booking = modelMapper.map(request, Booking.class);
         booking.setRenter(optionalRenter);
         booking.setStaff(optionalStaff);
         booking.setJobUnit(jobUnit);
-//        booking.setBookingStatus(optionalBookingStatus);
         booking.setOrderDate(Utils.getDateTimeNow());
         booking.setRequestCount(1);
 
