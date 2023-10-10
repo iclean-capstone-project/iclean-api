@@ -46,7 +46,7 @@ public class NotificationServiceImpl implements NotificationService {
         } else {
             notifications = notificationRepository.findAll(pageable);
         }
-        PageResponseObject pageResponseObject = Utils.convertToPageResponse(notifications);
+        PageResponseObject pageResponseObject = Utils.convertToPageResponse(notifications, null);
 
         return ResponseEntity.status(HttpStatus.OK)
                 .body(new ResponseObject(HttpStatus.OK.toString()
@@ -89,7 +89,7 @@ public class NotificationServiceImpl implements NotificationService {
                 throw new UserNotHavePermissionException();
 
             Page<Notification> notifications = notificationRepository.findByUserIdPageable(userIdAuth, pageable);
-            PageResponseObject pageResponseObject = Utils.convertToPageResponse(notifications);
+            PageResponseObject pageResponseObject = Utils.convertToPageResponse(notifications, null);
 
             if (notificationRepository.findNotificationByUserUserId(userId).isEmpty()) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)

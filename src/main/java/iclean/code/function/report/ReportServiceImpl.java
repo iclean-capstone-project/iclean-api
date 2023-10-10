@@ -63,7 +63,7 @@ public class ReportServiceImpl implements ReportService {
         } else {
             reportPageable = reportRepository.findAllAsAdminOrManager(pageable);
         }
-        PageResponseObject pageResponseObject = Utils.convertToPageResponse(reportPageable);
+        PageResponseObject pageResponseObject = Utils.convertToPageResponse(reportPageable, null);
 
         return ResponseEntity.status(HttpStatus.OK)
                 .body(new ResponseObject(HttpStatus.OK.toString(), "All Report ", pageResponseObject));

@@ -4,7 +4,9 @@ import iclean.code.data.dto.common.SortResponse;
 import iclean.code.data.dto.response.PageResponseObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Sort;
+import org.springframework.util.ObjectUtils;
 
+import javax.annotation.Nullable;
 import java.text.Normalizer;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -43,7 +45,7 @@ public class Utils {
         return value.substring(value.lastIndexOf(str) + 1);
     }
 
-    public static PageResponseObject convertToPageResponse(Page page, List<?> content) {
+    public static PageResponseObject convertToPageResponse(Page page, @Nullable List<?> content) {
         PageResponseObject pageResponseObject = new PageResponseObject();
         pageResponseObject.setOffset(page.getPageable().getOffset());
         pageResponseObject.setPageNumber(page.getPageable().getPageNumber());
@@ -60,7 +62,10 @@ public class Utils {
             }
         }
         pageResponseObject.setSortBy(sortResponseList);
-        pageResponseObject.setContent(content);
+        if (!ObjectUtils.isEmpty(content))
+            pageResponseObject.setContent(content);
+        else
+            pageResponseObject.setContent(page.getContent());
         return pageResponseObject;
     }
 }
