@@ -3,6 +3,7 @@ package iclean.code.function.notification.controller;
 import iclean.code.config.JwtUtils;
 import iclean.code.data.dto.common.PageRequestBuilder;
 import iclean.code.data.dto.common.ResponseObject;
+import iclean.code.data.dto.notification.GetNotificationDTO;
 import iclean.code.data.dto.request.notification.AddNotificationRequest;
 import iclean.code.data.dto.response.address.GetAddressResponseDto;
 import iclean.code.function.notification.service.NotificationService;
@@ -40,7 +41,7 @@ public class NotificationController {
     public ResponseEntity<ResponseObject> getAllNotification(
             @RequestParam(name = "page", defaultValue = "0") int page,
             @RequestParam(name = "size", defaultValue = "10") int size,
-            @RequestParam(name = "sort", required = false) @ValidSortFields(value = GetAddressResponseDto.class) List<String> sortFields,
+            @RequestParam(name = "sort", required = false) @ValidSortFields(value = GetNotificationDTO.class) List<String> sortFields,
             Authentication authentication) {
         Pageable pageable = PageRequestBuilder.buildPageRequest(page, size);
 
@@ -61,7 +62,7 @@ public class NotificationController {
     public ResponseEntity<ResponseObject> getNotificationById(
             @RequestParam(name = "page", defaultValue = "0") int page,
             @RequestParam(name = "size", defaultValue = "10") int size,
-            @RequestParam(name = "sort", required = false) @ValidSortFields(value = GetAddressResponseDto.class) List<String> sortFields,
+            @RequestParam(name = "sort", required = false) @ValidSortFields(value = GetNotificationDTO.class) List<String> sortFields,
             @PathVariable("notificationId") @Valid int notificationId,
             Authentication authentication) {
         Pageable pageable = PageRequestBuilder.buildPageRequest(page, size);
@@ -83,7 +84,7 @@ public class NotificationController {
     public ResponseEntity<ResponseObject> getNotificationByUserId(
             @RequestParam(name = "page", defaultValue = "0") int page,
             @RequestParam(name = "size", defaultValue = "10") int size,
-            @RequestParam(name = "sort", required = false) @ValidSortFields(value = GetAddressResponseDto.class) List<String> sortFields,
+            @RequestParam(name = "sort", required = false) @ValidSortFields(value = GetNotificationDTO.class) List<String> sortFields,
             Authentication authentication,
             @PathVariable("userId") @Valid Integer userId) {
         Pageable pageable = PageRequestBuilder.buildPageRequest(page, size);

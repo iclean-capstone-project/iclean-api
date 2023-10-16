@@ -4,6 +4,7 @@ import iclean.code.data.domain.ImgType;
 import iclean.code.data.dto.common.ResponseObject;
 import iclean.code.data.dto.request.imgtype.AddImgTypeRequest;
 import iclean.code.data.dto.request.imgtype.UpdateImgTypeRequest;
+import iclean.code.data.dto.response.imgtype.GetImgTypeDTO;
 import iclean.code.data.repository.ImgTypeRepository;
 import iclean.code.exception.NotFoundException;
 import iclean.code.function.imgtype.service.ImgTypeService;
@@ -12,6 +13,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 public class ImgTypeServiceImpl implements ImgTypeService {
@@ -24,23 +27,21 @@ public class ImgTypeServiceImpl implements ImgTypeService {
 
     @Override
     public ResponseEntity<ResponseObject> getAllImgType() {
-        if (imgTypeRepository.findAll().isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(new ResponseObject(HttpStatus.NOT_FOUND.toString(), "All Image type", "All Image type list is empty"));
-        }
+        List<ImgType> imgTypes = imgTypeRepository.findAll();
+        GetImgTypeDTO imgTypesResponse = modelMapper.map(imgTypes, GetImgTypeDTO.class);
+
         return ResponseEntity.status(HttpStatus.OK)
-                .body(new ResponseObject(HttpStatus.OK.toString(), "All Image type", imgTypeRepository.findAll()));
+                .body(new ResponseObject(HttpStatus.OK.toString(), "All Image type", imgTypesResponse));
     }
 
     @Override
     public ResponseEntity<ResponseObject> getImgTypeById(int imgTypeId) {
         try {
-            if (imgTypeRepository.findById(imgTypeId).isEmpty()) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(new ResponseObject(HttpStatus.NOT_FOUND.toString(), "Image type", "Image type is not exist"));
-            }
+            ImgType imgType =findImgType(imgTypeId);
+            GetImgTypeDTO imgTypesResponse = modelMapper.map(imgType, GetImgTypeDTO.class);
+
             return ResponseEntity.status(HttpStatus.OK)
-                    .body(new ResponseObject(HttpStatus.OK.toString(), "Image type", imgTypeRepository.findById(imgTypeId)));
+                    .body(new ResponseObject(HttpStatus.OK.toString(), "Image type", imgTypesResponse));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString()

@@ -2,8 +2,11 @@ package iclean.code.function.notification;
 
 import iclean.code.data.domain.*;
 import iclean.code.data.dto.common.ResponseObject;
+import iclean.code.data.dto.notification.GetNotificationDTO;
 import iclean.code.data.dto.request.notification.AddNotificationRequest;
 import iclean.code.data.dto.response.PageResponseObject;
+import iclean.code.data.dto.response.booking.GetBookingResponse;
+import iclean.code.data.dto.response.imgbooking.GetImgBookingDTO;
 import iclean.code.data.enumjava.Role;
 import iclean.code.data.enumjava.StatusNotification;
 import iclean.code.data.repository.NotificationRepository;
@@ -22,7 +25,9 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 @Service
 public class NotificationServiceImpl implements NotificationService {
@@ -38,36 +43,42 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     public ResponseEntity<ResponseObject> getAllNotification(Integer userId, Pageable pageable) {
-        Page<Notification> notifications = null;
-        User user = findUser(userId);
-        if (Objects.equals(iclean.code.data.enumjava.Role.RENTER.toString(), user.getRole().getTitle())
-                || Objects.equals(Role.EMPLOYEE.toString(), user.getRole().getTitle())) {
-            notifications = notificationRepository.findByUserIdPageable(userId, pageable);
-        } else {
-            notifications = notificationRepository.findAll(pageable);
-        }
-        PageResponseObject pageResponseObject = Utils.convertToPageResponse(notifications, null);
+        try {
+            Page<Notification> notifications = null;
+            User user = findUser(userId);
+            if (Objects.equals(iclean.code.data.enumjava.Role.RENTER.toString(), user.getRole().getTitle())
+                    || Objects.equals(Role.EMPLOYEE.toString(), user.getRole().getTitle())) {
+                notifications = notificationRepository.findByUserIdPageable(userId, pageable);
+            } else {
+                notifications = notificationRepository.findAll(pageable);
+            }
+            List<GetNotificationDTO> dtoList = notifications
+                    .stream()
+                    .map(notification -> modelMapper.map(notification, GetNotificationDTO.class))
+                    .collect(Collectors.toList());
+            PageResponseObject pageResponseObject = Utils.convertToPageResponse(notifications, dtoList);
 
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(new ResponseObject(HttpStatus.OK.toString()
-                        , "All Notification", pageResponseObject));
+            return ResponseEntity.status(HttpStatus.OK)
+                    .body(new ResponseObject(HttpStatus.OK.toString()
+                            , "All Notification", pageResponseObject));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString()
+                            , "Something wrong occur!", null));
+        }
     }
 
     @Override
     public ResponseEntity<ResponseObject> getNotificationById(Integer notificationId, Integer userId, Pageable pageable) {
         try {
             Notification notification = findNotification(notificationId);
-            if(isAuthorized(userId, notification)) {
-                if(!Objects.equals(userId, notification.getUser().getUserId())){
-                    throw new UserNotHavePermissionException();
-                }
+            if (isPermission(userId, notification)) {
+                GetNotificationDTO notificationResponse = modelMapper.map(notification, GetNotificationDTO.class);
                 return ResponseEntity.status(HttpStatus.OK)
                         .body(new ResponseObject(HttpStatus.OK.toString()
-                                , "Notification", notificationRepository.findById(notificationId)));
+                                , "Notification", notificationResponse));
             }
-            return ResponseEntity.status(HttpStatus.OK)
-                    .body(new ResponseObject(HttpStatus.OK.toString()
-                            , "Notification",notificationRepository.findById(notificationId)));
+            throw new UserNotHavePermissionException();
 
         } catch (Exception e) {
             if (e instanceof UserNotHavePermissionException)
@@ -85,20 +96,22 @@ public class NotificationServiceImpl implements NotificationService {
     public ResponseEntity<ResponseObject> getNotificationByUserId(Integer userId, Integer userIdAuth, Pageable pageable) {
         try {
             Notification notification = findNotification(userId);
-            if (!Objects.equals(notification.getUser().getUserId(), userIdAuth))
-                throw new UserNotHavePermissionException();
+            if (isPermission(userId, notification)) {
+                Page<Notification> notifications = notificationRepository.findByUserIdPageable(userIdAuth, pageable);
 
-            Page<Notification> notifications = notificationRepository.findByUserIdPageable(userIdAuth, pageable);
-            PageResponseObject pageResponseObject = Utils.convertToPageResponse(notifications, null);
+                List<GetNotificationDTO> dtoList = notifications
+                        .stream()
+                        .map(notificationMapper -> modelMapper.map(notificationMapper, GetNotificationDTO.class))
+                        .collect(Collectors.toList());
 
-            if (notificationRepository.findNotificationByUserUserId(userId).isEmpty()) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(new ResponseObject(HttpStatus.NOT_FOUND.toString()
-                                , "Notification", "User's notification list is empty"));
+                PageResponseObject pageResponseObject = Utils.convertToPageResponse(notifications, dtoList);
+
+                return ResponseEntity.status(HttpStatus.OK)
+                        .body(new ResponseObject(HttpStatus.OK.toString()
+                                , "Notification", pageResponseObject));
             }
-            return ResponseEntity.status(HttpStatus.OK)
-                    .body(new ResponseObject(HttpStatus.OK.toString()
-                            , "Notification", pageResponseObject));
+            throw new UserNotHavePermissionException();
+
         } catch (Exception e) {
             if (e instanceof UserNotHavePermissionException)
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
@@ -211,7 +224,7 @@ public class NotificationServiceImpl implements NotificationService {
                 .orElseThrow(() -> new NotFoundException("User is not exist"));
     }
 
-    private boolean isAuthorized(Integer userId, Notification notification) {
+    private boolean isPermission(Integer userId, Notification notification) {
         User user = findUser(userId);
         if (Role.RENTER.toString().equals(user.getRole().getTitle()) || Role.EMPLOYEE.toString().equals(user.getRole().getTitle())) {
             return Objects.equals(user.getUserId(), notification.getUser().getUserId());
