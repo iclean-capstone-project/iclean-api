@@ -4,6 +4,7 @@ import iclean.code.data.domain.*;
 import iclean.code.data.dto.common.ResponseObject;
 import iclean.code.data.dto.request.imgbooking.AddImgBooking;
 import iclean.code.data.dto.request.imgbooking.UpdateImgBooking;
+import iclean.code.data.dto.response.imgbooking.GetImgBookingDTO;
 import iclean.code.data.repository.BookingRepository;
 import iclean.code.data.repository.ImgBookingRepository;
 import iclean.code.data.repository.ImgTypeRepository;
@@ -17,6 +18,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 public class ImgBookingServiceImpl implements ImgBookingService {
@@ -35,23 +37,20 @@ public class ImgBookingServiceImpl implements ImgBookingService {
 
     @Override
     public ResponseEntity<ResponseObject> getAllImgBooking() {
-        if (imgBookingRepository.findAll().isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(new ResponseObject(HttpStatus.NOT_FOUND.toString(), "All Image booking", "Image booking list is empty"));
-        }
+        List<ImgBooking> imgBookings = imgBookingRepository.findAll();
+        GetImgBookingDTO imgBookingResponse = modelMapper.map(imgBookings, GetImgBookingDTO.class);
+
         return ResponseEntity.status(HttpStatus.OK)
-                .body(new ResponseObject(HttpStatus.OK.toString(), "All Image booking", imgBookingRepository.findAll()));
+                .body(new ResponseObject(HttpStatus.OK.toString(), "All Image booking", imgBookingResponse));
     }
 
     @Override
     public ResponseEntity<ResponseObject> getImgBookingById(int imgBookingId) {
         try {
-            if (imgBookingRepository.findById(imgBookingId).isEmpty()) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(new ResponseObject(HttpStatus.NOT_FOUND.toString(), "Image booking", "Image booking is not exist"));
-            }
+            ImgBooking imgBooking = findImgBooking(imgBookingId);
+            GetImgBookingDTO imgBookingResponse = modelMapper.map(imgBooking, GetImgBookingDTO.class);
             return ResponseEntity.status(HttpStatus.OK)
-                    .body(new ResponseObject(HttpStatus.OK.toString(), "Image booking", imgBookingRepository.findById(imgBookingId)));
+                    .body(new ResponseObject(HttpStatus.OK.toString(), "Image booking", imgBookingResponse));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString()

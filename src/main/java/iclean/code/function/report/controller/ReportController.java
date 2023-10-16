@@ -62,7 +62,7 @@ public class ReportController {
     public ResponseEntity<ResponseObject> getAllReportAsRenter(
             @RequestParam(name = "page", defaultValue = "0") int page,
             @RequestParam(name = "size", defaultValue = "10") int size,
-            @RequestParam(name = "sort", required = false) @ValidSortFields(value = GetAddressResponseDto.class) List<String> sortFields,
+            @RequestParam(name = "sort", required = false)  List<String> sortFields,
             Authentication authentication) {
         Pageable pageable = PageRequestBuilder.buildPageRequest(page, size);
         if (sortFields != null && !sortFields.isEmpty()) {

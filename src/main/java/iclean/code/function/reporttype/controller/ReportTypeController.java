@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.*;
 import javax.validation.Valid;
 
 @RestController
-@RequestMapping("/reportType")
+@RequestMapping("api/v1/reportType")
 @Tag(name = "Report Type")
 public class ReportTypeController {
     @Autowired

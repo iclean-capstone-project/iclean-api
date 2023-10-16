@@ -4,16 +4,24 @@ import iclean.code.data.domain.BookingStatus;
 import iclean.code.data.dto.common.ResponseObject;
 import iclean.code.data.dto.request.bookingstatus.AddBookingStatusRequest;
 import iclean.code.data.dto.request.bookingstatus.UpdateBookingStatusRequest;
+import iclean.code.data.dto.response.PageResponseObject;
+import iclean.code.data.dto.response.address.GetAddressResponseDetailDto;
+import iclean.code.data.dto.response.booking.GetBookingResponse;
+import iclean.code.data.dto.response.bookingstatus.GetBookingStatusDTO;
 import iclean.code.data.repository.BookingStatusRepository;
 import iclean.code.exception.NotFoundException;
 import iclean.code.function.bookingstatus.service.BookingStatusService;
+import iclean.code.utils.Utils;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class BookingStatusServiceImpl implements BookingStatusService {
@@ -29,19 +37,21 @@ public class BookingStatusServiceImpl implements BookingStatusService {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(new ResponseObject(HttpStatus.NOT_FOUND.toString(), "All BookingStatus", "BookingStatus list is empty"));
         }
+        List<BookingStatus> bookingStatus= bookingStatusRepository.findAll();
+        GetBookingStatusDTO response = modelMapper.map(bookingStatus, GetBookingStatusDTO.class);
+
         return ResponseEntity.status(HttpStatus.ACCEPTED)
-                .body(new ResponseObject(HttpStatus.ACCEPTED.toString(), "All BookingStatus", bookingStatusRepository.findAll()));
+                .body(new ResponseObject(HttpStatus.ACCEPTED.toString(), "All BookingStatus", response));
     }
 
     @Override
     public ResponseEntity<ResponseObject> getBookingStatusById(int statusId) {
         try {
-            if (bookingStatusRepository.findById(statusId).isEmpty()) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(new ResponseObject(HttpStatus.NOT_FOUND.toString(), "BookingStatus", "BookingStatus is not exist"));
-            }
+            BookingStatus bookingStatus =findBookingStatus(statusId);
+            GetBookingStatusDTO response = modelMapper.map(bookingStatus, GetBookingStatusDTO.class);
+
             return ResponseEntity.status(HttpStatus.OK)
-                    .body(new ResponseObject(HttpStatus.OK.toString(), "BookingStatus", bookingStatusRepository.findById(statusId)));
+                    .body(new ResponseObject(HttpStatus.OK.toString(), "BookingStatus", response));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString()

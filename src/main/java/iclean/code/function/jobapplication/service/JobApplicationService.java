@@ -2,7 +2,6 @@ package iclean.code.function.jobapplication.service;
 
 import iclean.code.data.dto.common.ResponseObject;
 import iclean.code.data.dto.request.jobapplication.CreateJobApplicationRequestDTO;
-import iclean.code.data.dto.request.jobapplication.GetJobApplicationRequestDTO;
 import iclean.code.data.dto.request.jobapplication.UpdateJobApplicationRequestDTO;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.multipart.MultipartFile;

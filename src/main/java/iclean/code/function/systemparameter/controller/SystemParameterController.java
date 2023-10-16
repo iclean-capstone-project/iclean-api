@@ -4,6 +4,7 @@ import iclean.code.data.dto.common.ResponseObject;
 import iclean.code.data.dto.request.systemparameter.CreateSystemParameter;
 import iclean.code.data.dto.request.systemparameter.UpdateSystemParameter;
 import iclean.code.function.systemparameter.service.SystemParameterService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -11,7 +12,8 @@ import org.springframework.web.bind.annotation.*;
 import javax.validation.Valid;
 
 @RestController
-@RequestMapping(value = "/systemParameter")
+@RequestMapping(value = "api/v1/systemParameter")
+@Tag(name = "System Parameter")
 public class SystemParameterController {
 
     @Autowired

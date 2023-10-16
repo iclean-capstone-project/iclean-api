@@ -2,8 +2,10 @@ package iclean.code.function.reporttype.service.impl;
 
 import iclean.code.data.domain.ReportType;
 import iclean.code.data.dto.common.ResponseObject;
+import iclean.code.data.dto.reporttype.GetReportTypeDTO;
 import iclean.code.data.dto.request.reporttype.AddReportTypeRequest;
 import iclean.code.data.dto.request.reporttype.UpdateReportTypeRequest;
+import iclean.code.data.dto.response.imgtype.GetImgTypeDTO;
 import iclean.code.data.repository.ReportTypeRepository;
 import iclean.code.exception.NotFoundException;
 import iclean.code.function.reporttype.service.ReportTypeService;
@@ -13,6 +15,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -27,23 +30,28 @@ public class ReportTypeServiceImpl implements ReportTypeService {
 
     @Override
     public ResponseEntity<ResponseObject> getAllReportType() {
-        if (reportTypeRepository.findAll().isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(new ResponseObject(HttpStatus.NOT_FOUND.toString(), "All Report type", "All Report type list is empty"));
+        try {
+            List<ReportType> reportTypes = reportTypeRepository.findAll();
+            GetReportTypeDTO reportTypeResponse = modelMapper.map(reportTypes, GetReportTypeDTO.class);
+
+            return ResponseEntity.status(HttpStatus.OK)
+                    .body(new ResponseObject(HttpStatus.OK.toString(), "All Report type", reportTypeResponse));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString()
+                            , "Something wrong occur!", null));
         }
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(new ResponseObject(HttpStatus.OK.toString(), "All Report type", reportTypeRepository.findAll()));
+
     }
 
     @Override
     public ResponseEntity<ResponseObject> getReportTypeById(int reportTypeId) {
         try {
-            if (reportTypeRepository.findById(reportTypeId).isEmpty()) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(new ResponseObject(HttpStatus.NOT_FOUND.toString(), "Report type", "Report type is not exist"));
-            }
+            ReportType reportType = findReportType(reportTypeId);
+            GetReportTypeDTO reportTypeResponse = modelMapper.map(reportType, GetReportTypeDTO.class);
+
             return ResponseEntity.status(HttpStatus.OK)
-                    .body(new ResponseObject(HttpStatus.OK.toString(), "Report type", reportTypeRepository.findById(reportTypeId)));
+                    .body(new ResponseObject(HttpStatus.OK.toString(), "Report type", reportTypeResponse));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString()

@@ -6,6 +6,8 @@ import iclean.code.data.dto.common.ResponseObject;
 import iclean.code.data.dto.request.booking.AddBookingRequest;
 import iclean.code.data.dto.request.booking.UpdateStatusBookingRequest;
 import iclean.code.data.dto.response.address.GetAddressResponseDto;
+import iclean.code.data.dto.response.booking.GetBookingResponse;
+import iclean.code.data.dto.response.booking.GetBookingResponseDetail;
 import iclean.code.function.booking.service.BookingService;
 import iclean.code.utils.validator.ValidSortFields;
 import io.swagger.v3.oas.annotations.Operation;
@@ -42,7 +44,7 @@ public class BookingController {
     public ResponseEntity<ResponseObject> getAllBooking(
             @RequestParam(name = "page", defaultValue = "0") int page,
             @RequestParam(name = "size", defaultValue = "10") int size,
-            @RequestParam(name = "sort", required = false) @ValidSortFields(value = GetAddressResponseDto.class) List<String> sortFields,
+            @RequestParam(name = "sort", required = false) @ValidSortFields(value = GetBookingResponse.class) List<String> sortFields,
             Authentication authentication) {
         Pageable pageable = PageRequestBuilder.buildPageRequest(page, size);
 
@@ -59,7 +61,7 @@ public class BookingController {
             @PathVariable @Valid int bookingId,
             @RequestParam(name = "page", defaultValue = "0") int page,
             @RequestParam(name = "size", defaultValue = "10") int size,
-            @RequestParam(name = "sort", required = false) @ValidSortFields(value = GetAddressResponseDto.class) List<String> sortFields,
+            @RequestParam(name = "sort", required = false) @ValidSortFields(value = GetBookingResponseDetail.class) List<String> sortFields,
             Authentication authentication) {
         Pageable pageable = PageRequestBuilder.buildPageRequest(page, size);
 

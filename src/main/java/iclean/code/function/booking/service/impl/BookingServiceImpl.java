@@ -5,6 +5,8 @@ import iclean.code.data.dto.common.ResponseObject;
 import iclean.code.data.dto.request.booking.AddBookingRequest;
 import iclean.code.data.dto.request.booking.UpdateStatusBookingRequest;
 import iclean.code.data.dto.response.PageResponseObject;
+import iclean.code.data.dto.response.address.GetAddressResponseDto;
+import iclean.code.data.dto.response.booking.GetBookingResponse;
 import iclean.code.data.enumjava.BookingStatusEnum;
 import iclean.code.data.enumjava.Role;
 import iclean.code.data.repository.*;
@@ -21,7 +23,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 @Service
 @Log4j2
@@ -54,7 +59,12 @@ public class BookingServiceImpl implements BookingService {
             bookings = bookingRepository.findByRenterId(userId, pageable);
         }
 
-        PageResponseObject pageResponseObject = Utils.convertToPageResponse(bookings, null);
+        List<GetBookingResponse> dtoList = bookings
+                .stream()
+                .map(booking -> modelMapper.map(booking, GetBookingResponse.class))
+                .collect(Collectors.toList());
+
+        PageResponseObject pageResponseObject = Utils.convertToPageResponse(bookings, Collections.singletonList(dtoList));
         return ResponseEntity.status(HttpStatus.OK)
                 .body(new ResponseObject(HttpStatus.OK.toString(), "All Booking", pageResponseObject));
     }
@@ -68,7 +78,13 @@ public class BookingServiceImpl implements BookingService {
                 throw new UserNotHavePermissionException();
 
             Page<Booking> bookings = bookingRepository.findBookingByBookingId(bookingId, userId, pageable);
-            PageResponseObject pageResponseObject = Utils.convertToPageResponse(bookings, null);
+
+            List<GetBookingResponse> dtoList = bookings
+                    .stream()
+                    .map(bookingMapper -> modelMapper.map(bookingMapper, GetBookingResponse.class))
+                    .collect(Collectors.toList());
+
+            PageResponseObject pageResponseObject = Utils.convertToPageResponse(bookings, Collections.singletonList(dtoList));
 
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseObject(HttpStatus.OK.toString(), "Booking", pageResponseObject));
