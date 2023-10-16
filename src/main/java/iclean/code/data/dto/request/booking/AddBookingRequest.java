@@ -43,7 +43,7 @@ public class AddBookingRequest {
     private Double totalPrice;
 
     @Range(min = 1, message = "Mã nhân viên phải lớn hơn 1")
-    private Integer staffId;
+    private Integer employeeId;
 
     @Range(min = 1, message = "Mã công việc phải lớn hơn 1")
     private Integer jobUnitId;

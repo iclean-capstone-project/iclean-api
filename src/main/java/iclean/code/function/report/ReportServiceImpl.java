@@ -22,7 +22,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.Objects;
 
 @Service
@@ -82,7 +81,7 @@ public class ReportServiceImpl implements ReportService {
                         .body(new ResponseObject(HttpStatus.OK.toString()
                                 , "Report", reportRepository.findById(reportId)));
             } else if (Objects.equals(Role.EMPLOYEE.toString(),user.getRole().getTitle())) {
-                if(!Objects.equals(user.getUserId(), report.getBooking().getStaff().getUserId())){
+                if(!Objects.equals(user.getUserId(), report.getBooking().getEmployee().getUserId())){
                     throw new UserNotHavePermissionException();
                 }
                 return ResponseEntity.status(HttpStatus.OK)

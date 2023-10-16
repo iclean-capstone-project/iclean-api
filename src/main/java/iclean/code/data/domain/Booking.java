@@ -75,8 +75,8 @@ public class Booking {
 
     @ManyToOne
     @JsonIgnore
-    @JoinColumn(name = "staff_id")
-    private User staff;
+    @JoinColumn(name = "employee_id")
+    private User employee;
 
     @ManyToOne
     @JsonIgnore
@@ -95,6 +95,11 @@ public class Booking {
     @JsonIgnore
     @JoinColumn(name = "job_unit_id")
     private JobUnit jobUnit;
+
+    @OneToMany(mappedBy = "booking")
+    @JsonIgnoreProperties("booking")
+    @JsonIgnore
+    private List<BookingEmployee> bookingEmployees;
 
     @OneToMany(mappedBy = "booking")
     @JsonIgnoreProperties("booking")

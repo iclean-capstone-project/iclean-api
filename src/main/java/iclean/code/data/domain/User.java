@@ -46,15 +46,20 @@ public class User {
     @JoinColumn(name = "role_id", insertable = false, updatable = false)
     private Role role;
 
+    @OneToMany(mappedBy = "employee")
+    @JsonIgnoreProperties("employee")
+    @JsonIgnore
+    private List<BookingEmployee> bookingEmployeeList;
+
     @OneToMany(mappedBy = "renter")
     @JsonIgnoreProperties("renter")
     @JsonIgnore
     private List<Booking> renterBookingList;
 
-    @OneToMany(mappedBy = "staff")
-    @JsonIgnoreProperties("staff")
+    @OneToMany(mappedBy = "employee")
+    @JsonIgnoreProperties("employee")
     @JsonIgnore
-    private List<Booking> staffBookingList;
+    private List<Booking> employeeBookingList;
 
     @OneToMany(mappedBy = "manager")
     @JsonIgnoreProperties("manager")
