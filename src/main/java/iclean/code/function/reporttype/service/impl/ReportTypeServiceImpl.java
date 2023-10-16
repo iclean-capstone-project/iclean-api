@@ -5,7 +5,6 @@ import iclean.code.data.dto.common.ResponseObject;
 import iclean.code.data.dto.reporttype.GetReportTypeDTO;
 import iclean.code.data.dto.request.reporttype.AddReportTypeRequest;
 import iclean.code.data.dto.request.reporttype.UpdateReportTypeRequest;
-import iclean.code.data.dto.response.imgtype.GetImgTypeDTO;
 import iclean.code.data.repository.ReportTypeRepository;
 import iclean.code.exception.NotFoundException;
 import iclean.code.function.reporttype.service.ReportTypeService;
