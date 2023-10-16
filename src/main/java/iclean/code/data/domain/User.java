@@ -28,7 +28,7 @@ public class User {
     @Column(name = "full_name")
     private String fullName;
 
-    @Column(name = "phone_number")
+    @Column(name = "phone_number", unique = true)
     private String phoneNumber;
 
     @Column(name = "otp_token")
