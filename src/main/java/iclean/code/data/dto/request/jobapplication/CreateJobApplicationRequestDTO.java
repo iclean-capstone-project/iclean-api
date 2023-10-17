@@ -19,9 +19,4 @@ public class CreateJobApplicationRequestDTO {
     @NotBlank(message = "employee Id không được bỏ trống")
     @Schema(example = "Nhật Linh")
     private String fullName;
-
-    @NotNull(message = "employee Id là bắt buộc")
-    @NotBlank(message = "employee Id không được bỏ trống")
-    @Schema(example = "Nhật Linh")
-    private String phoneNumber;
 }
