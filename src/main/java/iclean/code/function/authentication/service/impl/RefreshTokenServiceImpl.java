@@ -50,7 +50,7 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
 
     @Transactional
     @Override
-    public int deleteByUserId(Integer userId) {
-        return 1;
+    public void deleteByRefreshToken(String refreshToken) {
+        redisService.deleteKey(refreshToken);
     }
 }

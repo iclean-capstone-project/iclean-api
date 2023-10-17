@@ -9,5 +9,13 @@ public class UserInformationDto {
 
     private String phoneNumber;
 
+    private String roleName;
+
+    private String dateOfBirth;
+
+    private String gender;
+
+    private String avatar;
+
     private Boolean isNewUser = false;
 }

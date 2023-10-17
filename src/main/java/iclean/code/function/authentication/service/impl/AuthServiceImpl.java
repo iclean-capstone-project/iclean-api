@@ -69,6 +69,7 @@ public class AuthServiceImpl implements AuthService {
                 String refreshToken = refreshTokenService.createRefreshToken(userPrinciple.getId()).getToken();
                 User user = userRepository.findByUsername(form.getUsername());
                 UserInformationDto userInformationDto = modelMapper.map(user, UserInformationDto.class);
+                userInformationDto.setRoleName(user.getRole().getTitle());
                 return ResponseEntity.status(HttpStatus.OK)
                         .body(new ResponseObject(HttpStatus.OK.toString(), "Login success!",
                                 new JwtResponse(accessToken, refreshToken, userInformationDto)));
@@ -128,13 +129,14 @@ public class AuthServiceImpl implements AuthService {
                 String accessToken = jwtUtils.createAccessToken(userPrinciple);
                 String refreshToken = refreshTokenService.createRefreshToken(userPrinciple.getId()).getToken();
                 UserInformationDto userInformationDto = modelMapper.map(user, UserInformationDto.class);
-                if (ObjectUtils.anyNull(user.getFullName(), user.getRole())) {
+                if (ObjectUtils.anyNull(user.getFullName(), user.getRole(), user.getDateOfBirth(), user.getGender())) {
                     userInformationDto.setIsNewUser(true);
 
                     return ResponseEntity.status(HttpStatus.OK)
                             .body(new ResponseObject(HttpStatus.OK.toString(),
                                     "Need Update Information!", new JwtResponse(accessToken, refreshToken, userInformationDto)));
                 }
+                userInformationDto.setRoleName(user.getRole().getTitle());
                 return ResponseEntity.status(HttpStatus.OK)
                         .body(new ResponseObject(HttpStatus.OK.toString(),
                                 "Login successful!", new JwtResponse(accessToken, refreshToken, userInformationDto)));
@@ -178,7 +180,7 @@ public class AuthServiceImpl implements AuthService {
                 String refreshToken = refreshTokenService.createRefreshToken(userPrinciple.getId()).getToken();
                 UserInformationDto userInformationDto = modelMapper.map(user, UserInformationDto.class);
 
-                if (!ObjectUtils.anyNull(userInformationDto.getFullName())) {
+                if (!ObjectUtils.anyNull(user.getGender(), user.getRole(), user.getDateOfBirth(), user.getFullName())) {
                     userRepository.save(user);
 
                     userInformationDto.setIsNewUser(true);
@@ -187,7 +189,7 @@ public class AuthServiceImpl implements AuthService {
                                     "Need Update Information",
                                     new JwtResponse(accessToken, refreshToken, userInformationDto)));
                 }
-
+                userInformationDto.setRoleName(user.getRole().getTitle());
                 return ResponseEntity.status(HttpStatus.OK)
                         .body(new ResponseObject(HttpStatus.OK.toString(),
                                 "Login Successful",
@@ -276,9 +278,19 @@ public class AuthServiceImpl implements AuthService {
                 String refreshToken = refreshTokenService.createRefreshToken(userPrinciple.getId()).getToken();
                 User user = userRepository.findUserByPhoneNumber(formMobile.getPhoneNumber());
                 UserInformationDto userInformationDto = modelMapper.map(user, UserInformationDto.class);
+                if (ObjectUtils.anyNull(user.getFullName(), user.getRole(), user.getDateOfBirth(), user.getGender())) {
+                    userInformationDto.setIsNewUser(true);
+                    return ResponseEntity.status(HttpStatus.OK)
+                            .body(new ResponseObject(HttpStatus.OK.toString(), "Login success!",
+                                    new JwtResponse(accessToken, refreshToken, userInformationDto)));
+                }
+
+                userInformationDto.setRoleName(user.getRole().getTitle());
                 return ResponseEntity.status(HttpStatus.OK)
                         .body(new ResponseObject(HttpStatus.OK.toString(), "Login success!",
                                 new JwtResponse(accessToken, refreshToken, userInformationDto)));
+
+
 
             } else ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(new ResponseObject(HttpStatus.UNAUTHORIZED.toString(),
@@ -319,15 +331,15 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public ResponseEntity<ResponseObject> updateInformationFirstLogin(RegisterUserForm form) {
+    public ResponseEntity<ResponseObject> updateInformationFirstLogin(Integer userId, RegisterUserForm form) {
         try {
-            User user = findUser(form.getUserId());
+            User user = findUser(userId);
 
             if (form.getRole().equals(Role.RENTER)) {
-                user = modelMapper.map(form, User.class);
+                modelMapper.map(form, user);
 
             } else if (form.getRole().equals(Role.EMPLOYEE)) {
-                user = modelMapper.map(form, User.class);
+                modelMapper.map(form, user);
 
             }
             userRepository.save(user);
@@ -342,7 +354,7 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public ResponseEntity<ResponseObject> addFcmToken(FcmTokenDto dto, Integer userId) {
+    public ResponseEntity<ResponseObject> addFcmToken(LogoutTokenDto dto, Integer userId) {
         try {
             FcmToken fcmToken = modelMapper.map(dto, FcmToken.class);
             User user = findUser(userId);
@@ -368,12 +380,13 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public ResponseEntity<ResponseObject> deleteFcmToken(FcmTokenDto dto, Integer userId) {
+    public ResponseEntity<ResponseObject> logout(LogoutTokenDto dto, Integer userId) {
         try {
             FcmToken fcmToken = findFcmToken(dto.getFcmToken());
             if (!Objects.equals(fcmToken.getUser().getUserId(), userId))
                 throw new UserNotHavePermissionException();
 
+            refreshTokenService.deleteByRefreshToken(dto.getRefreshToken());
             fcmTokenRepository.delete(fcmToken);
 
             return ResponseEntity.status(HttpStatus.OK)
