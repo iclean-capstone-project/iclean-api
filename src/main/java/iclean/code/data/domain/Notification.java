@@ -28,7 +28,8 @@ public class Notification {
     @Column(name = "create_at")
     private LocalDateTime createAt;
 
-    private Integer status;
+    @Column(name = "is_read")
+    private Boolean isRead = false;
 
     @Column(name = "user_id")
     private Integer userId;
