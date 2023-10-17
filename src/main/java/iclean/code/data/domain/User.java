@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import javax.persistence.*;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
@@ -22,6 +23,10 @@ public class User {
 
     private String password;
 
+    private String gender;
+
+    private LocalDateTime dateOfBirth;
+
     @Column(name = "facebook_uid")
     private String facebookUid;
 
@@ -31,8 +36,12 @@ public class User {
     @Column(name = "phone_number")
     private String phoneNumber;
 
+    @Column(name = "avatar")
+    private String avatar;
+
     @Column(name = "otp_token")
     private String otpToken;
+
     @Column(name = "is_locked")
     private Boolean isLocked = false;
 

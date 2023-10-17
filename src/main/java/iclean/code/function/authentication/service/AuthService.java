@@ -15,11 +15,11 @@ public interface AuthService {
 
     ResponseEntity<ResponseObject> loginUsingPhoneNumberAndOTP(LoginFormMobile formMobile);
 
-    ResponseEntity<ResponseObject> updateInformationFirstLogin(RegisterUserForm form);
+    ResponseEntity<ResponseObject> updateInformationFirstLogin(Integer userId, RegisterUserForm form);
 
-    ResponseEntity<ResponseObject> addFcmToken(FcmTokenDto dto, Integer userId);
+    ResponseEntity<ResponseObject> addFcmToken(LogoutTokenDto dto, Integer userId);
 
-    ResponseEntity<ResponseObject> deleteFcmToken(FcmTokenDto dto, Integer userId);
+    ResponseEntity<ResponseObject> logout(LogoutTokenDto dto, Integer userId);
 
     ResponseEntity<ResponseObject> getNewAccessToken(TokenRefreshRequest form);
 }

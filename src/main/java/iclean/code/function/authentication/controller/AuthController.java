@@ -4,12 +4,12 @@ import iclean.code.config.JwtUtils;
 import iclean.code.data.dto.common.ResponseObject;
 import iclean.code.data.dto.request.authen.*;
 import iclean.code.function.authentication.service.AuthService;
-import iclean.code.service.impl.TwilioOTPServiceImpl;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -83,7 +83,7 @@ public class AuthController {
     public ResponseEntity<ResponseObject> verifyPhoneNumber(@RequestBody @Valid LoginFormMobile formMobile) {
         return authService.loginUsingPhoneNumberAndOTP(formMobile);
     }
-    @PostMapping("/update-information")
+    @PostMapping(value = "/update-information", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "Update the information after login", description = "Return status update successful")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "400", description = "Internal System Error - Contact the admin"),
@@ -91,8 +91,9 @@ public class AuthController {
             @ApiResponse(responseCode = "401", description = "Unauthorized - Need access_token"),
             @ApiResponse(responseCode = "400", description = "Bad request - Missing some field required or not match pattern")
     })
-    public ResponseEntity<ResponseObject> loginUsernamePassword(@RequestBody @Valid RegisterUserForm form) {
-        return authService.updateInformationFirstLogin(form);
+    public ResponseEntity<ResponseObject> updateInformation(@RequestAttribute @Valid RegisterUserForm form,
+                                                            Authentication authentication) {
+        return authService.updateInformationFirstLogin(JwtUtils.decodeToAccountId(authentication), form);
     }
 
     @PostMapping("/fcm-token")
@@ -104,12 +105,12 @@ public class AuthController {
             @ApiResponse(responseCode = "403", description = "Forbidden - You don't have permission to access on this api"),
             @ApiResponse(responseCode = "400", description = "Bad request - Missing some field required")
     })
-    public ResponseEntity<ResponseObject> addFcmToken(@RequestBody @Valid FcmTokenDto dto,
+    public ResponseEntity<ResponseObject> addFcmToken(@RequestBody @Valid LogoutTokenDto dto,
                                                       Authentication authentication) {
         return authService.addFcmToken(dto, JwtUtils.decodeToAccountId(authentication));
     }
 
-    @DeleteMapping("/fcm-token")
+    @DeleteMapping("/logout")
     @PreAuthorize("hasAnyAuthority('renter', 'employee', 'admin', 'manager')")
     @Operation(summary = "Login into the system with OTP", description = "Return status delete successful")
     @ApiResponses(value = {
@@ -118,8 +119,8 @@ public class AuthController {
             @ApiResponse(responseCode = "403", description = "Forbidden - You don't have permission to access on this api"),
             @ApiResponse(responseCode = "400", description = "Bad request - Missing some field required")
     })
-    public ResponseEntity<ResponseObject> deleteFcmToken(@RequestBody @Valid FcmTokenDto dto,
-                                                      Authentication authentication) {
-        return authService.deleteFcmToken(dto, JwtUtils.decodeToAccountId(authentication));
+    public ResponseEntity<ResponseObject> logout(@RequestBody @Valid LogoutTokenDto dto,
+                                                 Authentication authentication) {
+        return authService.logout(dto, JwtUtils.decodeToAccountId(authentication));
     }
 }
