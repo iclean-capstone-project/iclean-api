@@ -6,15 +6,15 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 
 public interface NotificationService {
-    ResponseEntity<ResponseObject> getAllNotification(Integer userId, Pageable pageable);
-
-    ResponseEntity<ResponseObject> getNotificationById(Integer notificationId, Integer userId, Pageable pageable);
-
-    ResponseEntity<ResponseObject> getNotificationByUserId(Integer userId, Integer userIdAuth, Pageable pageable);
-
     ResponseEntity<ResponseObject> addNotification(AddNotificationRequest request);
 
-    ResponseEntity<ResponseObject> updateStatusNotification(int notificationId);
+    ResponseEntity<ResponseObject> getNotificationById(Integer notificationId, Integer userId);
 
-    ResponseEntity<ResponseObject> deleteNotification(int notificationId);
+    ResponseEntity<ResponseObject> getNotifications(Integer userIdAuth, Pageable pageable);
+
+    ResponseEntity<ResponseObject> updateStatusNotification(int notificationId, int userId);
+
+    ResponseEntity<ResponseObject> deleteNotification(int notificationId, int userId);
+
+    ResponseEntity<ResponseObject> readAllNotification(int userId);
 }

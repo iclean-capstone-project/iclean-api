@@ -161,7 +161,7 @@ public class JobApplicationServiceImpl implements JobApplicationService {
             CMTBackResponse cmtBackResponse = objectMapper.readValue(backResponse, CMTBackResponse.class);
 
             RegisterEmployee registerEmployee = new RegisterEmployee();
-            registerEmployee.setPhoneNumber(request.getPhoneNumber());
+//            registerEmployee.setPhoneNumber(request.getPhoneNumber());
             registerEmployee.setNationId(cmtFrontResponse.getData().get(0).getId());
             registerEmployee.setFullName(cmtFrontResponse.getData().get(0).getName());
             jobApplication.setJobImgLink(imgAvatarLink);

@@ -4,12 +4,12 @@ import lombok.Getter;
 
 @Getter
 public enum StatusNotification {
-    READ(1),
-    NOT_READ(2);
+    READ(true),
+    NOT_READ(false);
 
-    private final int value;
+    private final boolean value;
 
-    private StatusNotification(int value) {
+    private StatusNotification(boolean value) {
         this.value = value;
     }
 }

@@ -16,8 +16,5 @@ public class GetNotificationDTO {
 
     private LocalDateTime createAt;
 
-    private Integer status;
-
-    private Integer userId;
-
+    private Boolean isRead;
 }
