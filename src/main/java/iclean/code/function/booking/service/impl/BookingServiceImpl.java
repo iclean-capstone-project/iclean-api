@@ -5,7 +5,6 @@ import iclean.code.data.dto.common.ResponseObject;
 import iclean.code.data.dto.request.booking.AddBookingRequest;
 import iclean.code.data.dto.request.booking.UpdateStatusBookingRequest;
 import iclean.code.data.dto.response.PageResponseObject;
-import iclean.code.data.dto.response.address.GetAddressResponseDto;
 import iclean.code.data.dto.response.booking.GetBookingResponse;
 import iclean.code.data.enumjava.BookingStatusEnum;
 import iclean.code.data.enumjava.Role;
@@ -74,7 +73,7 @@ public class BookingServiceImpl implements BookingService {
         try {
             Booking booking = finBooking(bookingId);
             if (!Objects.equals(booking.getRenter().getUserId(), userId) ||
-                    !Objects.equals(booking.getStaff().getUserId(), userId))
+                    !Objects.equals(booking.getEmployee().getUserId(), userId))
                 throw new UserNotHavePermissionException();
 
             Page<Booking> bookings = bookingRepository.findBookingByBookingId(bookingId, userId, pageable);
@@ -164,12 +163,12 @@ public class BookingServiceImpl implements BookingService {
     private Booking mappingBookingForCreate(Integer userId, AddBookingRequest request) {
 
         User optionalRenter = findAccount(userId, Role.RENTER.name());
-        User optionalStaff = findAccount(request.getStaffId(), Role.EMPLOYEE.name());
+        User optionalStaff = findAccount(request.getEmployeeId(), Role.EMPLOYEE.name());
         JobUnit jobUnit = findJobUnit(request.getJobUnitId());
 
         Booking booking = modelMapper.map(request, Booking.class);
         booking.setRenter(optionalRenter);
-        booking.setStaff(optionalStaff);
+        booking.setEmployee(optionalStaff);
         booking.setJobUnit(jobUnit);
         booking.setOrderDate(Utils.getDateTimeNow());
         booking.setRequestCount(1);

@@ -18,6 +18,6 @@ public interface ReportRepository extends JpaRepository<Report, Integer> {
     @Query("SELECT report FROM Report report WHERE report.booking.renter.userId = ?1")
     Page<Report> finAllReportAsRenter(Integer userId, Pageable pageable);
 
-    @Query("SELECT report FROM Report report WHERE report.booking.staff.userId = ?1")
+    @Query("SELECT report FROM Report report WHERE report.booking.employee.userId = ?1")
     Page<Report> finAllReportAsStaff(Integer userId, Pageable pageable);
 }
