@@ -1,12 +1,13 @@
 package iclean.code.function.jobapplication.service.impl;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import iclean.code.data.domain.JobApplication;
 import iclean.code.data.domain.RegisterEmployee;
 import iclean.code.data.dto.common.ResponseObject;
 import iclean.code.data.dto.request.jobapplication.CreateJobApplicationRequestDTO;
-import iclean.code.data.dto.request.jobapplication.GetJobApplicationRequestDTO;
 import iclean.code.data.dto.request.jobapplication.UpdateJobApplicationRequestDTO;
-import iclean.code.data.dto.response.others.CMTApiResponse;
+import iclean.code.data.dto.response.others.CMTBackResponse;
+import iclean.code.data.dto.response.others.CMTFrontResponse;
 import iclean.code.data.repository.JobApplicationRepository;
 import iclean.code.data.repository.RegisterEmployeeRepository;
 import iclean.code.exception.NotFoundException;
@@ -20,7 +21,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
@@ -89,11 +89,82 @@ public class JobApplicationServiceImpl implements JobApplicationService {
                                                                MultipartFile avatar,
                                                                List<MultipartFile> others) {
         try {
-            String imgLink = storageService.uploadFile(avatar);
+            String imgAvatarLink = storageService.uploadFile(avatar);
             JobApplication jobApplication = new JobApplication();
-            String frontResponse = externalApiService.scanNationId(frontIdCard).getBody();
-            String backResponse = externalApiService.scanNationId(backIdCard).getBody();
-            jobApplication.setJobImgLink(imgLink);
+//            String frontResponse = externalApiService.scanNationId(frontIdCard);
+            String frontResponse = "{\n" +
+                    "    \"errorCode\": 0,\n" +
+                    "    \"errorMessage\": \"\",\n" +
+                    "    \"data\": [\n" +
+                    "        {\n" +
+                    "            \"id\": \"075201010458\",\n" +
+                    "            \"id_prob\": \"98.31\",\n" +
+                    "            \"name\": \"NGUYỄN PHƯƠNG NHẬT LINH\",\n" +
+                    "            \"name_prob\": \"99.73\",\n" +
+                    "            \"dob\": \"18/11/2001\",\n" +
+                    "            \"dob_prob\": \"99.47\",\n" +
+                    "            \"sex\": \"NAM\",\n" +
+                    "            \"sex_prob\": \"99.15\",\n" +
+                    "            \"nationality\": \"VIỆT NAM\",\n" +
+                    "            \"nationality_prob\": \"98.29\",\n" +
+                    "            \"home\": \"NHẬT TÂN, KIM BẢNG, HÀ NAM\",\n" +
+                    "            \"home_prob\": \"99.22\",\n" +
+                    "            \"address\": \"TỔ 12 ẤP 1, VĨNH TÂN, VĨNH CỬU, ĐỒNG NAI\",\n" +
+                    "            \"address_prob\": \"98.49\",\n" +
+                    "            \"doe\": \"18/11/2026\",\n" +
+                    "            \"doe_prob\": \"99.17\",\n" +
+                    "            \"overall_score\": \"99.46\",\n" +
+                    "            \"address_entities\": {\n" +
+                    "                \"province\": \"ĐỒNG NAI\",\n" +
+                    "                \"district\": \"VĨNH CỬU\",\n" +
+                    "                \"ward\": \"VĨNH TÂN\",\n" +
+                    "                \"street\": \"TỔ 12 ẤP 1\"\n" +
+                    "            },\n" +
+                    "            \"type_new\": \"cccd_chip_front\",\n" +
+                    "            \"type\": \"chip_front\"\n" +
+                    "        }\n" +
+                    "    ]\n" +
+                    "}";
+            ObjectMapper objectMapper = new ObjectMapper();
+            CMTFrontResponse cmtFrontResponse = objectMapper.readValue(frontResponse, CMTFrontResponse.class);
+            String backResponse = "{\n" +
+                    "    \"errorCode\": 0,\n" +
+                    "    \"errorMessage\": \"\",\n" +
+                    "    \"data\": [\n" +
+                    "        {\n" +
+                    "            \"features\": \"NỐT RUỒI C:5CM DƯỚI TRƯỚC ĐẦU MÀY PHẢI\",\n" +
+                    "            \"features_prob\": \"98.21\",\n" +
+                    "            \"issue_date\": \"12/08/2021\",\n" +
+                    "            \"issue_date_prob\": \"99.36\",\n" +
+                    "            \"mrz\": [\n" +
+                    "                \"IDVNM2010104589075201010458<<5\",\n" +
+                    "                \"0111182M2611181VNM<<<<<<<<<<<0\",\n" +
+                    "                \"NGUYEN<<PHUONG<NHAT<LINH<<<<<<\"\n" +
+                    "            ],\n" +
+                    "            \"mrz_prob\": \"94.58\",\n" +
+                    "            \"overall_score\": \"99.56\",\n" +
+                    "            \"issue_loc\": \"CỤC CẢNH SÁT QUẢN LÝ HÀNH CHÍNH VỀ TRẬT TỰ XÃ HỘI\",\n" +
+                    "            \"issue_loc_prob\": \"95.9\",\n" +
+                    "            \"type_new\": \"chip_back\",\n" +
+                    "            \"type\": \"chip_back\",\n" +
+                    "            \"mrz_details\": {\n" +
+                    "                \"id\": \"075201010458\",\n" +
+                    "                \"name\": \"NGUYEN PHUONG NHAT LINH\",\n" +
+                    "                \"doe\": \"18/11/2026\",\n" +
+                    "                \"dob\": \"18/11/2001\",\n" +
+                    "                \"nationality\": \"VNM\",\n" +
+                    "                \"sex\": \"M\"\n" +
+                    "            }\n" +
+                    "        }\n" +
+                    "    ]\n" +
+                    "}";
+            CMTBackResponse cmtBackResponse = objectMapper.readValue(backResponse, CMTBackResponse.class);
+
+            RegisterEmployee registerEmployee = new RegisterEmployee();
+            registerEmployee.setPhoneNumber(request.getPhoneNumber());
+            registerEmployee.setNationId(cmtFrontResponse.getData().get(0).getId());
+            registerEmployee.setFullName(cmtFrontResponse.getData().get(0).getName());
+            jobApplication.setJobImgLink(imgAvatarLink);
             jobApplication.setCreateAt(Utils.getDateTimeNow());
 //            jobApplication.setRegisterEmployee(findRegisterEmployee(request.getRegisterEmployeeId()));
 
@@ -102,7 +173,7 @@ public class JobApplicationServiceImpl implements JobApplicationService {
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseObject(HttpStatus.OK.toString(),
                             "Create new Job Application Successful",
-                            jobApplication));
+                            null));
         } catch (Exception e) {
             log.error(e.getMessage());
             if (e instanceof NotFoundException)

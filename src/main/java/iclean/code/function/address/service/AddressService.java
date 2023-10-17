@@ -7,7 +7,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 
 public interface AddressService {
-    ResponseEntity<ResponseObject> getAddresses(Integer userId, Pageable pageable, String search);
+    ResponseEntity<ResponseObject> getAddresses(Integer userId);
 
     ResponseEntity<ResponseObject> getAddress(Integer id, Integer userId);
 

@@ -31,7 +31,9 @@ public class UserPrinciple implements UserDetails {
 
     public static UserPrinciple build(User user) {
         List<SimpleGrantedAuthority> authorities = new ArrayList<>();
-        authorities.add(new SimpleGrantedAuthority(user.getRole().getTitle()));
+        if (user.getRole()!=null) {
+            authorities.add(new SimpleGrantedAuthority(user.getRole().getTitle()));
+        }
         return UserPrinciple.builder()
                 .id(user.getUserId())
                 .isLocked(user.getIsLocked())

@@ -39,21 +39,19 @@ public class AddressServiceImpl implements AddressService {
     private ModelMapper modelMapper;
 
     @Override
-    public ResponseEntity<ResponseObject> getAddresses(Integer userId, Pageable pageable, String search) {
+    public ResponseEntity<ResponseObject> getAddresses(Integer userId) {
         try {
-            Page<Address> addresses = addressRepository.findByUserId(userId, Utils.removeAccentMarksForSearching(search), pageable);
+            List<Address> addresses = addressRepository.findByUserId(userId);
 
             List<GetAddressResponseDto> dtoList = addresses
                     .stream()
                     .map(address -> modelMapper.map(address, GetAddressResponseDto.class))
                     .collect(Collectors.toList());
 
-            PageResponseObject pageResponseObject = Utils.convertToPageResponse(addresses, Collections.singletonList(dtoList));
-
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseObject(HttpStatus.OK.toString(),
                             "Addresses List",
-                            pageResponseObject));
+                            dtoList));
         } catch (Exception e) {
             log.error(e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
