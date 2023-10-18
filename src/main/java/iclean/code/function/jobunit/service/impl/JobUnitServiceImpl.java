@@ -50,8 +50,8 @@ public class JobUnitServiceImpl implements JobUnitService {
     public ResponseEntity<ResponseObject> getJobUnits() {
         try {
             List<JobUnit> jobs = jobUnitRepository.findAll();
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(new ResponseObject(HttpStatus.NOT_FOUND.toString(),
+            return ResponseEntity.status(HttpStatus.OK)
+                    .body(new ResponseObject(HttpStatus.OK.toString(),
                             "All Job", jobs));
         } catch (Exception e) {
             log.error(e.getMessage());
