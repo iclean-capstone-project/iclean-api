@@ -40,8 +40,8 @@ public class TwilioOTPServiceImpl implements TwilioOTPService {
     }
 
     private String generateOTP() {
-        return new DecimalFormat("000000")
-                .format(new Random().nextInt(999999));
+        return new DecimalFormat("0000")
+                .format(new Random().nextInt(9999));
     }
 
     @Override

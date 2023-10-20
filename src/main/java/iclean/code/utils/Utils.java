@@ -8,6 +8,7 @@ import org.springframework.util.ObjectUtils;
 
 import javax.annotation.Nullable;
 import java.text.Normalizer;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -24,10 +25,34 @@ public class Utils {
         return LocalDateTime.now(gmtPlus7Zone);
     }
 
+    public static String convertToTitleCase(String input) {
+        if (input == null || input.isEmpty()) {
+            return input;
+        }
+        input = input.replace("  ", " ");
+        String[] words = input.split("\\s+");
+        StringBuilder result = new StringBuilder();
+
+        for (String word : words) {
+            if (!word.isEmpty()) {
+                result.append(Character.toUpperCase(word.charAt(0)));
+                result.append(word.substring(1).toLowerCase());
+                result.append(" ");
+            }
+        }
+
+        return result.toString().trim();
+    }
+
     public static String getDateTimeNowAsString() {
         ZoneId gmtPlus7Zone = ZoneId.of("GMT+7");
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
         return LocalDateTime.now(gmtPlus7Zone).format(formatter);
+    }
+
+    public static LocalDate convertStringToLocalDateTime(String dataString) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+        return LocalDate.parse(dataString, formatter);
     }
 
     public static String removeSpace(String value) {

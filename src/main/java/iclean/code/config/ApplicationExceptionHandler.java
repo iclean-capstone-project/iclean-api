@@ -10,6 +10,7 @@ import iclean.code.utils.Utils;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.validation.BindException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -103,5 +104,15 @@ public class ApplicationExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString(),
                         "Invalid JSON format", errorMap));
+    }
+
+    @ExceptionHandler(BindException.class)
+    public ResponseEntity<ResponseObject> handleBindException(BindException ex) {
+        String message = "Invalid JSON format: " + ex.getMessage();
+        Map<String, String> errorMap = new HashMap<>();
+        errorMap.put("errorMessage", message);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString(),
+                        message, errorMap));
     }
 }

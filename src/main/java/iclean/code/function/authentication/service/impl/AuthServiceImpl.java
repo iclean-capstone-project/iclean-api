@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseToken;
 import iclean.code.config.JwtUtils;
+import iclean.code.data.domain.Address;
 import iclean.code.data.domain.FcmToken;
 import iclean.code.data.domain.RefreshToken;
 import iclean.code.data.domain.User;
@@ -15,13 +16,17 @@ import iclean.code.data.dto.response.authen.TokenRefreshResponse;
 import iclean.code.data.dto.response.authen.UserInformationDto;
 import iclean.code.data.dto.response.authen.UserPrinciple;
 import iclean.code.data.enumjava.Role;
+import iclean.code.data.repository.AddressRepository;
 import iclean.code.data.repository.FcmTokenRepository;
+import iclean.code.data.repository.RoleRepository;
 import iclean.code.data.repository.UserRepository;
 import iclean.code.exception.NotFoundException;
 import iclean.code.exception.UserNotHavePermissionException;
 import iclean.code.function.authentication.service.AuthService;
 import iclean.code.function.authentication.service.RefreshTokenService;
+import iclean.code.service.StorageService;
 import iclean.code.service.TwilioOTPService;
+import iclean.code.utils.Utils;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.ObjectUtils;
 import org.modelmapper.ModelMapper;
@@ -34,6 +39,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Objects;
 
 @Service
@@ -45,7 +51,13 @@ public class AuthServiceImpl implements AuthService {
     @Autowired
     private UserRepository userRepository;
     @Autowired
+    private RoleRepository roleRepository;
+    @Autowired
     private FcmTokenRepository fcmTokenRepository;
+    @Autowired
+    private AddressRepository addressRepository;
+    @Autowired
+    private StorageService storageService;
     @Autowired
     private TwilioOTPService twilioOTPService;
     @Autowired
@@ -278,6 +290,15 @@ public class AuthServiceImpl implements AuthService {
                 String refreshToken = refreshTokenService.createRefreshToken(userPrinciple.getId()).getToken();
                 User user = userRepository.findUserByPhoneNumber(formMobile.getPhoneNumber());
                 UserInformationDto userInformationDto = modelMapper.map(user, UserInformationDto.class);
+                List<Address> addressList = addressRepository.findByUserIdAnAndIsDefault(user.getUserId());
+                if (!addressList.isEmpty()) {
+                    userInformationDto.setDefaultAddress(addressList.get(0).getDescription());
+                }
+
+                if (user.getRole() != null) {
+                    userInformationDto.setRoleName(user.getRole().getTitle());
+                }
+
                 if (ObjectUtils.anyNull(user.getFullName(), user.getRole(), user.getDateOfBirth(), user.getGender())) {
                     userInformationDto.setIsNewUser(true);
                     return ResponseEntity.status(HttpStatus.OK)
@@ -285,7 +306,6 @@ public class AuthServiceImpl implements AuthService {
                                     new JwtResponse(accessToken, refreshToken, userInformationDto)));
                 }
 
-                userInformationDto.setRoleName(user.getRole().getTitle());
                 return ResponseEntity.status(HttpStatus.OK)
                         .body(new ResponseObject(HttpStatus.OK.toString(), "Login success!",
                                 new JwtResponse(accessToken, refreshToken, userInformationDto)));
@@ -334,19 +354,37 @@ public class AuthServiceImpl implements AuthService {
     public ResponseEntity<ResponseObject> updateInformationFirstLogin(Integer userId, RegisterUserForm form) {
         try {
             User user = findUser(userId);
-
-            if (form.getRole().equals(Role.RENTER)) {
+            if (Objects.nonNull(user.getRole())) {
+                throw new UserNotHavePermissionException();
+            }
+            form.setFullName(Utils.convertToTitleCase(form.getFullName()));
+            if (form.getRole().equalsIgnoreCase(Role.RENTER.name())) {
                 modelMapper.map(form, user);
-
-            } else if (form.getRole().equals(Role.EMPLOYEE)) {
+                user.setRoleId(roleRepository.findByTitle(Role.RENTER.name().toLowerCase()).getRoleId());
+            } else if (form.getRole().equalsIgnoreCase(Role.EMPLOYEE.name())) {
                 modelMapper.map(form, user);
-
+                user.setRoleId(roleRepository.findByTitle(Role.EMPLOYEE.name().toLowerCase()).getRoleId());
+            }
+            user.setDateOfBirth(Utils.convertStringToLocalDateTime(form.getDateOfBirth()));
+            if (Objects.nonNull(form.getFileImage())) {
+                String avatar = storageService.uploadFile(form.getFileImage());
+                user.setAvatar(avatar);
             }
             userRepository.save(user);
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseObject(HttpStatus.OK.toString(),
                             "Update Information Successful", null));
         } catch (Exception e) {
+            if (e instanceof NotFoundException) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new ResponseObject(HttpStatus.NOT_FOUND.toString(),
+                                e.getMessage(), null));
+            }
+            if (e instanceof UserNotHavePermissionException) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(new ResponseObject(HttpStatus.FORBIDDEN.toString(),
+                                e.getMessage(), null));
+            }
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new ResponseObject(HttpStatus.INTERNAL_SERVER_ERROR.toString(),
                             "Something wrong occur.", null));
@@ -440,6 +478,41 @@ public class AuthServiceImpl implements AuthService {
                     .body(new ResponseObject(HttpStatus.INTERNAL_SERVER_ERROR.toString(),
                             "Internal System Error",
                             null));
+        }
+    }
+
+    @Override
+    public ResponseEntity<ResponseObject> updateProfile(Integer userId, UpdateProfileDto updateProfileDto) {
+        try {
+            User user = findUser(userId);
+            if (Objects.nonNull(user.getRole())) {
+                throw new UserNotHavePermissionException();
+            }
+            updateProfileDto.setFullName(Utils.convertToTitleCase(updateProfileDto.getFullName()));
+            modelMapper.map(updateProfileDto, user);
+            user.setDateOfBirth(Utils.convertStringToLocalDateTime(updateProfileDto.getDateOfBirth()));
+            if (Objects.nonNull(updateProfileDto.getFileImage())) {
+                String avatar = storageService.uploadFile(updateProfileDto.getFileImage());
+                user.setAvatar(avatar);
+            }
+            userRepository.save(user);
+            return ResponseEntity.status(HttpStatus.OK)
+                    .body(new ResponseObject(HttpStatus.OK.toString(),
+                            "Update Information Successful", null));
+        } catch (Exception e) {
+            if (e instanceof NotFoundException) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new ResponseObject(HttpStatus.NOT_FOUND.toString(),
+                                e.getMessage(), null));
+            }
+            if (e instanceof UserNotHavePermissionException) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(new ResponseObject(HttpStatus.FORBIDDEN.toString(),
+                                e.getMessage(), null));
+            }
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ResponseObject(HttpStatus.INTERNAL_SERVER_ERROR.toString(),
+                            "Something wrong occur.", null));
         }
     }
 }
