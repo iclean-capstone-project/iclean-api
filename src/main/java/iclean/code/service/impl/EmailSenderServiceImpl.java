@@ -27,7 +27,7 @@ public class EmailSenderServiceImpl implements EmailSenderService {
     @Autowired
     private TemplateEngine templateEngine;
 
-    @Value("classpath:email-template.html")
+    @Value("classpath:template")
     private Resource resource;
 
     @Override

@@ -2,6 +2,8 @@ package iclean.code.data.dto.response.authen;
 
 import lombok.Data;
 
+import java.time.LocalDateTime;
+
 @Data
 public class UserInformationDto {
 
@@ -11,7 +13,9 @@ public class UserInformationDto {
 
     private String roleName;
 
-    private String dateOfBirth;
+    private LocalDateTime dateOfBirth;
+
+    private String defaultAddress;
 
     private String gender;
 

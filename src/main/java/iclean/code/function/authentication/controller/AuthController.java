@@ -3,23 +3,33 @@ package iclean.code.function.authentication.controller;
 import iclean.code.config.JwtUtils;
 import iclean.code.data.dto.common.ResponseObject;
 import iclean.code.data.dto.request.authen.*;
+import iclean.code.data.enumjava.Role;
 import iclean.code.function.authentication.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.hibernate.sql.Update;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.validation.Valid;
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Pattern;
 
 @RestController
 @RequestMapping("api/v1/auth")
 @Tag(name = "Authentication API")
+@Validated
 public class AuthController {
     @Autowired
     private AuthService authService;
@@ -83,17 +93,51 @@ public class AuthController {
     public ResponseEntity<ResponseObject> verifyPhoneNumber(@RequestBody @Valid LoginFormMobile formMobile) {
         return authService.loginUsingPhoneNumberAndOTP(formMobile);
     }
-    @PostMapping(value = "/update-information", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @Operation(summary = "Update the information after login", description = "Return status update successful")
+    @PostMapping(value = "/register", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "Register the information after login", description = "Return status update successful")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "400", description = "Internal System Error - Contact the admin"),
+            @ApiResponse(responseCode = "403", description = "Internal System Error - Contact the admin"),
+            @ApiResponse(responseCode = "200", description = "Register Successful"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - Need access_token"),
+            @ApiResponse(responseCode = "400", description = "Bad request - Missing some field required or not match pattern")
+    })
+    public ResponseEntity<ResponseObject> updateInformation(@RequestPart(value = "fullName")
+                                                            @NotNull(message = "Full name là trường bắt buộc")
+                                                            @NotBlank(message = "Full name không được để trống")
+                                                            String fullName,
+                                                            @RequestPart(value = "dateOfBirth")
+                                                            @Pattern(regexp = "^([0]?[1-9]|[1|2][0-9]|[3][0|1])[./-]([0]?[1-9]|[1][0-2])[./-]([0-9]{4}|[0-9]{2})$", message = "Invalid date Of Birth")
+                                                            @NotNull(message = "Date Of Birth are required")
+                                                            String dateOfBirth,
+                                                            @RequestPart(value = "role")
+                                                            @Pattern(regexp = "(?i)(renter|employee)", message = "Role are invalid")
+                                                            String role,
+                                                            @RequestPart(value = "fileImage", required = false) MultipartFile file,
+                                                            Authentication authentication) {
+        return authService.updateInformationFirstLogin(JwtUtils.decodeToAccountId(authentication),
+                new RegisterUserForm(fullName, role, dateOfBirth, file));
+    }
+
+    @PutMapping(value = "/profile", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "Update the information", description = "Return status update successful")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "403", description = "Internal System Error - Contact the admin"),
             @ApiResponse(responseCode = "200", description = "Update Successful"),
             @ApiResponse(responseCode = "401", description = "Unauthorized - Need access_token"),
             @ApiResponse(responseCode = "400", description = "Bad request - Missing some field required or not match pattern")
     })
-    public ResponseEntity<ResponseObject> updateInformation(@RequestAttribute @Valid RegisterUserForm form,
+    public ResponseEntity<ResponseObject> updateProfile(@RequestPart(value = "fullName")
+                                                            @NotNull(message = "Full name là trường bắt buộc")
+                                                            @NotBlank(message = "Full name không được để trống")
+                                                            String fullName,
+                                                            @RequestPart(value = "dateOfBirth")
+                                                            @Pattern(regexp = "^([0]?[1-9]|[1|2][0-9]|[3][0|1])[./-]([0]?[1-9]|[1][0-2])[./-]([0-9]{4}|[0-9]{2})$", message = "Invalid date Of Birth")
+                                                            @NotNull(message = "Date Of Birth are required")
+                                                            String dateOfBirth,
+                                                            @RequestPart(value = "fileImage", required = false) MultipartFile file,
                                                             Authentication authentication) {
-        return authService.updateInformationFirstLogin(JwtUtils.decodeToAccountId(authentication), form);
+        return authService.updateProfile(JwtUtils.decodeToAccountId(authentication),
+                new UpdateProfileDto(fullName, dateOfBirth, file));
     }
 
     @PostMapping("/fcm-token")

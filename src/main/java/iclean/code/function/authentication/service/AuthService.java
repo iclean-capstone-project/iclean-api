@@ -22,4 +22,6 @@ public interface AuthService {
     ResponseEntity<ResponseObject> logout(LogoutTokenDto dto, Integer userId);
 
     ResponseEntity<ResponseObject> getNewAccessToken(TokenRefreshRequest form);
+
+    ResponseEntity<ResponseObject> updateProfile(Integer userId, UpdateProfileDto updateProfileDto);
 }
