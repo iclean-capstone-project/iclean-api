@@ -26,6 +26,8 @@ public interface BookingRepository extends JpaRepository<Booking, Integer> {
                                                              String status,
                                                              Integer managerId,
                                                              Pageable pageable);
+    @Query("SELECT booking FROM Booking booking")
+    Page<Booking> findAllBooking(Pageable pageable);
 
     @Query("SELECT booking FROM Booking booking WHERE booking.renter.userId = ?1")
     Page<Booking> findByRenterId(Integer userId, Pageable pageable);

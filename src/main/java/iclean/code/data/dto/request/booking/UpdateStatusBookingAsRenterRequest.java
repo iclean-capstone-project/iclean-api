@@ -13,11 +13,15 @@ import javax.annotation.Nullable;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class UpdateStatusBookingRequest {
+public class UpdateStatusBookingAsRenterRequest {
 
-    @Range(min = 1, max = 9, message = "bookingStatusId Nhập trong khoảng 1-4")
+    @Nullable
+    private Integer empId;
+
+    @Range(min = 1, max = 9, message = "bookingStatusId Nhập trong khoảng 1-9")
     private Integer bookingStatusId;
 
     @Nullable
     private Integer rejectReasonId;
+
 }

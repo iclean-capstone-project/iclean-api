@@ -4,6 +4,7 @@ import iclean.code.config.JwtUtils;
 import iclean.code.data.dto.common.PageRequestBuilder;
 import iclean.code.data.dto.common.ResponseObject;
 import iclean.code.data.dto.request.booking.AddBookingRequest;
+import iclean.code.data.dto.request.booking.UpdateStatusBookingAsRenterRequest;
 import iclean.code.data.dto.request.booking.UpdateStatusBookingRequest;
 import iclean.code.data.dto.response.address.GetAddressResponseDto;
 import iclean.code.data.dto.response.booking.GetBookingResponse;
@@ -40,9 +41,9 @@ public class BookingController {
             @ApiResponse(responseCode = "403", description = "Forbidden - You don't have permission to access on this api"),
             @ApiResponse(responseCode = "400", description = "Bad request - Missing some field required")
     })
-    @PreAuthorize("hasAnyAuthority('renter', 'employee')")
+    @PreAuthorize("hasAnyAuthority('renter', 'employee', 'manager')")
     public ResponseEntity<ResponseObject> getAllBooking(
-            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "page", defaultValue = "1") int page,
             @RequestParam(name = "size", defaultValue = "10") int size,
             @RequestParam(name = "sort", required = false) @ValidSortFields(value = GetBookingResponse.class) List<String> sortFields,
             Authentication authentication) {
@@ -59,7 +60,7 @@ public class BookingController {
     @Operation(summary = "Get by booking of a user", description = "Return booking information")
     public ResponseEntity<ResponseObject> getBookingByBookingId(
             @PathVariable @Valid int bookingId,
-            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "page", defaultValue = "1") int page,
             @RequestParam(name = "size", defaultValue = "10") int size,
             @RequestParam(name = "sort", required = false) @ValidSortFields(value = GetBookingResponseDetail.class) List<String> sortFields,
             Authentication authentication) {
@@ -88,7 +89,7 @@ public class BookingController {
 
     //PENDING
     @PutMapping(value = "status/{bookingId}")
-    @PreAuthorize("hasAnyAuthority('renter', 'employee', 'manager')")
+    @PreAuthorize("hasAnyAuthority('employee', 'manager')")
     @Operation(summary = "Update status booking of a user", description = "Return message fail or successful")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Update status booking Successful"),
@@ -100,7 +101,22 @@ public class BookingController {
             @PathVariable("bookingId") int bookingId,
             @RequestBody @Valid UpdateStatusBookingRequest request,
             Authentication authentication) {
-        return bookingService.updateStatusBooking(bookingId,JwtUtils.decodeToAccountId(authentication), request);
+        return bookingService.updateStatusBooking(bookingId, JwtUtils.decodeToAccountId(authentication), request);
     }
-    ///PENDING
+
+    @PutMapping(value = "status/renter/{bookingId}")
+    @PreAuthorize("hasAnyAuthority('renter')")
+    @Operation(summary = "Renter Update status booking", description = "Return message fail or successful")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Update status booking Successful"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - Login please"),
+            @ApiResponse(responseCode = "403", description = "Forbidden - You don't have permission to access on this api"),
+            @ApiResponse(responseCode = "400", description = "Bad request - Missing some field required")
+    })
+    public ResponseEntity<ResponseObject> updateStatusBookingAsRenter(
+            @PathVariable("bookingId") int bookingId,
+            @RequestBody @Valid UpdateStatusBookingAsRenterRequest request,
+            Authentication authentication) {
+        return bookingService.updateStatusBookingAsRenter(bookingId, JwtUtils.decodeToAccountId(authentication), request);
+    }
 }

@@ -40,7 +40,7 @@ public class MoneyPointController {
     })
     @PreAuthorize("hasAnyAuthority('admin', 'manager')")
     public ResponseEntity<ResponseObject> getAllMoneyPoint(
-            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "page", defaultValue = "1") int page,
             @RequestParam(name = "size", defaultValue = "10") int size,
             @RequestParam(name = "sort", required = false) @ValidSortFields(value = GetAddressResponseDto.class) List<String> sortFields) {
         Pageable pageable = PageRequestBuilder.buildPageRequest(page, size);
@@ -61,7 +61,7 @@ public class MoneyPointController {
     })
     @PreAuthorize("hasAnyAuthority('renter')")
     public ResponseEntity<ResponseObject> getMoneyPointByRenter(
-            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "page", defaultValue = "1") int page,
             @RequestParam(name = "size", defaultValue = "10") int size,
             @RequestParam(name = "sort", required = false) @ValidSortFields(value = GetAddressResponseDto.class) List<String> sortFields,
             Authentication authentication) {
