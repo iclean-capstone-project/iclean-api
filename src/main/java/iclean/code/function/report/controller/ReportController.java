@@ -60,7 +60,7 @@ public class ReportController {
             @ApiResponse(responseCode = "400", description = "Bad request - Missing some field required")
     })
     public ResponseEntity<ResponseObject> getAllReportAsRenter(
-            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "page", defaultValue = "1") int page,
             @RequestParam(name = "size", defaultValue = "10") int size,
             @RequestParam(name = "sort", required = false)  List<String> sortFields,
             Authentication authentication) {

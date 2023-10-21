@@ -33,17 +33,13 @@ public class AddBookingRequest {
     @NotNull(message = "Vị trí không được để trống")
     private Double workHour;
 
-    @Range(min = 1, max = 8, message = "Giờ làm thực tế không được lớn hơn 8 tiếng")
-    @NotNull(message = "Vị trí không được để trống")
-    private Double workHourActual;
-
     @Range(min = 1000, message = "Giá tiền phải lớn hơn 1000 VNĐ")
     @NotNull(message = "Vị trí không được để trống")
     @RegEx
     private Double totalPrice;
 
-    @Range(min = 1, message = "Mã nhân viên phải lớn hơn 1")
-    private Integer employeeId;
+//    @Range(min = 1, message = "Mã nhân viên phải lớn hơn 1")
+//    private Integer employeeId;
 
     @Range(min = 1, message = "Mã công việc phải lớn hơn 1")
     private Integer jobUnitId;

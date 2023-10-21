@@ -55,9 +55,9 @@ public class ReportServiceImpl implements ReportService {
     public ResponseEntity<ResponseObject> getAllReport(Integer userId, Pageable pageable) {
         Page<Report> reportPageable = null;
         User user = findUser(userId);
-        if(Objects.equals(Role.RENTER.toString(),user.getRole().getTitle())){
+        if(Objects.equals(Role.RENTER.toString(),user.getRole().getTitle().toUpperCase())){
             reportPageable = reportRepository.finAllReportAsRenter(userId, pageable);
-        } else if(Objects.equals(Role.EMPLOYEE.toString(),user.getRole().getTitle())){
+        } else if(Objects.equals(Role.EMPLOYEE.toString(),user.getRole().getTitle().toUpperCase())){
             reportPageable = reportRepository.finAllReportAsStaff(userId, pageable);
         } else {
             reportPageable = reportRepository.findAllAsAdminOrManager(pageable);
@@ -73,14 +73,14 @@ public class ReportServiceImpl implements ReportService {
         try {
             User user = findUser(userId);
             Report report = findReport(reportId);
-            if(Objects.equals(Role.RENTER.toString(),user.getRole().getTitle())){
+            if(Objects.equals(Role.RENTER.toString(),user.getRole().getTitle().toUpperCase())){
                 if(!Objects.equals(user.getUserId(), report.getBooking().getRenter().getUserId())){
                     throw new UserNotHavePermissionException();
                 }
                 return ResponseEntity.status(HttpStatus.OK)
                         .body(new ResponseObject(HttpStatus.OK.toString()
                                 , "Report", reportRepository.findById(reportId)));
-            } else if (Objects.equals(Role.EMPLOYEE.toString(),user.getRole().getTitle())) {
+            } else if (Objects.equals(Role.EMPLOYEE.toString(),user.getRole().getTitle().toUpperCase())) {
                 if(!Objects.equals(user.getUserId(), report.getBooking().getEmployee().getUserId())){
                     throw new UserNotHavePermissionException();
                 }
