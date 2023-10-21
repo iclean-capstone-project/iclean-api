@@ -2,6 +2,7 @@ package iclean.code.function.authentication.service;
 
 import iclean.code.data.dto.common.ResponseObject;
 import iclean.code.data.dto.request.authen.*;
+import iclean.code.data.dto.request.profile.UpdateProfileDto;
 import org.springframework.http.ResponseEntity;
 
 public interface AuthService {
@@ -23,5 +24,4 @@ public interface AuthService {
 
     ResponseEntity<ResponseObject> getNewAccessToken(TokenRefreshRequest form);
 
-    ResponseEntity<ResponseObject> updateProfile(Integer userId, UpdateProfileDto updateProfileDto);
 }

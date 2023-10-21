@@ -1,4 +1,4 @@
-package iclean.code.data.dto.request.authen;
+package iclean.code.data.dto.request.profile;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

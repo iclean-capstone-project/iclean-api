@@ -10,6 +10,7 @@ import iclean.code.data.domain.RefreshToken;
 import iclean.code.data.domain.User;
 import iclean.code.data.dto.common.ResponseObject;
 import iclean.code.data.dto.request.authen.*;
+import iclean.code.data.dto.request.profile.UpdateProfileDto;
 import iclean.code.data.dto.request.security.OtpAuthentication;
 import iclean.code.data.dto.response.authen.JwtResponse;
 import iclean.code.data.dto.response.authen.TokenRefreshResponse;
@@ -423,7 +424,7 @@ public class AuthServiceImpl implements AuthService {
             FcmToken fcmToken = findFcmToken(dto.getFcmToken());
             if (!Objects.equals(fcmToken.getUser().getUserId(), userId))
                 throw new UserNotHavePermissionException();
-
+ 
             refreshTokenService.deleteByRefreshToken(dto.getRefreshToken());
             fcmTokenRepository.delete(fcmToken);
 
@@ -478,41 +479,6 @@ public class AuthServiceImpl implements AuthService {
                     .body(new ResponseObject(HttpStatus.INTERNAL_SERVER_ERROR.toString(),
                             "Internal System Error",
                             null));
-        }
-    }
-
-    @Override
-    public ResponseEntity<ResponseObject> updateProfile(Integer userId, UpdateProfileDto updateProfileDto) {
-        try {
-            User user = findUser(userId);
-            if (Objects.nonNull(user.getRole())) {
-                throw new UserNotHavePermissionException();
-            }
-            updateProfileDto.setFullName(Utils.convertToTitleCase(updateProfileDto.getFullName()));
-            modelMapper.map(updateProfileDto, user);
-            user.setDateOfBirth(Utils.convertStringToLocalDateTime(updateProfileDto.getDateOfBirth()));
-            if (Objects.nonNull(updateProfileDto.getFileImage())) {
-                String avatar = storageService.uploadFile(updateProfileDto.getFileImage());
-                user.setAvatar(avatar);
-            }
-            userRepository.save(user);
-            return ResponseEntity.status(HttpStatus.OK)
-                    .body(new ResponseObject(HttpStatus.OK.toString(),
-                            "Update Information Successful", null));
-        } catch (Exception e) {
-            if (e instanceof NotFoundException) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(new ResponseObject(HttpStatus.NOT_FOUND.toString(),
-                                e.getMessage(), null));
-            }
-            if (e instanceof UserNotHavePermissionException) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                        .body(new ResponseObject(HttpStatus.FORBIDDEN.toString(),
-                                e.getMessage(), null));
-            }
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new ResponseObject(HttpStatus.INTERNAL_SERVER_ERROR.toString(),
-                            "Something wrong occur.", null));
         }
     }
 }

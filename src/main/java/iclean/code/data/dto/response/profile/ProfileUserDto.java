@@ -1,23 +1,18 @@
-package iclean.code.data.dto.response.authen;
+package iclean.code.data.dto.response.profile;
 
 import lombok.Data;
 
 import java.time.LocalDateTime;
 
 @Data
-public class UserInformationDto {
-
+public class ProfileUserDto {
     private String fullName;
 
     private String phoneNumber;
-
-    private String roleName;
 
     private LocalDateTime dateOfBirth;
 
     private String defaultAddress;
 
     private String avatar;
-
-    private Boolean isNewUser = false;
 }
