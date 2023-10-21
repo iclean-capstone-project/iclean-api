@@ -1,6 +1,5 @@
 package iclean.code.data.repository;
 
-import iclean.code.data.domain.MoneyPoint;
 import iclean.code.data.domain.Notification;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

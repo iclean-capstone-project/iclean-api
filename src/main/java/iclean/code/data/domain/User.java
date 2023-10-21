@@ -85,9 +85,4 @@ public class User {
     @JsonIgnoreProperties("user")
     @JsonIgnore
     private List<MoneyRequest> moneyRequests;
-
-    @OneToOne(mappedBy = "user")
-    @JsonIgnoreProperties("user")
-    @JsonIgnore
-    private MoneyPoint moneyPoints;
 }
