@@ -20,4 +20,7 @@ public interface BookingService {
     ResponseEntity<ResponseObject> updateStatusBookingAsRenter(Integer bookingId, Integer userId, UpdateStatusBookingAsRenterRequest bookingRequest);
 
     ResponseEntity<ResponseObject> deleteBooking(int bookingId);
+
+    ResponseEntity<ResponseObject> getBookingHistory(int userId, Pageable pageable);
+
 }
