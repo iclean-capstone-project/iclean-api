@@ -24,4 +24,5 @@ public interface AuthService {
 
     ResponseEntity<ResponseObject> getNewAccessToken(TokenRefreshRequest form);
 
+    ResponseEntity<ResponseObject> updateProfile(Integer userId, UpdateProfileDto dto);
 }
