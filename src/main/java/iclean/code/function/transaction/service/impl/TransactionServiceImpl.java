@@ -12,7 +12,7 @@ import iclean.code.data.enumjava.TransactionStatus;
 import iclean.code.data.enumjava.TransactionType;
 import iclean.code.data.enumjava.WalletType;
 import iclean.code.data.repository.UserRepository;
-import iclean.code.data.repository.WalletHistoryRepository;
+import iclean.code.data.repository.TransactionRepository;
 import iclean.code.data.repository.WalletRepository;
 import iclean.code.exception.BadRequestException;
 import iclean.code.exception.NotFoundException;
@@ -34,7 +34,7 @@ import java.util.stream.Collectors;
 @Log4j2
 public class TransactionServiceImpl implements TransactionService {
     @Autowired
-    private WalletHistoryRepository walletHistoryRepository;
+    private TransactionRepository transactionRepository;
     @Autowired
     private UserRepository userRepository;
     @Autowired
@@ -44,7 +44,7 @@ public class TransactionServiceImpl implements TransactionService {
     @Override
     public ResponseEntity<ResponseObject> getTransactions(Integer userId) {
         try {
-            List<Transaction> transactions = walletHistoryRepository.findByUserUserId(userId);
+            List<Transaction> transactions = transactionRepository.findByUserUserId(userId);
             List<GetTransactionResponseDto> responses = transactions
                     .stream()
                     .map(transaction -> modelMapper.map(transaction, GetTransactionResponseDto.class))
@@ -110,13 +110,46 @@ public class TransactionServiceImpl implements TransactionService {
     @Override
     public ResponseEntity<ResponseObject> createTransaction(TransactionRequestDto request) {
         try {
-            Transaction transaction = mappingForCreate(request);
+            boolean check = createTransactionService(request);
+
+            if (check) {
+                return ResponseEntity.status(HttpStatus.OK)
+                        .body(new ResponseObject(HttpStatus.OK.toString(),
+                                "Create new Transaction Successful",
+                                null));
+            }
+            return ResponseEntity.status(HttpStatus.OK)
+                    .body(new ResponseObject(HttpStatus.OK.toString(),
+                            "Create new Transaction Fail",
+                            null));
+
+        } catch (Exception e) {
+            log.error(e.getMessage());
+            if (e instanceof BadRequestException) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString(),
+                                e.getMessage(),
+                                null));
+            }
+            if (e instanceof NotFoundException)
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new ResponseObject(HttpStatus.NOT_FOUND.toString(),
+                                e.getMessage(),
+                                null));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ResponseObject(HttpStatus.INTERNAL_SERVER_ERROR.toString(),
+                            "Internal System Error",
+                            null));
+        }
+    }
+
+    @Override
+    public boolean createTransactionService(TransactionRequestDto request) throws BadRequestException {
             User user = findUserById(request.getUserId());
             if (!Objects.equals(user.getRole().getTitle().toUpperCase(), Role.EMPLOYEE.name()) &&
                     !user.getRole().getTitle().toUpperCase().equals(Role.RENTER.name())) {
                 throw new BadRequestException("This user cannot have this information");
             }
-            transaction.setUser(user);
             Wallet wallet = walletRepository.getWalletByUserIdAndType(request.getUserId(),
                     WalletType.valueOf(request.getWalletType().toUpperCase()));
             if (Objects.isNull(wallet)) {
@@ -141,31 +174,12 @@ public class TransactionServiceImpl implements TransactionService {
                     wallet.setBalance(wallet.getBalance() - request.getBalance());
                     break;
             }
-            walletRepository.save(wallet);
-            walletHistoryRepository.save(transaction);
-
-            return ResponseEntity.status(HttpStatus.OK)
-                    .body(new ResponseObject(HttpStatus.OK.toString(),
-                            "Create new Transaction Successful",
-                            null));
-        } catch (Exception e) {
-            log.error(e.getMessage());
-            if (e instanceof BadRequestException) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString(),
-                                e.getMessage(),
-                                null));
-            }
-            if (e instanceof NotFoundException)
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(new ResponseObject(HttpStatus.NOT_FOUND.toString(),
-                                e.getMessage(),
-                                null));
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new ResponseObject(HttpStatus.INTERNAL_SERVER_ERROR.toString(),
-                            "Internal System Error",
-                            null));
-        }
+            Wallet walletUpdate = walletRepository.save(wallet);
+        Transaction transaction = mappingForCreate(request);
+        transaction.setUser(user);
+        transaction.setWallet(walletUpdate);
+        transactionRepository.save(transaction);
+            return true;
     }
 
     private User findUserById(Integer id) {
@@ -175,7 +189,7 @@ public class TransactionServiceImpl implements TransactionService {
     }
 
     private Transaction findWalletHistoryById(Integer id) {
-        return walletHistoryRepository
+        return transactionRepository
                 .findById(id)
                 .orElseThrow(() -> new NotFoundException(String.format("Wallet History ID: %s is not exist", id)));
     }

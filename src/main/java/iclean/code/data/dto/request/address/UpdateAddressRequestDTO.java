@@ -24,9 +24,6 @@ public class UpdateAddressRequestDTO {
     @Schema(example = "903, đường Võ Văn Ngân, Thành phố Thủ Đức, Thành phố Hồ Chí Minh")
     private String description;
 
-    @Schema(example = "Võ Văn Ngân")
-    private String street;
-
     @Schema(example = "Nhà riêng")
     private String locationName;
 

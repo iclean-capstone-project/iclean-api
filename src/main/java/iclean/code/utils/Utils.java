@@ -10,10 +10,13 @@ import javax.annotation.Nullable;
 import java.text.Normalizer;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class Utils {
     public static boolean isNullOrEmpty(String input) {
@@ -50,12 +53,27 @@ public class Utils {
         return LocalDateTime.now(gmtPlus7Zone).format(formatter);
     }
 
+    public static String getLocalDateAsString(LocalDate localDate) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+        if (Objects.isNull(localDate)) {
+            return null;
+        }
+        return localDate.format(formatter);
+    }
+
     public static LocalDate convertStringToLocalDateTime(String dataString) {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
         return LocalDate.parse(dataString, formatter);
     }
 
+    public static Double minusLocalTime(LocalTime start, LocalTime end) {
+        double numberHours = start.until(end, ChronoUnit.HOURS);
+        double numberMinutes = start.until(end, ChronoUnit.MINUTES);
+        return numberHours + numberMinutes / 60;
+    }
+
     public static String removeSpace(String value) {
+        if (isNullOrEmpty(value)) return null;
         return value.replace(" ", "");
     }
 

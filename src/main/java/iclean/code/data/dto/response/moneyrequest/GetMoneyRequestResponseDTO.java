@@ -1,12 +1,22 @@
 package iclean.code.data.dto.response.moneyrequest;
 
-import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.NoArgsConstructor;
+
+import java.time.LocalDateTime;
 
 @Data
-@AllArgsConstructor
-@NoArgsConstructor
 public class GetMoneyRequestResponseDTO {
-    private Integer userId;
+
+    private Integer requestId;
+
+    private LocalDateTime requestDate;
+
+    private Double balance;
+
+    private String requestStatus;
+
+    private LocalDateTime processDate;
+
+    private String requestType;
+
 }

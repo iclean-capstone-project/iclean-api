@@ -2,6 +2,8 @@ package iclean.code.data.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import iclean.code.data.enumjava.MoneyRequestEnum;
+import iclean.code.data.enumjava.MoneyRequestStatusEnum;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -24,20 +26,23 @@ public class MoneyRequest {
     @Column(name = "balance")
     private Double balance;
 
+    @Column(name = "otp_token")
+    private String otpToken;
+
+    @Column(name = "expired_token")
+    private LocalDateTime expiredTime;
+
     @Column(name = "request_status")
-    private String requestStatus;
+    private MoneyRequestStatusEnum requestStatus;
 
     @Column(name = "process_date")
     private LocalDateTime processDate;
 
-    @Column(name = "is_withdrawal")
-    private Boolean isWithDrawl = false;
-
-    @Column(name = "user_id")
-    private Integer userId;
+    @Column(name = "request_type")
+    private MoneyRequestEnum requestType;
 
     @ManyToOne
     @JsonIgnore
-    @JoinColumn(name = "employee_id", insertable = false, updatable = false)
+    @JoinColumn(name = "user_id")
     private User user;
 }

@@ -8,6 +8,7 @@ import iclean.code.data.repository.SystemParameterRepository;
 import iclean.code.service.TwilioOTPService;
 import iclean.code.utils.Utils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -21,6 +22,9 @@ public class TwilioOTPServiceImpl implements TwilioOTPService {
     @Autowired
     private TwilioConfig twilioConfig;
 
+    @Value("${iclean.app.default.otp.message}")
+    private String defaultMessage;
+
     @Autowired
     private SystemParameterRepository systemParameterRepository;
 
@@ -32,10 +36,10 @@ public class TwilioOTPServiceImpl implements TwilioOTPService {
                     .getParameterValue();
 
         } catch (EntityNotFoundException e) {
-            return twilioConfig.getDefaultMessage();
-        } catch (Exception ignored) {
-            ignored.printStackTrace();
-            return null;
+            return defaultMessage;
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            return "%s";
         }
     }
 

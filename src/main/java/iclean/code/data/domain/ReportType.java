@@ -18,8 +18,8 @@ public class ReportType {
     @Column(name = "report_type_id")
     private int reportTypeId;
 
-    @Column(name= "report_detail")
-    private String reportDetail;
+    @Column(name= "report_name")
+    private String reportName;
 
     @OneToMany(mappedBy = "reportType")
     @JsonIgnoreProperties("reportType")

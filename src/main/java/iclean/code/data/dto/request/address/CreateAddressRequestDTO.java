@@ -1,9 +1,7 @@
 package iclean.code.data.dto.request.address;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 import javax.validation.constraints.*;
 
@@ -23,9 +21,6 @@ public class CreateAddressRequestDTO {
 
     @Schema(example = "903, đường Võ Văn Ngân, Thành phố Thủ Đức, Thành phố Hồ Chí Minh")
     private String description;
-
-    @Schema(example = "Võ Văn Ngân")
-    private String street;
 
     @Schema(example = "Nhà riêng")
     private String locationName;

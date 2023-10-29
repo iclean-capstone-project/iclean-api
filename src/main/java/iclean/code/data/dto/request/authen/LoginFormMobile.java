@@ -22,7 +22,7 @@ public class LoginFormMobile {
 
     @NotNull(message = "OTP là bắt buộc")
     @NotBlank(message = "OTP không được để trống")
-    @Pattern(regexp = "^\\d{6}$", message = "OTP sai định dạng")
-    @Schema(example = "012345")
+    @Pattern(regexp = "^\\d{4}$", message = "OTP sai định dạng")
+    @Schema(example = "1234")
     private String otpToken;
 }

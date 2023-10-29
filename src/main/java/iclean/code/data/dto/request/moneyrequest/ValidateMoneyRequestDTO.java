@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class UpdateMoneyRequestRequestDTO {
-    private Integer userId;
+public class ValidateMoneyRequestDTO {
+    private Integer requestId;
+    private String otpToken;
 }

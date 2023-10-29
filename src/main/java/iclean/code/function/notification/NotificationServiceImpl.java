@@ -2,12 +2,9 @@ package iclean.code.function.notification;
 
 import iclean.code.data.domain.*;
 import iclean.code.data.dto.common.ResponseObject;
-import iclean.code.data.dto.notification.GetNotificationDTO;
+import iclean.code.data.dto.request.notification.GetNotificationDTO;
 import iclean.code.data.dto.request.notification.AddNotificationRequest;
 import iclean.code.data.dto.response.PageResponseObject;
-import iclean.code.data.dto.response.booking.GetBookingResponse;
-import iclean.code.data.dto.response.imgbooking.GetImgBookingDTO;
-import iclean.code.data.enumjava.Role;
 import iclean.code.data.enumjava.StatusNotification;
 import iclean.code.data.repository.NotificationRepository;
 import iclean.code.data.repository.UserRepository;
@@ -23,10 +20,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -86,29 +81,6 @@ public class NotificationServiceImpl implements NotificationService {
                             , "Notification", pageResponseObject));
 
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString()
-                            , "Something wrong occur!", null));
-        }
-    }
-
-    @Override
-    public ResponseEntity<ResponseObject> addNotification(AddNotificationRequest request) {
-        try {
-
-            Notification notification = mappingNotificationForCreate(request);
-            notificationRepository.save(notification);
-
-            return ResponseEntity.status(HttpStatus.OK)
-                    .body(new ResponseObject(HttpStatus.OK.toString()
-                            , "Create Notification Successfully!", null));
-
-        } catch (Exception e) {
-            if (e instanceof NotFoundException) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(new ResponseObject(HttpStatus.NOT_FOUND.toString()
-                                , "Something wrong occur!", e.getMessage()));
-            }
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString()
                             , "Something wrong occur!", null));

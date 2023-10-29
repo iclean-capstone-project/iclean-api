@@ -2,7 +2,7 @@ package iclean.code.function.reporttype.service.impl;
 
 import iclean.code.data.domain.ReportType;
 import iclean.code.data.dto.common.ResponseObject;
-import iclean.code.data.dto.reporttype.GetReportTypeDTO;
+import iclean.code.data.dto.request.reporttype.GetReportTypeDTO;
 import iclean.code.data.dto.request.reporttype.AddReportTypeRequest;
 import iclean.code.data.dto.request.reporttype.UpdateReportTypeRequest;
 import iclean.code.data.repository.ReportTypeRepository;
@@ -62,7 +62,7 @@ public class ReportTypeServiceImpl implements ReportTypeService {
     public ResponseEntity<ResponseObject> addReportType(AddReportTypeRequest reportTypeRequest) {
         try {
             ReportType reportType = modelMapper.map(reportTypeRequest, ReportType.class);
-            reportType.setReportDetail(reportTypeRequest.getReportDetail());
+            reportType.setReportName(reportTypeRequest.getReportDetail());
 
             reportTypeRepository.save(reportType);
             return ResponseEntity.status(HttpStatus.OK)
@@ -82,7 +82,7 @@ public class ReportTypeServiceImpl implements ReportTypeService {
             ReportType reportTypeForUpdate = findReportType(reportTypeId);
             ReportType reportType = modelMapper.map(reportTypeForUpdate, ReportType.class);
 
-            reportType.setReportDetail(reportTypeRequest.getReportDetail());
+            reportType.setReportName(reportTypeRequest.getReportDetail());
             reportTypeRepository.save(reportType);
 
             return ResponseEntity.status(HttpStatus.OK)

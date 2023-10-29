@@ -20,15 +20,14 @@ public class User {
     @Column(name = "user_id")
     private Integer userId;
 
+    @Column(unique = true)
     private String username;
 
     private String password;
 
-    private String gender;
-
     private LocalDate dateOfBirth;
 
-    @Column(name = "facebook_uid")
+    @Column(name = "facebook_uid", unique = true)
     private String facebookUid;
 
     @Column(name = "full_name")
@@ -43,9 +42,13 @@ public class User {
     @Column(name = "otp_token")
     private String otpToken;
 
+    @Column(name = "expired_token")
+    private LocalDateTime expiredToken;
+
     @Column(name = "is_locked")
     private Boolean isLocked = false;
 
+    @Column(unique = true)
     private String email;
 
     @Column(name = "role_id")
@@ -80,9 +83,4 @@ public class User {
     @JsonIgnoreProperties("user")
     @JsonIgnore
     private List<Notification> notifications;
-
-    @OneToMany(mappedBy = "user")
-    @JsonIgnoreProperties("user")
-    @JsonIgnore
-    private List<MoneyRequest> moneyRequests;
 }

@@ -1,4 +1,4 @@
-package iclean.code.data.dto.reporttype;
+package iclean.code.data.dto.request.reporttype;
 
 import lombok.Data;
 
