@@ -6,7 +6,7 @@ import iclean.code.data.dto.common.ResponseObject;
 import iclean.code.data.dto.request.booking.AddBookingRequest;
 import iclean.code.data.dto.request.booking.UpdateStatusBookingAsRenterRequest;
 import iclean.code.data.dto.request.booking.UpdateStatusBookingRequest;
-import iclean.code.data.dto.response.address.GetAddressResponseDto;
+import iclean.code.data.dto.response.booking.GetBookingHistoryResponse;
 import iclean.code.data.dto.response.booking.GetBookingResponse;
 import iclean.code.data.dto.response.booking.GetBookingResponseDetail;
 import iclean.code.function.booking.service.BookingService;
@@ -53,6 +53,28 @@ public class BookingController {
             pageable = PageRequestBuilder.buildPageRequest(page, size, sortFields);
         }
         return bookingService.getAllBooking(JwtUtils.decodeToAccountId(authentication), pageable);
+    }
+
+    @GetMapping(value = "/history")
+    @PreAuthorize("hasAnyAuthority('renter', 'employee')")
+    @Operation(summary = "Get all booking of a user", description = "Return all booking information")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Booking Information"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - Login please"),
+            @ApiResponse(responseCode = "403", description = "Forbidden - You don't have permission to access on this api"),
+            @ApiResponse(responseCode = "400", description = "Bad request - Missing some field required")
+    })
+    public ResponseEntity<ResponseObject> getBookingHistory(
+            @RequestParam(name = "page", defaultValue = "1") int page,
+            @RequestParam(name = "size", defaultValue = "10") int size,
+            @RequestParam(name = "sort", required = false) @ValidSortFields(value = GetBookingHistoryResponse.class) List<String> sortFields,
+            Authentication authentication) {
+        Pageable pageable = PageRequestBuilder.buildPageRequest(page, size);
+
+        if (sortFields != null && !sortFields.isEmpty()) {
+            pageable = PageRequestBuilder.buildPageRequest(page, size, sortFields);
+        }
+        return bookingService.getBookingHistory(JwtUtils.decodeToAccountId(authentication), pageable);
     }
 
     @GetMapping(value = "{bookingId}")

@@ -7,6 +7,7 @@ import iclean.code.data.dto.request.booking.AddBookingRequest;
 import iclean.code.data.dto.request.booking.UpdateStatusBookingAsRenterRequest;
 import iclean.code.data.dto.request.booking.UpdateStatusBookingRequest;
 import iclean.code.data.dto.response.PageResponseObject;
+import iclean.code.data.dto.response.booking.GetBookingHistoryResponse;
 import iclean.code.data.dto.response.booking.GetBookingResponse;
 import iclean.code.data.enumjava.BookingStatusEnum;
 import iclean.code.data.enumjava.Role;
@@ -136,7 +137,7 @@ public class BookingServiceImpl implements BookingService {
             NotificationRequestDto notificationRequestDto = new NotificationRequestDto();
             notificationRequestDto.setTarget(fcmTokens.get(0).getFcmToken());
             notificationRequestDto.setTitle("iClean - Helping Hand Hub Platform");
-            notificationRequestDto.setBody("Đơn hàng "+ booking.getBookingId() +" của bạn đã được đặt thành công!");
+            notificationRequestDto.setBody("Đơn hàng " + booking.getBookingId() + " của bạn đã được đặt thành công!");
 
             fcmService.sendPnsToTopic(notificationRequestDto);
             //---------
@@ -156,7 +157,6 @@ public class BookingServiceImpl implements BookingService {
         }
     }
 
-
     @Override
     public ResponseEntity<ResponseObject> updateStatusBooking(Integer bookingId,
                                                               Integer userId,
@@ -167,7 +167,7 @@ public class BookingServiceImpl implements BookingService {
             Booking booking = finBooking(bookingId);
 
             BookingStatusHistory bookingStatusHistory = bookingStatusHistoryRepository.findTheLatestBookingStatusByBookingId(bookingId);
-            if(bookingStatusHistory != null){
+            if (bookingStatusHistory != null) {
                 if (Objects.equals(bookingStatusHistory.getBookingStatus().getTitleStatus(), BookingStatusEnum.FINISH.name())) {
                     return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                             .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString()
@@ -194,7 +194,7 @@ public class BookingServiceImpl implements BookingService {
             NotificationRequestDto notificationRequestDto = new NotificationRequestDto();
             notificationRequestDto.setTarget(fcmTokens.get(0).getFcmToken());
             notificationRequestDto.setTitle("iClean - Helping Hand Hub Platform");
-            notificationRequestDto.setBody("Đơn hàng "+ booking.getBookingId() +" của bạn đã được cập nhật trạng thái mới.");
+            notificationRequestDto.setBody("Đơn hàng " + booking.getBookingId() + " của bạn đã được cập nhật trạng thái mới.");
 
             fcmService.sendPnsToTopic(notificationRequestDto);
             //---------
@@ -234,7 +234,7 @@ public class BookingServiceImpl implements BookingService {
             BookingStatus optionalBookingStatus = findStatus(bookingRequest.getBookingStatusId());
 
             BookingStatusHistory bookingStatusHistory = bookingStatusHistoryRepository.findTheLatestBookingStatusByBookingId(bookingId);
-            if(bookingStatusHistory != null){
+            if (bookingStatusHistory != null) {
                 if (Objects.equals(bookingStatusHistory.getBookingStatus().getTitleStatus(), BookingStatusEnum.FINISH.name())) {
                     return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                             .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString()
@@ -253,7 +253,7 @@ public class BookingServiceImpl implements BookingService {
             NotificationRequestDto notificationRequestDto = new NotificationRequestDto();
             notificationRequestDto.setTarget(fcmTokens.get(0).getFcmToken());
             notificationRequestDto.setTitle("iClean - Helping Hand Hub Platform");
-            notificationRequestDto.setBody("Đơn hàng "+ booking.getBookingId() +" của bạn đã được cập nhật trạng thái mới.");
+            notificationRequestDto.setBody("Đơn hàng " + booking.getBookingId() + " của bạn đã được cập nhật trạng thái mới.");
 
             fcmService.sendPnsToTopic(notificationRequestDto);
             //---------
@@ -280,6 +280,19 @@ public class BookingServiceImpl implements BookingService {
     @Override
     public ResponseEntity<ResponseObject> deleteBooking(int bookingId) {
         return null;
+    }
+
+    @Override
+    public ResponseEntity<ResponseObject> getBookingHistory(int userId, Pageable pageable) {
+        Page<Booking> bookings = bookingRepository.findBookingHistoryByUserId(userId, pageable);
+
+        List<GetBookingHistoryResponse> dtoList = bookings
+                .stream()
+                .map(booking -> modelMapper.map(booking, GetBookingHistoryResponse.class))
+                .collect(Collectors.toList());
+        PageResponseObject pageResponseObject = Utils.convertToPageResponse(bookings, Collections.singletonList(dtoList));
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(new ResponseObject(HttpStatus.OK.toString(), "All Booking", pageResponseObject));
     }
 
     private Booking mappingBookingForCreate(Integer userId,
@@ -344,12 +357,12 @@ public class BookingServiceImpl implements BookingService {
                 booking.setRejectReason(rejectReason);
             }
         } else if (BookingStatusEnum.IN_PROCESS.getValue() == optionalBookingStatus.getBookingStatusId()) {
-            if(booking.getEmployee() == null){
+            if (booking.getEmployee() == null) {
                 throw new NotFoundException("Booking này hiện tại chưa có nhân viên");
             }
             booking.setWorkStart(LocalDateTime.now());
         } else if (BookingStatusEnum.FINISH.getValue() == optionalBookingStatus.getBookingStatusId()) {
-            if(booking.getEmployee() == null){
+            if (booking.getEmployee() == null) {
                 throw new NotFoundException("Booking này hiện tại chưa có nhân viên");
             }
             booking.setWorkEnd(LocalDateTime.now());
