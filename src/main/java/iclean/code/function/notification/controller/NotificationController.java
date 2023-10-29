@@ -3,7 +3,7 @@ package iclean.code.function.notification.controller;
 import iclean.code.config.JwtUtils;
 import iclean.code.data.dto.common.PageRequestBuilder;
 import iclean.code.data.dto.common.ResponseObject;
-import iclean.code.data.dto.notification.GetNotificationDTO;
+import iclean.code.data.dto.request.notification.GetNotificationDTO;
 import iclean.code.function.notification.service.NotificationService;
 import iclean.code.utils.validator.ValidSortFields;
 import io.swagger.v3.oas.annotations.Operation;

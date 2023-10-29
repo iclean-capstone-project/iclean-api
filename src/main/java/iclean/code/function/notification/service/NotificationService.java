@@ -6,7 +6,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 
 public interface NotificationService {
-    ResponseEntity<ResponseObject> addNotification(AddNotificationRequest request);
 
     ResponseEntity<ResponseObject> getNotificationById(Integer notificationId, Integer userId);
 

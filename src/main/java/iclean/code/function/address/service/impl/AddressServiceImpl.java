@@ -5,7 +5,6 @@ import iclean.code.data.domain.User;
 import iclean.code.data.dto.common.ResponseObject;
 import iclean.code.data.dto.request.address.CreateAddressRequestDTO;
 import iclean.code.data.dto.request.address.UpdateAddressRequestDTO;
-import iclean.code.data.dto.response.PageResponseObject;
 import iclean.code.data.dto.response.address.GetAddressResponseDetailDto;
 import iclean.code.data.dto.response.address.GetAddressResponseDto;
 import iclean.code.data.repository.AddressRepository;
@@ -17,13 +16,10 @@ import iclean.code.utils.Utils;
 import lombok.extern.log4j.Log4j2;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -106,6 +102,10 @@ public class AddressServiceImpl implements AddressService {
     public ResponseEntity<ResponseObject> createAddress(CreateAddressRequestDTO request, Integer userId) {
         try {
             Address address = modelMapper.map(request, Address.class);
+            List<Address> addresses = addressRepository.findByUserIdAnAndIsDefault(userId);
+            if (addresses.isEmpty()) {
+                address.setIsDefault(true);
+            }
             User user = findUser(userId);
             address.setUser(user);
             address.setCreateAt(Utils.getDateTimeNow());

@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface UserRepository extends JpaRepository<User, Integer> {
 
@@ -15,6 +16,9 @@ public interface UserRepository extends JpaRepository<User, Integer> {
     User findByFacebookUid(String facebookUid);
     @Query("SELECT t FROM User t WHERE t.phoneNumber = ?1")
     User findUserByPhoneNumber(String phoneNumber);
+
+    @Query("SELECT t FROM User t WHERE t.phoneNumber = ?1")
+    Optional<User> getUserByPhoneNumber(String phoneNumber);
 
     User findByUserId(int id);
 

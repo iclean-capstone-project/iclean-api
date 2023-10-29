@@ -142,7 +142,7 @@ public class AuthServiceImpl implements AuthService {
                 String accessToken = jwtUtils.createAccessToken(userPrinciple);
                 String refreshToken = refreshTokenService.createRefreshToken(userPrinciple.getId()).getToken();
                 UserInformationDto userInformationDto = modelMapper.map(user, UserInformationDto.class);
-                if (ObjectUtils.anyNull(user.getFullName(), user.getRole(), user.getDateOfBirth(), user.getGender())) {
+                if (ObjectUtils.anyNull(user.getFullName(), user.getRole(), user.getDateOfBirth())) {
                     userInformationDto.setIsNewUser(true);
 
                     return ResponseEntity.status(HttpStatus.OK)
@@ -193,7 +193,7 @@ public class AuthServiceImpl implements AuthService {
                 String refreshToken = refreshTokenService.createRefreshToken(userPrinciple.getId()).getToken();
                 UserInformationDto userInformationDto = modelMapper.map(user, UserInformationDto.class);
 
-                if (!ObjectUtils.anyNull(user.getGender(), user.getRole(), user.getDateOfBirth(), user.getFullName())) {
+                if (!ObjectUtils.anyNull(user.getRole(), user.getDateOfBirth(), user.getFullName())) {
                     userRepository.save(user);
 
                     userInformationDto.setIsNewUser(true);
@@ -300,7 +300,7 @@ public class AuthServiceImpl implements AuthService {
                     userInformationDto.setRoleName(user.getRole().getTitle());
                 }
 
-                if (ObjectUtils.anyNull(user.getFullName(), user.getRole(), user.getDateOfBirth(), user.getGender())) {
+                if (ObjectUtils.anyNull(user.getFullName(), user.getRole())) {
                     userInformationDto.setIsNewUser(true);
                     return ResponseEntity.status(HttpStatus.OK)
                             .body(new ResponseObject(HttpStatus.OK.toString(), "Login success!",

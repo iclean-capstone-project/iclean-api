@@ -1,4 +1,4 @@
-package iclean.code.data.dto.notification;
+package iclean.code.data.dto.request.notification;
 
 import lombok.Data;
 

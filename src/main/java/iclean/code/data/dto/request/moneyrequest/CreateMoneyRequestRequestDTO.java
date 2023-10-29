@@ -8,5 +8,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class CreateMoneyRequestRequestDTO {
-    private Integer userId;
+    private String userPhoneNumber;
+    private Double balance;
+    private String moneyRequestType;
 }

@@ -26,8 +26,6 @@ public class Address {
 
     private String description;
 
-    private String street;
-
     @Column(name = "location_name")
     private String locationName;
 
@@ -39,9 +37,6 @@ public class Address {
 
     @Column(name = "update_at")
     private LocalDateTime updateAt = Utils.getDateTimeNow();
-
-    @Column(name = "user_id", insertable = false, updatable = false)
-    private Integer userId;
 
     @ManyToOne
     @JsonIgnore

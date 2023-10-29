@@ -10,9 +10,8 @@ import org.springframework.stereotype.Component;
 @Component
 public class TransactionMapper {
     private final ModelMapper modelMapper;
-
-    public TransactionMapper() {
-        this.modelMapper = new ModelMapper();
+    public TransactionMapper(ModelMapper modelMapper) {
+        this.modelMapper = modelMapper;
 
         modelMapper.addMappings(new PropertyMap<Transaction, GetTransactionResponseDto>() {
             @Override
