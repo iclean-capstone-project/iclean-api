@@ -11,4 +11,7 @@ public enum Role {
     private Role(int value) {
         this.value = value;
     }
+    public Integer getValue() {
+        return value;
+    }
 }

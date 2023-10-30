@@ -28,7 +28,7 @@ public class BookingDetailHelper {
 
     @ManyToOne
     @JsonIgnore
-    @JoinColumn(name = "booking_helper_id")
+    @JoinColumn(name = "booking_detail_id")
     private BookingDetail bookingDetail;
 
     @ManyToOne

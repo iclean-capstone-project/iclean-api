@@ -1,23 +1,22 @@
 package iclean.code.data.mapper;
 
-import iclean.code.data.domain.Booking;
-import iclean.code.data.dto.response.booking.GetBookingHistoryResponse;
+import iclean.code.data.domain.BookingDetail;
+import iclean.code.data.dto.response.feedback.GetFeedbackResponse;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.PropertyMap;
 import org.springframework.stereotype.Component;
 
 @Component
-public class BookingMapper {
+public class FeedbackMapper {
     private final ModelMapper modelMapper;
 
-    public BookingMapper(ModelMapper modelMapper) {
+    public FeedbackMapper(ModelMapper modelMapper) {
         this.modelMapper = modelMapper;
 
-        modelMapper.addMappings(new PropertyMap<Booking, GetBookingHistoryResponse>() {
+        modelMapper.addMappings(new PropertyMap<BookingDetail, GetFeedbackResponse>() {
             @Override
             protected void configure() {
-//                map().setEmployeeFullName(source.getEmployee().getFullName());
-                map().setRenterFullName(source.getRenter().getFullName());
+                map().setFullName(source.getBooking().getRenter().getFullName());
             }
         });
     }

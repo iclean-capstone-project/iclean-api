@@ -7,8 +7,8 @@ import org.springframework.stereotype.Component;
 public class AddressMapper {
     private final ModelMapper modelMapper;
 
-    public AddressMapper() {
-        this.modelMapper = new ModelMapper();
+    public AddressMapper(ModelMapper modelMapper) {
+        this.modelMapper = modelMapper;
     }
 
     public <S, D> D map(S source, Class<D> destinationType) {
