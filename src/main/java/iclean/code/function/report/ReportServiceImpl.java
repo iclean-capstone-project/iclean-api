@@ -81,9 +81,9 @@ public class ReportServiceImpl implements ReportService {
                         .body(new ResponseObject(HttpStatus.OK.toString()
                                 , "Report", reportRepository.findById(reportId)));
             } else if (Objects.equals(Role.EMPLOYEE.toString(),user.getRole().getTitle().toUpperCase())) {
-                if(!Objects.equals(user.getUserId(), report.getBooking().getEmployee().getUserId())){
-                    throw new UserNotHavePermissionException();
-                }
+//                if(!Objects.equals(user.getUserId(), report.getBooking().getEmployee().getUserId())){
+//                    throw new UserNotHavePermissionException();
+//                }
                 return ResponseEntity.status(HttpStatus.OK)
                         .body(new ResponseObject(HttpStatus.OK.toString()
                                 , "Report", reportRepository.findById(reportId)));

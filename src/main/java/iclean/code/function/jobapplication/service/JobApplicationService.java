@@ -1,8 +1,8 @@
 package iclean.code.function.jobapplication.service;
 
 import iclean.code.data.dto.common.ResponseObject;
-import iclean.code.data.dto.request.jobapplication.CreateJobApplicationRequestDTO;
-import iclean.code.data.dto.request.jobapplication.UpdateJobApplicationRequestDTO;
+import iclean.code.data.dto.request.attachment.CreateAttachmentRequestDTO;
+import iclean.code.data.dto.request.attachment.UpdateAttachmentRequestDTO;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -13,13 +13,13 @@ public interface JobApplicationService {
 
     ResponseEntity<ResponseObject> getJobApplication(Integer id);
 
-    ResponseEntity<ResponseObject> createJobApplication(CreateJobApplicationRequestDTO request,
+    ResponseEntity<ResponseObject> createJobApplication(CreateAttachmentRequestDTO request,
                                                         MultipartFile frontIdCard,
                                                         MultipartFile backIdCard,
                                                         MultipartFile avatar,
                                                         List<MultipartFile> others);
 
-    ResponseEntity<ResponseObject> updateJobApplication(Integer id, UpdateJobApplicationRequestDTO request, MultipartFile file);
+    ResponseEntity<ResponseObject> updateJobApplication(Integer id, UpdateAttachmentRequestDTO request, MultipartFile file);
 
     ResponseEntity<ResponseObject> deleteJobApplication(Integer id);
 }

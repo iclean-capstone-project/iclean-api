@@ -1,8 +1,8 @@
 package iclean.code.function.jobunit.service;
 
 import iclean.code.data.dto.common.ResponseObject;
-import iclean.code.data.dto.request.jobunit.CreateJobUnitRequest;
-import iclean.code.data.dto.request.jobunit.UpdateJobUnitRequest;
+import iclean.code.data.dto.request.serviceunit.CreateServiceUnitRequest;
+import iclean.code.data.dto.request.serviceunit.UpdateServiceUnitRequest;
 import org.springframework.http.ResponseEntity;
 
 public interface JobUnitService {
@@ -10,9 +10,9 @@ public interface JobUnitService {
 
     ResponseEntity<ResponseObject> getJobUnits();
 
-    ResponseEntity<ResponseObject> createJobUnits(CreateJobUnitRequest request);
+    ResponseEntity<ResponseObject> createJobUnits(CreateServiceUnitRequest request);
 
-    ResponseEntity<ResponseObject> updateJobUnit(int jobUnitId, UpdateJobUnitRequest request);
+    ResponseEntity<ResponseObject> updateJobUnit(int jobUnitId, UpdateServiceUnitRequest request);
 
     ResponseEntity<ResponseObject> deleteJobUnit(int jobUnitId);
 }

@@ -43,6 +43,6 @@ public class Report {
 
     @ManyToOne
     @JsonIgnore
-    @JoinColumn(name = "report_type_id", insertable = true, updatable = true)
+    @JoinColumn(name = "report_type_id")
     private ReportType reportType;
 }

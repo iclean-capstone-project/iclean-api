@@ -5,13 +5,12 @@ import iclean.code.data.domain.User;
 import iclean.code.data.dto.common.ResponseObject;
 import iclean.code.data.dto.request.wallet.UpdateBalance;
 import iclean.code.data.dto.response.wallet.CurrentBalanceDto;
-import iclean.code.data.enumjava.WalletType;
+import iclean.code.data.enumjava.WalletTypeEnum;
 import iclean.code.data.repository.WalletRepository;
 import iclean.code.data.repository.UserRepository;
 import iclean.code.exception.NotFoundException;
 import iclean.code.function.wallet.service.WalletService;
 import iclean.code.utils.Utils;
-import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -32,15 +31,15 @@ public class WalletServiceImpl implements WalletService {
         try {
             CurrentBalanceDto response = new CurrentBalanceDto();
             finUser(userId);
-            WalletType walletType = WalletType.valueOf(walletTypeValue.toUpperCase());
-            Wallet wallet = walletRepository.getWalletByUserIdAndType(userId, walletType);
+            WalletTypeEnum walletTypeEnum = WalletTypeEnum.valueOf(walletTypeValue.toUpperCase());
+            Wallet wallet = walletRepository.getWalletByUserIdAndType(userId, walletTypeEnum);
 //            CurrentBalanceDto response = modelMapper.map(wallet, CurrentBalanceDto.class);
             if (Objects.isNull(wallet)) {
                 response.setCurrentBalance(0D);
                 response.setWalletType(walletTypeValue);
             }
             response.setCurrentBalance(wallet.getBalance());
-            response.setWalletType(walletType.name());
+            response.setWalletType(walletTypeEnum.name());
 
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseObject(HttpStatus.OK.toString(),
@@ -82,12 +81,12 @@ public class WalletServiceImpl implements WalletService {
     private Wallet mappingMoneyPointForUpdate(int userId, UpdateBalance updateBalance) {
 
         Wallet optionalWallet = walletRepository.getWalletByUserIdAndType(userId,
-                WalletType.valueOf(updateBalance.getWalletType().toUpperCase()));
+                WalletTypeEnum.valueOf(updateBalance.getWalletType().toUpperCase()));
 
         if (Objects.isNull(optionalWallet)) {
             optionalWallet = new Wallet();
             optionalWallet.setUser(finUser(userId));
-            optionalWallet.setWalletType(WalletType.valueOf(updateBalance.getWalletType().toUpperCase()));
+            optionalWallet.setWalletTypeEnum(WalletTypeEnum.valueOf(updateBalance.getWalletType().toUpperCase()));
         }
         optionalWallet.setBalance(Double.valueOf(updateBalance.getBalance()));
         optionalWallet.setUpdateAt(Utils.getDateTimeNow());

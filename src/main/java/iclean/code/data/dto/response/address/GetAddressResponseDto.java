@@ -8,8 +8,7 @@ import java.time.LocalDateTime;
 public class GetAddressResponseDto {
     private Integer addressId;
     private String description;
-    private String street;
     private String locationName;
     private Boolean isDefault;
-    private LocalDateTime updateAt;
+    private LocalDateTime createAt;
 }

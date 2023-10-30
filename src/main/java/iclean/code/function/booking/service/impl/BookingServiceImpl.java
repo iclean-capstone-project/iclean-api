@@ -9,6 +9,7 @@ import iclean.code.data.dto.request.booking.UpdateStatusBookingRequest;
 import iclean.code.data.dto.response.PageResponseObject;
 import iclean.code.data.dto.response.booking.GetBookingHistoryResponse;
 import iclean.code.data.dto.response.booking.GetBookingResponse;
+import iclean.code.data.enumjava.BookingDetailHelperStatusEnum;
 import iclean.code.data.enumjava.BookingStatusEnum;
 import iclean.code.data.enumjava.Role;
 import iclean.code.data.repository.*;
@@ -46,10 +47,7 @@ public class BookingServiceImpl implements BookingService {
     private UserRepository userRepository;
 
     @Autowired
-    private JobUnitRepository jobUnitRepository;
-
-    @Autowired
-    private BookingStatusRepository bookingStatusRepository;
+    private UnitRepository unitRepository;
 
     @Autowired
     private BookingStatusHistoryRepository bookingStatusHistoryRepository;
@@ -58,10 +56,10 @@ public class BookingServiceImpl implements BookingService {
     private BookingEmployeeRepository bookingEmployeeRepository;
 
     @Autowired
-    private RejectReasonRepository rejectReasonRepository;
+    private RejectionReasonRepository rejectionReasonRepository;
 
     @Autowired
-    private FcmTokenRepository fcmTokenRepository;
+    private DeviceTokenRepository deviceTokenRepository;
 
     @Autowired
     private ModelMapper modelMapper;
@@ -90,9 +88,9 @@ public class BookingServiceImpl implements BookingService {
     public ResponseEntity<ResponseObject> getBookingById(Integer bookingId, Integer userId, Pageable pageable) {
         try {
             Booking booking = finBooking(bookingId);
-            if (!Objects.equals(booking.getRenter().getUserId(), userId) ||
-                    !Objects.equals(booking.getEmployee().getUserId(), userId))
-                throw new UserNotHavePermissionException();
+//            if (!Objects.equals(booking.getRenter().getUserId(), userId) ||
+//                    !Objects.equals(booking.getEmployee().getUserId(), userId))
+//                throw new UserNotHavePermissionException();
 
             Page<Booking> bookings = bookingRepository.findBookingByBookingId(bookingId, userId, pageable);
 
@@ -124,18 +122,17 @@ public class BookingServiceImpl implements BookingService {
             Booking booking = mappingBookingForCreate(userId, request);
             Booking newBooking = bookingRepository.save(booking);
 
-            BookingStatus optionalBookingStatus = findStatus(BookingStatusEnum.NOT_YET.getValue());
             BookingStatusHistory bookingStatusHistory = new BookingStatusHistory();
             bookingStatusHistory.setBooking(newBooking);
-            bookingStatusHistory.setBookingStatus(optionalBookingStatus);
+            bookingStatusHistory.setBookingStatus(BookingStatusEnum.NOT_YET);
             bookingStatusHistory.setCreateAt(Utils.getDateTimeNow());
             bookingStatusHistoryRepository.save(bookingStatusHistory);
 
             //SEND NOTIFICATION
-            List<FcmToken> fcmTokens = fcmTokenRepository.findByUserId(userId);
+            List<DeviceToken> deviceTokens = deviceTokenRepository.findByUserId(userId);
 
             NotificationRequestDto notificationRequestDto = new NotificationRequestDto();
-            notificationRequestDto.setTarget(fcmTokens.get(0).getFcmToken());
+            notificationRequestDto.setTarget(deviceTokens.get(0).getFcmToken());
             notificationRequestDto.setTitle("iClean - Helping Hand Hub Platform");
             notificationRequestDto.setBody("Đơn hàng " + booking.getBookingId() + " của bạn đã được đặt thành công!");
 
@@ -168,13 +165,13 @@ public class BookingServiceImpl implements BookingService {
 
             BookingStatusHistory bookingStatusHistory = bookingStatusHistoryRepository.findTheLatestBookingStatusByBookingId(bookingId);
             if (bookingStatusHistory != null) {
-                if (Objects.equals(bookingStatusHistory.getBookingStatus().getTitleStatus(), BookingStatusEnum.FINISH.name())) {
+                if (Objects.equals(bookingStatusHistory.getBookingStatus(), BookingStatusEnum.FINISHED)) {
                     return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                             .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString()
                                     , "You can't update FINISHED Booking", null));
                 }
             }
-            BookingStatus optionalBookingStatus = findStatus(request.getBookingStatusId());
+            BookingStatusEnum optionalBookingStatus = BookingStatusEnum.valueOf(request.getBookingStatus().toUpperCase());
             User userUpdate = findAccount(userId);
 
             if (Objects.equals(Role.MANAGER.name(), userUpdate.getRole().getTitle().toUpperCase())) {
@@ -189,10 +186,10 @@ public class BookingServiceImpl implements BookingService {
             bookingRepository.save(bookingForUpdateStatus);
 
             //SEND NOTIFICATION
-            List<FcmToken> fcmTokens = fcmTokenRepository.findByUserId(userId);
+            List<DeviceToken> deviceTokens = deviceTokenRepository.findByUserId(userId);
 
             NotificationRequestDto notificationRequestDto = new NotificationRequestDto();
-            notificationRequestDto.setTarget(fcmTokens.get(0).getFcmToken());
+            notificationRequestDto.setTarget(deviceTokens.get(0).getFcmToken());
             notificationRequestDto.setTitle("iClean - Helping Hand Hub Platform");
             notificationRequestDto.setBody("Đơn hàng " + booking.getBookingId() + " của bạn đã được cập nhật trạng thái mới.");
 
@@ -231,11 +228,11 @@ public class BookingServiceImpl implements BookingService {
             if (!Objects.equals(booking.getRenter().getUserId(), userId))
                 throw new UserNotHavePermissionException();
 
-            BookingStatus optionalBookingStatus = findStatus(bookingRequest.getBookingStatusId());
+            BookingStatusEnum optionalBookingStatus = BookingStatusEnum.valueOf(bookingRequest.getBookingStatus().toUpperCase());
 
             BookingStatusHistory bookingStatusHistory = bookingStatusHistoryRepository.findTheLatestBookingStatusByBookingId(bookingId);
             if (bookingStatusHistory != null) {
-                if (Objects.equals(bookingStatusHistory.getBookingStatus().getTitleStatus(), BookingStatusEnum.FINISH.name())) {
+                if (Objects.equals(bookingStatusHistory.getBookingStatus(), BookingStatusEnum.FINISHED)) {
                     return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                             .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString()
                                     , "You can't update FINISHED Booking", null));
@@ -248,10 +245,10 @@ public class BookingServiceImpl implements BookingService {
             bookingRepository.save(bookingForUpdateStatus);
 
             //SEND NOTIFICATION
-            List<FcmToken> fcmTokens = fcmTokenRepository.findByUserId(userId);
+            List<DeviceToken> deviceTokens = deviceTokenRepository.findByUserId(userId);
 
             NotificationRequestDto notificationRequestDto = new NotificationRequestDto();
-            notificationRequestDto.setTarget(fcmTokens.get(0).getFcmToken());
+            notificationRequestDto.setTarget(deviceTokens.get(0).getFcmToken());
             notificationRequestDto.setTitle("iClean - Helping Hand Hub Platform");
             notificationRequestDto.setBody("Đơn hàng " + booking.getBookingId() + " của bạn đã được cập nhật trạng thái mới.");
 
@@ -300,12 +297,12 @@ public class BookingServiceImpl implements BookingService {
 
         User optionalRenter = findAccount(userId, Role.RENTER.name());
 //        User optionalStaff = findAccount(request.getEmployeeId(), Role.EMPLOYEE.name());
-        JobUnit jobUnit = findJobUnit(request.getJobUnitId());
+        Unit unit = findJobUnit(request.getJobUnitId());
 
         Booking booking = modelMapper.map(request, Booking.class);
         booking.setRenter(optionalRenter);
 //        booking.setEmployee(optionalStaff);
-        booking.setJobUnit(jobUnit);
+//        booking.setUnit(unit);
         booking.setOrderDate(Utils.getDateTimeNow());
         booking.setRequestCount(1);
 
@@ -313,7 +310,7 @@ public class BookingServiceImpl implements BookingService {
     }
 
     private Booking mappingUpdateBookingForManager(Booking optionalBooking,
-                                                   BookingStatus optionalBookingStatus,
+                                                   BookingStatusEnum optionalBookingStatus,
                                                    UpdateStatusBookingRequest request) throws UserNotHavePermissionException {
 
         optionalBooking.setRequestCount(optionalBooking.getRequestCount() + 1);
@@ -322,12 +319,12 @@ public class BookingServiceImpl implements BookingService {
 
         Booking booking = modelMapper.map(optionalBooking, Booking.class);
 
-        if (Objects.equals(BookingStatusEnum.REJECT.getValue(), optionalBookingStatus.getBookingStatusId())) {
+        if (Objects.equals(BookingStatusEnum.REJECTED, optionalBookingStatus)) {
             if (request.getRejectReasonId() != null) {
-                RejectReason rejectReason = findReject(request.getRejectReasonId());
-                booking.setRejectReason(rejectReason);
+                RejectionReason rejectionReason = findReject(request.getRejectReasonId());
+                booking.setRejectionReason(rejectionReason);
             }
-        } else if (BookingStatusEnum.APPROVED.getValue() == optionalBookingStatus.getBookingStatusId()) {
+        } else if (BookingStatusEnum.APPROVED == optionalBookingStatus) {
             booking.setAcceptDate(LocalDateTime.now());
         } else {
             throw new UserNotHavePermissionException("You can't update this status");
@@ -337,7 +334,7 @@ public class BookingServiceImpl implements BookingService {
     }
 
     private Booking mappingUpdateBookingForEmployee(Booking optionalBooking,
-                                                    BookingStatus optionalBookingStatus,
+                                                    BookingStatusEnum optionalBookingStatus,
                                                     Integer empId,
                                                     UpdateStatusBookingRequest request) throws UserNotHavePermissionException {
 
@@ -347,25 +344,22 @@ public class BookingServiceImpl implements BookingService {
 
         Booking booking = modelMapper.map(optionalBooking, Booking.class);
 
-        if (Objects.equals(BookingStatusEnum.EMPLOYEE_ACCEPT.getValue(), optionalBookingStatus.getBookingStatusId())) {
+        if (Objects.equals(BookingStatusEnum.EMPLOYEE_ACCEPTED, optionalBookingStatus)) {
             addBookingEmployee(optionalBooking, empId);
 
-        } else if (BookingStatusEnum.EMPLOYEE_CANCEL.getValue() == optionalBookingStatus.getBookingStatusId()) {
-            booking.setWorkEnd(LocalDateTime.now());
+        } else if (BookingStatusEnum.EMPLOYEE_CANCELED == optionalBookingStatus) {
             if (request.getRejectReasonId() != null) {
-                RejectReason rejectReason = findReject(request.getRejectReasonId());
-                booking.setRejectReason(rejectReason);
+                RejectionReason rejectionReason = findReject(request.getRejectReasonId());
+                booking.setRejectionReason(rejectionReason);
             }
-        } else if (BookingStatusEnum.IN_PROCESS.getValue() == optionalBookingStatus.getBookingStatusId()) {
-            if (booking.getEmployee() == null) {
-                throw new NotFoundException("Booking này hiện tại chưa có nhân viên");
-            }
-            booking.setWorkStart(LocalDateTime.now());
-        } else if (BookingStatusEnum.FINISH.getValue() == optionalBookingStatus.getBookingStatusId()) {
-            if (booking.getEmployee() == null) {
-                throw new NotFoundException("Booking này hiện tại chưa có nhân viên");
-            }
-            booking.setWorkEnd(LocalDateTime.now());
+        } else if (BookingStatusEnum.IN_PROCESSING == optionalBookingStatus) {
+//            if (booking.getEmployee() == null) {
+//                throw new NotFoundException("Booking này hiện tại chưa có nhân viên");
+//            }
+        } else if (BookingStatusEnum.FINISHED == optionalBookingStatus) {
+//            if (booking.getEmployee() == null) {
+//                throw new NotFoundException("Booking này hiện tại chưa có nhân viên");
+//            }
         } else {
             throw new UserNotHavePermissionException("You can't update this status");
         }
@@ -374,7 +368,7 @@ public class BookingServiceImpl implements BookingService {
     }
 
     private Booking mappingUpdateBookingForRenter(Booking optionalBooking,
-                                                  BookingStatus optionalBookingStatus,
+                                                  BookingStatusEnum optionalBookingStatus,
                                                   Integer empId,
                                                   UpdateStatusBookingAsRenterRequest request) throws UserNotHavePermissionException {
 
@@ -383,20 +377,19 @@ public class BookingServiceImpl implements BookingService {
 
         Booking booking = modelMapper.map(optionalBooking, Booking.class);
 
-        if (Objects.equals(BookingStatusEnum.RENTER_ASSIGN.getValue(), optionalBookingStatus.getBookingStatusId())) {
+        if (Objects.equals(BookingStatusEnum.RENTER_ASSIGNED, optionalBookingStatus)) {
 //            addBookingEmployee(optionalBooking, empId);
-            BookingEmployee bookingEmployee = findEmployeeBooking(empId);
-            bookingEmployee.setAccept(true);
-            bookingEmployeeRepository.save(bookingEmployee);
+            BookingDetailHelper bookingDetailHelper = findEmployeeBooking(empId);
+            bookingDetailHelper.setBookingDetailHelperStatus(BookingDetailHelperStatusEnum.ACTIVE);
+            bookingEmployeeRepository.save(bookingDetailHelper);
 
             User employee = findAccount(empId, Role.EMPLOYEE.name());
-            booking.setEmployee(employee);
+//            booking.setEmployee(employee);
 
-        } else if (BookingStatusEnum.RENTER_CANCEL.getValue() == optionalBookingStatus.getBookingStatusId()) {
-            booking.setWorkEnd(LocalDateTime.now());
+        } else if (BookingStatusEnum.RENTER_CANCELED == optionalBookingStatus) {
             if (request.getRejectReasonId() != null) {
-                RejectReason rejectReason = findReject(request.getRejectReasonId());
-                booking.setRejectReason(rejectReason);
+                RejectionReason rejectionReason = findReject(request.getRejectReasonId());
+                booking.setRejectionReason(rejectionReason);
             }
         } else {
             throw new UserNotHavePermissionException("You can't update this status");
@@ -405,7 +398,7 @@ public class BookingServiceImpl implements BookingService {
         return booking;
     }
 
-    private void addBookingStatusHistory(Booking booking, BookingStatus bookingStatus) {
+    private void addBookingStatusHistory(Booking booking, BookingStatusEnum bookingStatus) {
         BookingStatusHistory bookingStatusHistory = new BookingStatusHistory();
         bookingStatusHistory.setBooking(booking);
         bookingStatusHistory.setBookingStatus(bookingStatus);
@@ -416,10 +409,10 @@ public class BookingServiceImpl implements BookingService {
     private void addBookingEmployee(Booking booking, Integer epmId) {
         User employee = findAccount(epmId, Role.EMPLOYEE.name());
 
-        BookingEmployee bookingEmployee = new BookingEmployee();
-        bookingEmployee.setBooking(booking);
-        bookingEmployee.setEmployee(employee);
-        bookingEmployeeRepository.save(bookingEmployee);
+        BookingDetailHelper bookingDetailHelper = new BookingDetailHelper();
+//        bookingDetailHelper.setBooking(booking);
+//        bookingDetailHelper.setEmployee(employee);
+        bookingEmployeeRepository.save(bookingDetailHelper);
     }
 
     private User findAccount(int userId, String role) {
@@ -432,7 +425,7 @@ public class BookingServiceImpl implements BookingService {
                 .orElseThrow(() -> new NotFoundException("User is not exist"));
     }
 
-    private BookingEmployee findEmployeeBooking(int userId) {
+    private BookingDetailHelper findEmployeeBooking(int userId) {
         return bookingEmployeeRepository.findTopByEmployeeUserIdOrderByBookingEmpIdDesc(userId)
                 .orElseThrow(() -> new NotFoundException("Employee is not exist"));
     }
@@ -442,18 +435,13 @@ public class BookingServiceImpl implements BookingService {
                 .orElseThrow(() -> new NotFoundException("Booking is not exist"));
     }
 
-    private BookingStatus findStatus(int statusId) {
-        return bookingStatusRepository.findById(statusId)
-                .orElseThrow(() -> new NotFoundException("Status is not exist"));
-    }
-
-    private JobUnit findJobUnit(Integer jobUnitId) {
-        return jobUnitRepository.findById(jobUnitId)
+    private Unit findJobUnit(Integer jobUnitId) {
+        return unitRepository.findById(jobUnitId)
                 .orElseThrow(() -> new NotFoundException("Job Unit is not exist"));
     }
 
-    private RejectReason findReject(int rejectId) {
-        return rejectReasonRepository.findById(rejectId)
+    private RejectionReason findReject(int rejectId) {
+        return rejectionReasonRepository.findById(rejectId)
                 .orElseThrow(() -> new NotFoundException("Reject Reason is not exist"));
     }
 }

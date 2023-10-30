@@ -1,14 +1,14 @@
 package iclean.code.function.jobapplication.service.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import iclean.code.data.domain.JobApplication;
-import iclean.code.data.domain.RegisterEmployee;
+import iclean.code.data.domain.Attachment;
+import iclean.code.data.domain.HelperInformation;
 import iclean.code.data.dto.common.ResponseObject;
-import iclean.code.data.dto.request.jobapplication.CreateJobApplicationRequestDTO;
-import iclean.code.data.dto.request.jobapplication.UpdateJobApplicationRequestDTO;
+import iclean.code.data.dto.request.attachment.CreateAttachmentRequestDTO;
+import iclean.code.data.dto.request.attachment.UpdateAttachmentRequestDTO;
 import iclean.code.data.dto.response.others.CMTBackResponse;
 import iclean.code.data.dto.response.others.CMTFrontResponse;
-import iclean.code.data.repository.JobApplicationRepository;
+import iclean.code.data.repository.AttachmentRepository;
 import iclean.code.data.repository.RegisterEmployeeRepository;
 import iclean.code.exception.NotFoundException;
 import iclean.code.function.jobapplication.service.JobApplicationService;
@@ -29,7 +29,7 @@ import java.util.List;
 @Slf4j
 public class JobApplicationServiceImpl implements JobApplicationService {
     @Autowired
-    private JobApplicationRepository jobApplicationRepository;
+    private AttachmentRepository attachmentRepository;
     @Autowired
     private RegisterEmployeeRepository registerEmployeeRepository;
     @Autowired
@@ -41,11 +41,11 @@ public class JobApplicationServiceImpl implements JobApplicationService {
     @Override
     public ResponseEntity<ResponseObject> getJobApplications() {
         try {
-            List<JobApplication> jobApplications = jobApplicationRepository.findAll();
+            List<Attachment> attachments = attachmentRepository.findAll();
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseObject(HttpStatus.OK.toString(),
                             "Job Application Detail",
-                            jobApplications));
+                            attachments));
         } catch (Exception e) {
             log.error(e.getMessage());
             if (e instanceof NotFoundException)
@@ -63,11 +63,11 @@ public class JobApplicationServiceImpl implements JobApplicationService {
     @Override
     public ResponseEntity<ResponseObject> getJobApplication(Integer id) {
         try {
-            JobApplication jobApplication = findJobApplication(id);
+            Attachment attachment = findJobApplication(id);
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseObject(HttpStatus.OK.toString(),
                             "Job Application Detail",
-                            jobApplication));
+                            attachment));
         } catch (Exception e) {
             log.error(e.getMessage());
             if (e instanceof NotFoundException)
@@ -83,14 +83,14 @@ public class JobApplicationServiceImpl implements JobApplicationService {
     }
 
     @Override
-    public ResponseEntity<ResponseObject> createJobApplication(CreateJobApplicationRequestDTO request,
+    public ResponseEntity<ResponseObject> createJobApplication(CreateAttachmentRequestDTO request,
                                                                MultipartFile frontIdCard,
                                                                MultipartFile backIdCard,
                                                                MultipartFile avatar,
                                                                List<MultipartFile> others) {
         try {
             String imgAvatarLink = storageService.uploadFile(avatar);
-            JobApplication jobApplication = new JobApplication();
+            Attachment attachment = new Attachment();
 //            String frontResponse = externalApiService.scanNationId(frontIdCard);
             String frontResponse = "{\n" +
                     "    \"errorCode\": 0,\n" +
@@ -160,15 +160,15 @@ public class JobApplicationServiceImpl implements JobApplicationService {
                     "}";
             CMTBackResponse cmtBackResponse = objectMapper.readValue(backResponse, CMTBackResponse.class);
 
-            RegisterEmployee registerEmployee = new RegisterEmployee();
+            HelperInformation helperInformation = new HelperInformation();
 //            registerEmployee.setPhoneNumber(request.getPhoneNumber());
-            registerEmployee.setNationId(cmtFrontResponse.getData().get(0).getId());
-            registerEmployee.setFullName(cmtFrontResponse.getData().get(0).getName());
-            jobApplication.setJobImgLink(imgAvatarLink);
-            jobApplication.setCreateAt(Utils.getDateTimeNow());
+            helperInformation.setNationId(cmtFrontResponse.getData().get(0).getId());
+            helperInformation.setFullName(cmtFrontResponse.getData().get(0).getName());
+            attachment.setAttachmentLink(imgAvatarLink);
+            attachment.setCreateAt(Utils.getDateTimeNow());
 //            jobApplication.setRegisterEmployee(findRegisterEmployee(request.getRegisterEmployeeId()));
 
-            jobApplicationRepository.save(jobApplication);
+            attachmentRepository.save(attachment);
 
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseObject(HttpStatus.OK.toString(),
@@ -189,22 +189,22 @@ public class JobApplicationServiceImpl implements JobApplicationService {
     }
 
     @Override
-    public ResponseEntity<ResponseObject> updateJobApplication(Integer id, UpdateJobApplicationRequestDTO request, MultipartFile file) {
+    public ResponseEntity<ResponseObject> updateJobApplication(Integer id, UpdateAttachmentRequestDTO request, MultipartFile file) {
         try {
-            JobApplication jobApplication = findJobApplication(id);
-            storageService.deleteFile(jobApplication.getJobImgLink());
+            Attachment attachment = findJobApplication(id);
+            storageService.deleteFile(attachment.getAttachmentLink());
             String imgLink = storageService.uploadFile(file);
-            jobApplication = modelMapper.map(request, JobApplication.class);
-            jobApplication.setJobImgLink(imgLink);
-            jobApplication.setCreateAt(Utils.getDateTimeNow());
-            jobApplication.setRegisterEmployee(findRegisterEmployee(request.getRegisterEmployeeId()));
+            attachment = modelMapper.map(request, Attachment.class);
+            attachment.setAttachmentLink(imgLink);
+            attachment.setCreateAt(Utils.getDateTimeNow());
+            attachment.setHelperInformation(findRegisterEmployee(request.getRegisterEmployeeId()));
 
-            jobApplicationRepository.save(jobApplication);
+            attachmentRepository.save(attachment);
 
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseObject(HttpStatus.OK.toString(),
                             "Update a Job Application Successful",
-                            jobApplication));
+                            attachment));
         } catch (Exception e) {
             log.error(e.getMessage());
             if (e instanceof NotFoundException)
@@ -222,10 +222,10 @@ public class JobApplicationServiceImpl implements JobApplicationService {
     @Override
     public ResponseEntity<ResponseObject> deleteJobApplication(Integer id) {
         try {
-            JobApplication jobApplication = findJobApplication(id);
-            storageService.deleteFile(jobApplication.getJobImgLink());
+            Attachment attachment = findJobApplication(id);
+            storageService.deleteFile(attachment.getAttachmentLink());
 
-            jobApplicationRepository.delete(jobApplication);
+            attachmentRepository.delete(attachment);
 
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseObject(HttpStatus.OK.toString(),
@@ -245,12 +245,12 @@ public class JobApplicationServiceImpl implements JobApplicationService {
         }
     }
 
-    private JobApplication findJobApplication(int id) {
-        return jobApplicationRepository.findById(id)
+    private Attachment findJobApplication(int id) {
+        return attachmentRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException(String.format("Job Application ID: %s is not exist", id)));
     }
 
-    private RegisterEmployee findRegisterEmployee(int id) {
+    private HelperInformation findRegisterEmployee(int id) {
         return registerEmployeeRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException(String.format("Register Employee ID: %s is not exist", id)));
     }

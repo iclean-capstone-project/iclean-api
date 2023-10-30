@@ -1,19 +1,19 @@
 package iclean.code.function.registeremployee.service;
 
 import iclean.code.data.dto.common.ResponseObject;
-import iclean.code.data.dto.request.registeremployee.CreateRegisterEmployeeRequestDTO;
-import iclean.code.data.dto.request.registeremployee.GetRegisterEmployeeRequestDTO;
-import iclean.code.data.dto.request.registeremployee.UpdateRegisterEmployeeRequestDTO;
+import iclean.code.data.dto.request.employeeinformation.CreateEmployeeInformationRequestDTO;
+import iclean.code.data.dto.request.employeeinformation.GetEmployeeInformationRequestDTO;
+import iclean.code.data.dto.request.employeeinformation.UpdateEmployeeInformationRequestDTO;
 import org.springframework.http.ResponseEntity;
 
 public interface RegisterEmployeeService {
-    ResponseEntity<ResponseObject> getRegisterEmployees(GetRegisterEmployeeRequestDTO request);
+    ResponseEntity<ResponseObject> getRegisterEmployees(GetEmployeeInformationRequestDTO request);
 
     ResponseEntity<ResponseObject> getRegisterEmployee(Integer id);
 
-    ResponseEntity<ResponseObject> createRegisterEmployee(CreateRegisterEmployeeRequestDTO request);
+    ResponseEntity<ResponseObject> createRegisterEmployee(CreateEmployeeInformationRequestDTO request);
 
-    ResponseEntity<ResponseObject> updateRegisterEmployee(Integer id, UpdateRegisterEmployeeRequestDTO request);
+    ResponseEntity<ResponseObject> updateRegisterEmployee(Integer id, UpdateEmployeeInformationRequestDTO request);
 
     ResponseEntity<ResponseObject> deleteRegisterEmployee(Integer id);
 }

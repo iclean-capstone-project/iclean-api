@@ -8,15 +8,14 @@ import iclean.code.data.dto.request.transaction.TransactionRequestDto;
 import iclean.code.data.dto.response.transaction.GetTransactionDetailResponseDto;
 import iclean.code.data.dto.response.transaction.GetTransactionResponseDto;
 import iclean.code.data.enumjava.Role;
-import iclean.code.data.enumjava.TransactionStatus;
-import iclean.code.data.enumjava.TransactionType;
-import iclean.code.data.enumjava.WalletType;
+import iclean.code.data.enumjava.TransactionStatusEnum;
+import iclean.code.data.enumjava.TransactionTypeEnum;
+import iclean.code.data.enumjava.WalletTypeEnum;
 import iclean.code.data.repository.UserRepository;
 import iclean.code.data.repository.TransactionRepository;
 import iclean.code.data.repository.WalletRepository;
 import iclean.code.exception.BadRequestException;
 import iclean.code.exception.NotFoundException;
-import iclean.code.exception.UserNotHavePermissionException;
 import iclean.code.function.transaction.service.TransactionService;
 import iclean.code.utils.Utils;
 import lombok.extern.log4j.Log4j2;
@@ -68,8 +67,6 @@ public class TransactionServiceImpl implements TransactionService {
                                                          Integer userId) {
         try {
             Transaction transaction = findWalletHistoryById(id);
-            if (!Objects.equals(userId, transaction.getUser().getUserId()))
-                throw new UserNotHavePermissionException();
 
             GetTransactionDetailResponseDto responses = modelMapper.map(transaction, GetTransactionDetailResponseDto.class);
 
@@ -79,12 +76,6 @@ public class TransactionServiceImpl implements TransactionService {
                             responses));
         } catch (Exception e) {
             log.error(e.getMessage());
-            if (e instanceof UserNotHavePermissionException) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                        .body(new ResponseObject(HttpStatus.FORBIDDEN.toString(),
-                                e.getMessage(),
-                                null));
-            }
             if (e instanceof NotFoundException) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body(new ResponseObject(HttpStatus.NOT_FOUND.toString(),
@@ -102,8 +93,8 @@ public class TransactionServiceImpl implements TransactionService {
         Transaction transaction = modelMapper.map(request, Transaction.class);
         transaction.setAmount(request.getBalance());
         transaction.setCreateAt(Utils.getDateTimeNow());
-        transaction.setTransactionStatus(TransactionStatus.SUCCESS);
-        transaction.setTransactionType(TransactionType.valueOf(request.getTransactionType().toUpperCase()));
+        transaction.setTransactionStatusEnum(TransactionStatusEnum.SUCCESS);
+        transaction.setTransactionTypeEnum(TransactionTypeEnum.valueOf(request.getTransactionType().toUpperCase()));
         return transaction;
     }
 
@@ -151,17 +142,17 @@ public class TransactionServiceImpl implements TransactionService {
                 throw new BadRequestException("This user cannot have this information");
             }
             Wallet wallet = walletRepository.getWalletByUserIdAndType(request.getUserId(),
-                    WalletType.valueOf(request.getWalletType().toUpperCase()));
+                    WalletTypeEnum.valueOf(request.getWalletType().toUpperCase()));
             if (Objects.isNull(wallet)) {
                 wallet = new Wallet();
                 wallet.setUser(user);
                 wallet.setBalance(0D);
-                wallet.setWalletType(WalletType.valueOf(request.getWalletType().toUpperCase()));
+                wallet.setWalletTypeEnum(WalletTypeEnum.valueOf(request.getWalletType().toUpperCase()));
             }
 
             wallet.setUpdateAt(Utils.getDateTimeNow());
-            TransactionType transactionType = TransactionType.valueOf(request.getTransactionType().toUpperCase());
-            switch (transactionType) {
+            TransactionTypeEnum transactionTypeEnum = TransactionTypeEnum.valueOf(request.getTransactionType().toUpperCase());
+            switch (transactionTypeEnum) {
                 case DEPOSIT:
                     wallet.setBalance(wallet.getBalance() + request.getBalance());
                     break;
@@ -176,7 +167,6 @@ public class TransactionServiceImpl implements TransactionService {
             }
             Wallet walletUpdate = walletRepository.save(wallet);
         Transaction transaction = mappingForCreate(request);
-        transaction.setUser(user);
         transaction.setWallet(walletUpdate);
         transactionRepository.save(transaction);
             return true;

@@ -14,8 +14,6 @@ public class GetAddressResponseDetailDto {
 
     private String description;
 
-    private String street;
-
     private String locationName;
 
     private Boolean isDefault;

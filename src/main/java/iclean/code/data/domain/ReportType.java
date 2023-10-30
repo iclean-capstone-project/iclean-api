@@ -1,12 +1,10 @@
 package iclean.code.data.domain;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Getter;
 import lombok.Setter;
 
 import javax.persistence.*;
-import java.util.List;
 
 @Entity
 @Getter
@@ -20,9 +18,4 @@ public class ReportType {
 
     @Column(name= "report_name")
     private String reportName;
-
-    @OneToMany(mappedBy = "reportType")
-    @JsonIgnoreProperties("reportType")
-    @JsonIgnore
-    private List<Report> reportList;
 }

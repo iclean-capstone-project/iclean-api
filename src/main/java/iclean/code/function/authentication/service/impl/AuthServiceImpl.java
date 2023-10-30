@@ -5,12 +5,11 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseToken;
 import iclean.code.config.JwtUtils;
 import iclean.code.data.domain.Address;
-import iclean.code.data.domain.FcmToken;
+import iclean.code.data.domain.DeviceToken;
 import iclean.code.data.domain.RefreshToken;
 import iclean.code.data.domain.User;
 import iclean.code.data.dto.common.ResponseObject;
 import iclean.code.data.dto.request.authen.*;
-import iclean.code.data.dto.request.profile.UpdateProfileDto;
 import iclean.code.data.dto.request.security.OtpAuthentication;
 import iclean.code.data.dto.response.authen.JwtResponse;
 import iclean.code.data.dto.response.authen.TokenRefreshResponse;
@@ -18,7 +17,7 @@ import iclean.code.data.dto.response.authen.UserInformationDto;
 import iclean.code.data.dto.response.authen.UserPrinciple;
 import iclean.code.data.enumjava.Role;
 import iclean.code.data.repository.AddressRepository;
-import iclean.code.data.repository.FcmTokenRepository;
+import iclean.code.data.repository.DeviceTokenRepository;
 import iclean.code.data.repository.RoleRepository;
 import iclean.code.data.repository.UserRepository;
 import iclean.code.exception.NotFoundException;
@@ -54,7 +53,7 @@ public class AuthServiceImpl implements AuthService {
     @Autowired
     private RoleRepository roleRepository;
     @Autowired
-    private FcmTokenRepository fcmTokenRepository;
+    private DeviceTokenRepository deviceTokenRepository;
     @Autowired
     private AddressRepository addressRepository;
     @Autowired
@@ -343,8 +342,8 @@ public class AuthServiceImpl implements AuthService {
         }
     }
 
-    private FcmToken findFcmToken(String fcmToken) {
-        return fcmTokenRepository.findByToken(fcmToken).orElseThrow(() -> new NotFoundException("FcmToken not found"));
+    private DeviceToken findFcmToken(String fcmToken) {
+        return deviceTokenRepository.findByToken(fcmToken).orElseThrow(() -> new NotFoundException("FcmToken not found"));
     }
 
     private User findUser(Integer id) {
@@ -395,10 +394,10 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public ResponseEntity<ResponseObject> addFcmToken(LogoutTokenDto dto, Integer userId) {
         try {
-            FcmToken fcmToken = modelMapper.map(dto, FcmToken.class);
+            DeviceToken deviceToken = modelMapper.map(dto, DeviceToken.class);
             User user = findUser(userId);
-            fcmToken.setUser(user);
-            fcmTokenRepository.save(fcmToken);
+            deviceToken.setUser(user);
+            deviceTokenRepository.save(deviceToken);
 
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseObject(HttpStatus.OK.toString(),
@@ -421,12 +420,12 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public ResponseEntity<ResponseObject> logout(LogoutTokenDto dto, Integer userId) {
         try {
-            FcmToken fcmToken = findFcmToken(dto.getFcmToken());
-            if (!Objects.equals(fcmToken.getUser().getUserId(), userId))
+            DeviceToken deviceToken = findFcmToken(dto.getFcmToken());
+            if (!Objects.equals(deviceToken.getUser().getUserId(), userId))
                 throw new UserNotHavePermissionException();
  
             refreshTokenService.deleteByRefreshToken(dto.getRefreshToken());
-            fcmTokenRepository.delete(fcmToken);
+            deviceTokenRepository.delete(deviceToken);
 
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseObject(HttpStatus.OK.toString(),

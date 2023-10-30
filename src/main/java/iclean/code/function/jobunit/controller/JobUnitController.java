@@ -1,8 +1,8 @@
 package iclean.code.function.jobunit.controller;
 
 import iclean.code.data.dto.common.ResponseObject;
-import iclean.code.data.dto.request.jobunit.CreateJobUnitRequest;
-import iclean.code.data.dto.request.jobunit.UpdateJobUnitRequest;
+import iclean.code.data.dto.request.serviceunit.CreateServiceUnitRequest;
+import iclean.code.data.dto.request.serviceunit.UpdateServiceUnitRequest;
 import iclean.code.function.jobunit.service.JobUnitService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -18,7 +18,6 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.validation.Valid;
 import javax.validation.constraints.*;
 
 @RestController
@@ -81,7 +80,7 @@ public class JobUnitController {
                                                      @Pattern(regexp = "^[0-9a-zA-Z/]+$", message = "Unit Value is invalid")
                                                      @Length(max = 200, message = "Max length: 200")
                                                      @RequestPart String unitValue) {
-        return jobUnitService.createJobUnits(new CreateJobUnitRequest(priceDefault, employeeCommission, imgUnitFile, unitValue));
+        return jobUnitService.createJobUnits(new CreateServiceUnitRequest(priceDefault, employeeCommission, imgUnitFile, unitValue));
     }
 
     @PutMapping(value = "{jobUnitId}")
@@ -111,7 +110,7 @@ public class JobUnitController {
                                                         @Pattern(regexp = "^[0-9a-zA-Z/]+$", message = "Unit Value is invalid")
                                                         @Length(max = 200, message = "Max length: 200")
                                                         @RequestPart String unitValue) {
-        return jobUnitService.updateJobUnit(jobUnitId, new UpdateJobUnitRequest(priceDefault, employeeCommission, imgUnitFile, unitValue));
+        return jobUnitService.updateJobUnit(jobUnitId, new UpdateServiceUnitRequest(priceDefault, employeeCommission, imgUnitFile, unitValue));
     }
 
     @DeleteMapping(value = "{jobUnitId}")
