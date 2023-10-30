@@ -30,7 +30,7 @@ public class BookingDetail {
     private Double workHour;
 
     @Column(name = "work_date")
-    private Double workDate;
+    private LocalDateTime workDate;
 
     @Column(name = "work_start")
     private LocalDateTime workStart;

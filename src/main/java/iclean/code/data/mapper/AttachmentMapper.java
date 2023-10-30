@@ -7,8 +7,8 @@ import org.springframework.stereotype.Component;
 public class AttachmentMapper {
     private final ModelMapper modelMapper;
 
-    public AttachmentMapper() {
-        this.modelMapper = new ModelMapper();
+    public AttachmentMapper(ModelMapper modelMapper) {
+        this.modelMapper = modelMapper;
     }
 
     public <S, D> D map(S source, Class<D> destinationType) {

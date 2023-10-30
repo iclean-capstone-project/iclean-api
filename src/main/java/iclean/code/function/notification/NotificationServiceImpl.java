@@ -3,11 +3,9 @@ package iclean.code.function.notification;
 import iclean.code.data.domain.*;
 import iclean.code.data.dto.common.ResponseObject;
 import iclean.code.data.dto.request.notification.GetNotificationDTO;
-import iclean.code.data.dto.request.notification.AddNotificationRequest;
 import iclean.code.data.dto.response.PageResponseObject;
 import iclean.code.data.enumjava.NotificationStatusEnum;
 import iclean.code.data.repository.NotificationRepository;
-import iclean.code.data.repository.UserRepository;
 import iclean.code.exception.NotFoundException;
 import iclean.code.exception.UserNotHavePermissionException;
 import iclean.code.function.notification.service.NotificationService;
@@ -31,9 +29,6 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Autowired
     private NotificationRepository notificationRepository;
-
-    @Autowired
-    private UserRepository userRepository;
 
     @Autowired
     private ModelMapper modelMapper;
@@ -157,20 +152,6 @@ public class NotificationServiceImpl implements NotificationService {
         }
     }
 
-    private Notification mappingNotificationForCreate(AddNotificationRequest request) {
-        User optionalUser = findUser(request.getUserId());
-
-        Notification notification = modelMapper.map(request, Notification.class);
-        notification.setContent(request.getContent());
-        notification.setTitle(request.getTitle());
-        notification.setCreateAt(Utils.getDateTimeNow());
-        notification.setUser(optionalUser);
-        notification.setIsRead(NotificationStatusEnum.NOT_READ.isValue());
-        notification.setNotificationImgLink(request.getNotificationImgLink());
-
-        return notification;
-    }
-
     private Notification mappingNotificationForUpdate(int notificationId) {
         Notification optionalNotification = findNotification(notificationId);
         optionalNotification.setIsRead(NotificationStatusEnum.READ.isValue());
@@ -180,11 +161,6 @@ public class NotificationServiceImpl implements NotificationService {
     private Notification findNotification(int notificationId) {
         return notificationRepository.findById(notificationId)
                 .orElseThrow(() -> new NotFoundException("Notification is not exist"));
-    }
-
-    private User findUser(int userId) {
-        return userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("User is not exist"));
     }
 
     private boolean isPermission(Integer userId, Notification notification) throws UserNotHavePermissionException {
