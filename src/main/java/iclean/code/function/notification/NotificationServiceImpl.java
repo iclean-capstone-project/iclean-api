@@ -5,7 +5,7 @@ import iclean.code.data.dto.common.ResponseObject;
 import iclean.code.data.dto.request.notification.GetNotificationDTO;
 import iclean.code.data.dto.request.notification.AddNotificationRequest;
 import iclean.code.data.dto.response.PageResponseObject;
-import iclean.code.data.enumjava.StatusNotification;
+import iclean.code.data.enumjava.NotificationStatusEnum;
 import iclean.code.data.repository.NotificationRepository;
 import iclean.code.data.repository.UserRepository;
 import iclean.code.exception.NotFoundException;
@@ -165,7 +165,7 @@ public class NotificationServiceImpl implements NotificationService {
         notification.setTitle(request.getTitle());
         notification.setCreateAt(Utils.getDateTimeNow());
         notification.setUser(optionalUser);
-        notification.setIsRead(StatusNotification.NOT_READ.isValue());
+        notification.setIsRead(NotificationStatusEnum.NOT_READ.isValue());
         notification.setNotificationImgLink(request.getNotificationImgLink());
 
         return notification;
@@ -173,7 +173,7 @@ public class NotificationServiceImpl implements NotificationService {
 
     private Notification mappingNotificationForUpdate(int notificationId) {
         Notification optionalNotification = findNotification(notificationId);
-        optionalNotification.setIsRead(StatusNotification.READ.isValue());
+        optionalNotification.setIsRead(NotificationStatusEnum.READ.isValue());
         return modelMapper.map(optionalNotification, Notification.class);
     }
 

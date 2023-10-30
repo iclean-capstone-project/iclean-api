@@ -2,8 +2,8 @@ package iclean.code.function.jobapplication.controller;
 
 import iclean.code.config.JwtUtils;
 import iclean.code.data.dto.common.ResponseObject;
-import iclean.code.data.dto.request.jobapplication.CreateJobApplicationRequestDTO;
-import iclean.code.data.dto.request.jobapplication.UpdateJobApplicationRequestDTO;
+import iclean.code.data.dto.request.attachment.CreateAttachmentRequestDTO;
+import iclean.code.data.dto.request.attachment.UpdateAttachmentRequestDTO;
 import iclean.code.function.jobapplication.service.JobApplicationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -80,7 +80,7 @@ public class JobApplicationController {
                                                                @RequestPart("backIdCard") MultipartFile backIdCard,
                                                                @RequestPart("avatar") MultipartFile avatar,
                                                                @RequestPart(value = "others", required = false) List<MultipartFile> others) {
-        return jobApplicationService.createJobApplication(new CreateJobApplicationRequestDTO(fullName),
+        return jobApplicationService.createJobApplication(new CreateAttachmentRequestDTO(fullName),
                 frontIdCard,
                 backIdCard,
                 avatar,
@@ -96,7 +96,7 @@ public class JobApplicationController {
             @ApiResponse(responseCode = "403", description = "Forbidden - You don't have permission to access on this api"),
             @ApiResponse(responseCode = "400", description = "Bad request - Missing some field required")
     })
-    public ResponseEntity<ResponseObject> updateJobApplication(@RequestBody @Valid UpdateJobApplicationRequestDTO request,
+    public ResponseEntity<ResponseObject> updateJobApplication(@RequestBody @Valid UpdateAttachmentRequestDTO request,
                                                                @PathVariable Integer id,
                                                                @RequestPart MultipartFile file) {
         return jobApplicationService.updateJobApplication(id, request, file);

@@ -16,7 +16,7 @@ public class TransactionMapper {
         modelMapper.addMappings(new PropertyMap<Transaction, GetTransactionResponseDto>() {
             @Override
             protected void configure() {
-                map().setTransactionStatus(String.valueOf(source.getTransactionStatus()));
+                map().setTransactionStatus(String.valueOf(source.getTransactionStatusEnum()));
                 map().setBalance(source.getAmount());
             }
         });
@@ -24,7 +24,7 @@ public class TransactionMapper {
         modelMapper.addMappings(new PropertyMap<Transaction, GetTransactionDetailResponseDto>() {
             @Override
             protected void configure() {
-                map().setTransactionStatus(String.valueOf(source.getTransactionStatus()));
+                map().setTransactionStatus(String.valueOf(source.getTransactionStatusEnum()));
                 map().setBalance(source.getAmount());
             }
         });

@@ -2,7 +2,7 @@ package iclean.code.data.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import iclean.code.data.enumjava.WalletType;
+import iclean.code.data.enumjava.WalletTypeEnum;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -23,7 +23,7 @@ public class Wallet {
     private Double balance;
 
     @Column(name = "wallet_type")
-    private WalletType walletType;
+    private WalletTypeEnum walletTypeEnum;
 
     @OneToOne
     @JsonIgnore

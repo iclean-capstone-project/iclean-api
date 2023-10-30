@@ -1,9 +1,9 @@
 package iclean.code.function.serviceprice.service.impl;
 
-import iclean.code.data.domain.JobUnit;
+import iclean.code.data.domain.Unit;
 import iclean.code.data.domain.ServicePrice;
 import iclean.code.data.dto.common.ResponseObject;
-import iclean.code.data.repository.JobUnitRepository;
+import iclean.code.data.repository.UnitRepository;
 import iclean.code.data.repository.ServicePriceRepository;
 import iclean.code.exception.NotFoundException;
 import iclean.code.function.serviceprice.service.ServicePriceService;
@@ -16,7 +16,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalTime;
-import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 @Service
@@ -27,7 +26,7 @@ public class ServicePriceImplement implements ServicePriceService {
     private ServicePriceRepository servicePriceRepository;
 
     @Autowired
-    private JobUnitRepository jobUnitRepository;
+    private UnitRepository unitRepository;
 
     @Autowired
     private ModelMapper modelMapper;
@@ -56,7 +55,7 @@ public class ServicePriceImplement implements ServicePriceService {
         }
     }
 
-    private JobUnit findJobUnitById(int id) {
-        return jobUnitRepository.findById(id).orElseThrow(()-> new NotFoundException("Job Unit not found"));
+    private Unit findJobUnitById(int id) {
+        return unitRepository.findById(id).orElseThrow(()-> new NotFoundException("Job Unit not found"));
     }
 }

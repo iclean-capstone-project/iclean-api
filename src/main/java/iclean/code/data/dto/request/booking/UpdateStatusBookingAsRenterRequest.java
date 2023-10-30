@@ -19,7 +19,7 @@ public class UpdateStatusBookingAsRenterRequest {
     private Integer empId;
 
     @Range(min = 1, max = 9, message = "bookingStatusId Nhập trong khoảng 1-9")
-    private Integer bookingStatusId;
+    private String bookingStatus;
 
     @Nullable
     private Integer rejectReasonId;

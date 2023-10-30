@@ -1,8 +1,8 @@
 package iclean.code.function.rejectreason.controller;
 
 import iclean.code.data.dto.common.ResponseObject;
-import iclean.code.data.dto.request.rejectreason.CreateRejectReasonRequestDTO;
-import iclean.code.data.dto.request.rejectreason.UpdateRejectReasonRequestDTO;
+import iclean.code.data.dto.request.rejectionreason.CreateRejectionReasonRequestDTO;
+import iclean.code.data.dto.request.rejectionreason.UpdateRejectionReasonRequestDTO;
 import iclean.code.function.rejectreason.service.RejectReasonService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -55,7 +55,7 @@ public class RejectReasonController {
             @ApiResponse(responseCode = "403", description = "Forbidden - You don't have permission to access on this api"),
             @ApiResponse(responseCode = "400", description = "Bad request - Missing some field required")
     })
-    public ResponseEntity<ResponseObject> createRejectReason(@RequestBody @Valid CreateRejectReasonRequestDTO request) {
+    public ResponseEntity<ResponseObject> createRejectReason(@RequestBody @Valid CreateRejectionReasonRequestDTO request) {
         return rejectReasonService.createRejectReason(request);
     }
 
@@ -67,7 +67,7 @@ public class RejectReasonController {
             @ApiResponse(responseCode = "403", description = "Forbidden - You don't have permission to access on this api"),
             @ApiResponse(responseCode = "400", description = "Bad request - Missing some field required")
     })
-    public ResponseEntity<ResponseObject> updateRejectReason(@RequestBody @Valid UpdateRejectReasonRequestDTO request,
+    public ResponseEntity<ResponseObject> updateRejectReason(@RequestBody @Valid UpdateRejectionReasonRequestDTO request,
                                                                  @PathVariable Integer id) {
         return rejectReasonService.updateRejectReason(id, request);
     }

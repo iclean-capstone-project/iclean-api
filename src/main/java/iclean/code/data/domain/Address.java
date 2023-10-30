@@ -33,10 +33,10 @@ public class Address {
     private Boolean isDefault = false;
 
     @Column(name = "create_at")
-    private LocalDateTime createAt;
+    private LocalDateTime createAt = Utils.getDateTimeNow();
 
     @Column(name = "update_at")
-    private LocalDateTime updateAt = Utils.getDateTimeNow();
+    private LocalDateTime updateAt;
 
     @ManyToOne
     @JsonIgnore

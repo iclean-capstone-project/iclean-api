@@ -1,11 +1,11 @@
 package iclean.code.function.rejectreason.service.impl;
 
-import iclean.code.data.domain.RejectReason;
+import iclean.code.data.domain.RejectionReason;
 import iclean.code.data.dto.common.ResponseObject;
-import iclean.code.data.dto.request.rejectreason.CreateRejectReasonRequestDTO;
-import iclean.code.data.dto.request.rejectreason.UpdateRejectReasonRequestDTO;
-import iclean.code.data.dto.response.rejectreason.GetRejectReasonResponseDTO;
-import iclean.code.data.repository.RejectReasonRepository;
+import iclean.code.data.dto.request.rejectionreason.CreateRejectionReasonRequestDTO;
+import iclean.code.data.dto.request.rejectionreason.UpdateRejectionReasonRequestDTO;
+import iclean.code.data.dto.response.rejectionreason.GetRejectionReasonResponseDTO;
+import iclean.code.data.repository.RejectionReasonRepository;
 import iclean.code.exception.NotFoundException;
 import iclean.code.function.rejectreason.service.RejectReasonService;
 import iclean.code.utils.Utils;
@@ -23,16 +23,16 @@ import java.util.stream.Collectors;
 @Log4j2
 public class RejectReasonServiceImpl implements RejectReasonService {
     @Autowired
-    private RejectReasonRepository rejectReasonRepository;
+    private RejectionReasonRepository rejectionReasonRepository;
     @Autowired
     private ModelMapper modelMapper;
     @Override
     public ResponseEntity<ResponseObject> getRejectReasons() {
         try {
-            List<RejectReason> rejectReasons = rejectReasonRepository.findAll();
-            List<GetRejectReasonResponseDTO> responses = rejectReasons
+            List<RejectionReason> rejectionReasons = rejectionReasonRepository.findAll();
+            List<GetRejectionReasonResponseDTO> responses = rejectionReasons
                     .stream()
-                    .map(rejectReason -> modelMapper.map(rejectReason, GetRejectReasonResponseDTO.class))
+                    .map(rejectionReason -> modelMapper.map(rejectionReason, GetRejectionReasonResponseDTO.class))
                     .collect(Collectors.toList());
 
             return ResponseEntity.status(HttpStatus.OK)
@@ -51,8 +51,8 @@ public class RejectReasonServiceImpl implements RejectReasonService {
     @Override
     public ResponseEntity<ResponseObject> getRejectReason(Integer id) {
         try {
-            RejectReason rejectReason = findRejectReasonById(id);
-            GetRejectReasonResponseDTO responses = modelMapper.map(rejectReason, GetRejectReasonResponseDTO.class);
+            RejectionReason rejectionReason = findRejectReasonById(id);
+            GetRejectionReasonResponseDTO responses = modelMapper.map(rejectionReason, GetRejectionReasonResponseDTO.class);
 
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseObject(HttpStatus.OK.toString(),
@@ -74,11 +74,11 @@ public class RejectReasonServiceImpl implements RejectReasonService {
     }
 
     @Override
-    public ResponseEntity<ResponseObject> createRejectReason(CreateRejectReasonRequestDTO request) {
+    public ResponseEntity<ResponseObject> createRejectReason(CreateRejectionReasonRequestDTO request) {
         try {
-            RejectReason rejectReason = modelMapper.map(request, RejectReason.class);
-            rejectReason.setCreateAt(Utils.getDateTimeNow());
-            rejectReasonRepository.save(rejectReason);
+            RejectionReason rejectionReason = modelMapper.map(request, RejectionReason.class);
+            rejectionReason.setCreateAt(Utils.getDateTimeNow());
+            rejectionReasonRepository.save(rejectionReason);
 
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseObject(HttpStatus.OK.toString(),
@@ -99,11 +99,11 @@ public class RejectReasonServiceImpl implements RejectReasonService {
     }
 
     @Override
-    public ResponseEntity<ResponseObject> updateRejectReason(Integer id, UpdateRejectReasonRequestDTO request) {
+    public ResponseEntity<ResponseObject> updateRejectReason(Integer id, UpdateRejectionReasonRequestDTO request) {
         try {
-            RejectReason rejectReason = findRejectReasonById(id);
-            modelMapper.map(request, rejectReason);
-            rejectReasonRepository.save(rejectReason);
+            RejectionReason rejectionReason = findRejectReasonById(id);
+            modelMapper.map(request, rejectionReason);
+            rejectionReasonRepository.save(rejectionReason);
 
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseObject(HttpStatus.OK.toString(),
@@ -126,8 +126,8 @@ public class RejectReasonServiceImpl implements RejectReasonService {
     @Override
     public ResponseEntity<ResponseObject> deleteRejectReason(Integer id) {
         try {
-            RejectReason rejectReason = findRejectReasonById(id);
-            rejectReasonRepository.delete(rejectReason);
+            RejectionReason rejectionReason = findRejectReasonById(id);
+            rejectionReasonRepository.delete(rejectionReason);
 
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseObject(HttpStatus.OK.toString(),
@@ -147,8 +147,8 @@ public class RejectReasonServiceImpl implements RejectReasonService {
         }
     }
 
-    private RejectReason findRejectReasonById(Integer id) {
-        return rejectReasonRepository
+    private RejectionReason findRejectReasonById(Integer id) {
+        return rejectionReasonRepository
                 .findById(id)
                 .orElseThrow(() -> new NotFoundException(String.format("Reject Reason ID: %s is not exist", id)));
     }

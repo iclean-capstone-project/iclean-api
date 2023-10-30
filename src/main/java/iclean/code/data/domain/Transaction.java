@@ -2,8 +2,8 @@ package iclean.code.data.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import iclean.code.data.enumjava.TransactionStatus;
-import iclean.code.data.enumjava.TransactionType;
+import iclean.code.data.enumjava.TransactionStatusEnum;
+import iclean.code.data.enumjava.TransactionTypeEnum;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -28,18 +28,18 @@ public class Transaction {
     private LocalDateTime createAt;
 
     @Column(name = "transaction_status")
-    private TransactionStatus transactionStatus;
+    private TransactionStatusEnum transactionStatusEnum;
 
     @Column(name = "transaction_type")
-    private TransactionType transactionType;
-
-    @ManyToOne
-    @JsonIgnore
-    @JoinColumn(name = "user_id")
-    private User user;
+    private TransactionTypeEnum transactionTypeEnum;
 
     @ManyToOne
     @JsonIgnore
     @JoinColumn(name = "wallet_id")
     private Wallet wallet;
+
+    @ManyToOne
+    @JsonIgnore
+    @JoinColumn(name = "booking_id")
+    private Booking booking;
 }

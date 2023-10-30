@@ -1,11 +1,11 @@
 package iclean.code.function.jobunit.service.impl;
 
-import iclean.code.data.domain.JobUnit;
+import iclean.code.data.domain.Unit;
 import iclean.code.data.dto.common.ResponseObject;
-import iclean.code.data.dto.request.jobunit.CreateJobUnitRequest;
-import iclean.code.data.dto.request.jobunit.UpdateJobUnitRequest;
+import iclean.code.data.dto.request.serviceunit.CreateServiceUnitRequest;
+import iclean.code.data.dto.request.serviceunit.UpdateServiceUnitRequest;
 import iclean.code.data.enumjava.DeleteStatusEnum;
-import iclean.code.data.repository.JobUnitRepository;
+import iclean.code.data.repository.UnitRepository;
 import iclean.code.exception.NotFoundException;
 import iclean.code.function.jobunit.service.JobUnitService;
 import iclean.code.service.StorageService;
@@ -24,7 +24,7 @@ import java.util.List;
 public class JobUnitServiceImpl implements JobUnitService {
 
     @Autowired
-    private JobUnitRepository jobUnitRepository;
+    private UnitRepository unitRepository;
 
     @Autowired
     private StorageService storageService;
@@ -35,10 +35,10 @@ public class JobUnitServiceImpl implements JobUnitService {
     @Override
     public ResponseEntity<ResponseObject> getJobUnitActives() {
         try {
-            List<JobUnit> jobUnits = jobUnitRepository.findAllActive();
+            List<Unit> units = unitRepository.findAllActive();
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseObject(HttpStatus.OK.toString(),
-                            "All Job", jobUnits));
+                            "All Job", units));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new ResponseObject(HttpStatus.INTERNAL_SERVER_ERROR.toString(),
@@ -49,7 +49,7 @@ public class JobUnitServiceImpl implements JobUnitService {
     @Override
     public ResponseEntity<ResponseObject> getJobUnits() {
         try {
-            List<JobUnit> jobs = jobUnitRepository.findAll();
+            List<Unit> jobs = unitRepository.findAll();
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseObject(HttpStatus.OK.toString(),
                             "All Job", jobs));
@@ -62,14 +62,14 @@ public class JobUnitServiceImpl implements JobUnitService {
     }
 
     @Override
-    public ResponseEntity<ResponseObject> createJobUnits(CreateJobUnitRequest request) {
+    public ResponseEntity<ResponseObject> createJobUnits(CreateServiceUnitRequest request) {
         try {
-            JobUnit job = modelMapper.map(request, JobUnit.class);
-            String jobImgLink = storageService.uploadFile(request.getImgUnitFile());
-            job.setImgJobUnit(jobImgLink);
+            Unit job = modelMapper.map(request, Unit.class);
+//            String jobImgLink = storageService.uploadFile(request.getImgUnitFile());
+//            job.setImgJobUnit(jobImgLink);
             job.setCreateAt(Utils.getDateTimeNow());
 
-            jobUnitRepository.save(job);
+            unitRepository.save(job);
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseObject(HttpStatus.OK.toString(),
                             "Create Job Successfully!", null));
@@ -83,17 +83,17 @@ public class JobUnitServiceImpl implements JobUnitService {
     }
 
     @Override
-    public ResponseEntity<ResponseObject> updateJobUnit(int jobUnitId, UpdateJobUnitRequest request) {
+    public ResponseEntity<ResponseObject> updateJobUnit(int jobUnitId, UpdateServiceUnitRequest request) {
         try {
-            JobUnit jobUnit = findJobUnitById(jobUnitId);
+            Unit unit = findJobUnitById(jobUnitId);
 
-            storageService.deleteFile(jobUnit.getImgJobUnit());
-            String jobImgLink = storageService.uploadFile(request.getImgUnitFile());
-            jobUnit.setImgJobUnit(jobImgLink);
-            jobUnit.setUpdateAt(Utils.getDateTimeNow());
-            modelMapper.map(request, jobUnit);
+//            storageService.deleteFile(unit.getImgJobUnit());
+//            String jobImgLink = storageService.uploadFile(request.getImgUnitFile());
+//            unit.setImgJobUnit(jobImgLink);
+//            unit.setUpdateAt(Utils.getDateTimeNow());
+            modelMapper.map(request, unit);
 
-            jobUnitRepository.save(jobUnit);
+            unitRepository.save(unit);
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseObject(HttpStatus.OK.toString(),
                             "Update Job Successfully!", null));
@@ -114,10 +114,10 @@ public class JobUnitServiceImpl implements JobUnitService {
     @Override
     public ResponseEntity<ResponseObject> deleteJobUnit(int jobUnitId) {
         try {
-            JobUnit jobUnit = findJobUnitById(jobUnitId);
+            Unit unit = findJobUnitById(jobUnitId);
 
-            jobUnit.setIsDelete(DeleteStatusEnum.INACTIVE.getValue());
-            jobUnitRepository.save(jobUnit);
+            unit.setIsDeleted(DeleteStatusEnum.INACTIVE.getValue());
+            unitRepository.save(unit);
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseObject(HttpStatus.OK.toString(),
                             "Delete Job Successfully!", null));
@@ -135,7 +135,7 @@ public class JobUnitServiceImpl implements JobUnitService {
         }
     }
 
-    private JobUnit findJobUnitById(int id) {
-        return jobUnitRepository.findById(id).orElseThrow(() -> new NotFoundException(String.format("Job Unit ID %s are not exist", "id")));
+    private Unit findJobUnitById(int id) {
+        return unitRepository.findById(id).orElseThrow(() -> new NotFoundException(String.format("Job Unit ID %s are not exist", "id")));
     }
 }

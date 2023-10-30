@@ -1,12 +1,12 @@
 package iclean.code.function.registeremployee.service.impl;
 
-import iclean.code.data.domain.RegisterEmployee;
+import iclean.code.data.domain.HelperInformation;
 import iclean.code.data.domain.User;
 import iclean.code.data.dto.common.ResponseObject;
-import iclean.code.data.dto.request.registeremployee.CreateRegisterEmployeeRequestDTO;
-import iclean.code.data.dto.request.registeremployee.GetRegisterEmployeeRequestDTO;
-import iclean.code.data.dto.request.registeremployee.UpdateRegisterEmployeeRequestDTO;
-import iclean.code.data.dto.response.registeremployee.GetRegisterEmployeeResponseDTO;
+import iclean.code.data.dto.request.employeeinformation.CreateEmployeeInformationRequestDTO;
+import iclean.code.data.dto.request.employeeinformation.GetEmployeeInformationRequestDTO;
+import iclean.code.data.dto.request.employeeinformation.UpdateEmployeeInformationRequestDTO;
+import iclean.code.data.dto.response.employeeinformation.GetEmployeeInformationResponseDTO;
 import iclean.code.data.repository.RegisterEmployeeRepository;
 import iclean.code.data.repository.UserRepository;
 import iclean.code.exception.NotFoundException;
@@ -33,12 +33,12 @@ public class RegisterEmployeeServiceImpl implements RegisterEmployeeService {
     @Autowired
     private ModelMapper modelMapper;
     @Override
-    public ResponseEntity<ResponseObject> getRegisterEmployees(GetRegisterEmployeeRequestDTO request) {
+    public ResponseEntity<ResponseObject> getRegisterEmployees(GetEmployeeInformationRequestDTO request) {
         try {
-            List<RegisterEmployee> registerEmployees = registerEmployeeRepository.findAll();
-            List<GetRegisterEmployeeResponseDTO> responses = registerEmployees
+            List<HelperInformation> helperInformations = registerEmployeeRepository.findAll();
+            List<GetEmployeeInformationResponseDTO> responses = helperInformations
                     .stream()
-                    .map(registerEmployee -> modelMapper.map(registerEmployee, GetRegisterEmployeeResponseDTO.class))
+                    .map(employeeInformation -> modelMapper.map(employeeInformation, GetEmployeeInformationResponseDTO.class))
                     .collect(Collectors.toList());
 
             return ResponseEntity.status(HttpStatus.OK)
@@ -57,8 +57,8 @@ public class RegisterEmployeeServiceImpl implements RegisterEmployeeService {
     @Override
     public ResponseEntity<ResponseObject> getRegisterEmployee(Integer id) {
         try {
-            RegisterEmployee registerEmployee = findRegisterEmployeeById(id);
-            GetRegisterEmployeeResponseDTO responses = modelMapper.map(registerEmployee, GetRegisterEmployeeResponseDTO.class);
+            HelperInformation helperInformation = findRegisterEmployeeById(id);
+            GetEmployeeInformationResponseDTO responses = modelMapper.map(helperInformation, GetEmployeeInformationResponseDTO.class);
 
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseObject(HttpStatus.OK.toString(),
@@ -80,12 +80,12 @@ public class RegisterEmployeeServiceImpl implements RegisterEmployeeService {
     }
 
     @Override
-    public ResponseEntity<ResponseObject> createRegisterEmployee(CreateRegisterEmployeeRequestDTO request) {
+    public ResponseEntity<ResponseObject> createRegisterEmployee(CreateEmployeeInformationRequestDTO request) {
         try {
-            RegisterEmployee registerEmployee = modelMapper.map(request, RegisterEmployee.class);
+            HelperInformation helperInformation = modelMapper.map(request, HelperInformation.class);
             User user = findUserById(request.getUserId());
-            registerEmployee.setUser(user);
-            registerEmployeeRepository.save(registerEmployee);
+            helperInformation.setUser(user);
+            registerEmployeeRepository.save(helperInformation);
 
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseObject(HttpStatus.OK.toString(),
@@ -106,14 +106,14 @@ public class RegisterEmployeeServiceImpl implements RegisterEmployeeService {
     }
 
     @Override
-    public ResponseEntity<ResponseObject> updateRegisterEmployee(Integer id, UpdateRegisterEmployeeRequestDTO request) {
+    public ResponseEntity<ResponseObject> updateRegisterEmployee(Integer id, UpdateEmployeeInformationRequestDTO request) {
         try {
-            RegisterEmployee registerEmployee = findRegisterEmployeeById(id);
-            if (!Objects.equals(registerEmployee.getUser().getUserId(), request.getUserId()))
+            HelperInformation helperInformation = findRegisterEmployeeById(id);
+            if (!Objects.equals(helperInformation.getUser().getUserId(), request.getUserId()))
                 throw new UserNotHavePermissionException();
 
-            registerEmployee = modelMapper.map(request, RegisterEmployee.class);
-            registerEmployeeRepository.save(registerEmployee);
+            helperInformation = modelMapper.map(request, HelperInformation.class);
+            registerEmployeeRepository.save(helperInformation);
 
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseObject(HttpStatus.OK.toString(),
@@ -141,12 +141,12 @@ public class RegisterEmployeeServiceImpl implements RegisterEmployeeService {
     @Override
     public ResponseEntity<ResponseObject> deleteRegisterEmployee(Integer id) {
         try {
-            RegisterEmployee registerEmployee = findRegisterEmployeeById(id);
+            HelperInformation helperInformation = findRegisterEmployeeById(id);
             Integer fakeId = 1;
-            if (!Objects.equals(registerEmployee.getUser().getUserId(), fakeId))
+            if (!Objects.equals(helperInformation.getUser().getUserId(), fakeId))
                 throw new UserNotHavePermissionException();
 
-            registerEmployeeRepository.delete(registerEmployee);
+            registerEmployeeRepository.delete(helperInformation);
 
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseObject(HttpStatus.OK.toString(),
@@ -176,7 +176,7 @@ public class RegisterEmployeeServiceImpl implements RegisterEmployeeService {
                 .orElseThrow(() -> new NotFoundException(String.format("User ID: %s is not exist", id)));
     }
 
-    private RegisterEmployee findRegisterEmployeeById(Integer id) {
+    private HelperInformation findRegisterEmployeeById(Integer id) {
         return registerEmployeeRepository
                 .findById(id)
                 .orElseThrow(() -> new NotFoundException(String.format("Register Employee ID: %s is not exist", id)));

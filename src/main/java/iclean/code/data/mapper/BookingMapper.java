@@ -16,9 +16,8 @@ public class BookingMapper {
         modelMapper.addMappings(new PropertyMap<Booking, GetBookingHistoryResponse>() {
             @Override
             protected void configure() {
-                map().setEmployeeFullName(source.getEmployee().getFullName());
+//                map().setEmployeeFullName(source.getEmployee().getFullName());
                 map().setRenterFullName(source.getRenter().getFullName());
-                map().setJobName(source.getJobUnit().getJob().getJobName());
             }
         });
     }

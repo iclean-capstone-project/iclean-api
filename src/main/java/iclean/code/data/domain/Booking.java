@@ -2,6 +2,7 @@ package iclean.code.data.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import iclean.code.utils.Utils;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -29,7 +30,7 @@ public class Booking {
     private Double latitude;
 
     @Column(name = "order_date")
-    private LocalDateTime orderDate;
+    private LocalDateTime orderDate = Utils.getDateTimeNow();
 
     @Column(name = "accept_date")
     private LocalDateTime acceptDate;
@@ -37,30 +38,8 @@ public class Booking {
     @Column(name = "rj_reason_description")
     private String rjReasonDescription;
 
-    @Column(name = "work_date")
-    private LocalDateTime workDate;
-
-    @Column(name = "work_hour")
-    private Double workHour;
-
-    @Column(name = "work_hour_actual")
-    private Double workHourActual;
-
     @Column(name = "request_count")
     private Integer requestCount;
-
-    @Column(name = "work_start")
-    private LocalDateTime workStart;
-
-    @Column(name = "work_end")
-    private LocalDateTime workEnd;
-
-    private Double rate;
-
-    private String feedback;
-
-    @Column(name = "feedback_time")
-    private LocalDateTime feedbackTime;
 
     @Column(name = "total_price")
     private Double totalPrice;
@@ -75,31 +54,18 @@ public class Booking {
 
     @ManyToOne
     @JsonIgnore
-    @JoinColumn(name = "employee_id")
-    private User employee;
-
-    @ManyToOne
-    @JsonIgnore
     @JoinColumn(name = "manager_id")
     private User manager;
 
-    @Column(name = "rj_reason_id", insertable = false, updatable = false)
-    private Integer rjReasonId;
-
     @ManyToOne
     @JsonIgnore
-    @JoinColumn(name = "rj_reason_id")
-    private RejectReason rejectReason;
-
-    @ManyToOne
-    @JsonIgnore
-    @JoinColumn(name = "job_unit_id")
-    private JobUnit jobUnit;
+    @JoinColumn(name = "rejection_reason_id")
+    private RejectionReason rejectionReason;
 
     @OneToMany(mappedBy = "booking")
     @JsonIgnoreProperties("booking")
     @JsonIgnore
-    private List<BookingEmployee> bookingEmployees;
+    private List<BookingDetail> bookingDetails;
 
     @OneToMany(mappedBy = "booking")
     @JsonIgnoreProperties("booking")

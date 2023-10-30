@@ -12,7 +12,7 @@ import iclean.code.data.dto.response.moneyrequest.GetMoneyRequestResponseDTO;
 import iclean.code.data.dto.response.moneyrequest.GetMoneyRequestUserDto;
 import iclean.code.data.enumjava.MoneyRequestEnum;
 import iclean.code.data.enumjava.MoneyRequestStatusEnum;
-import iclean.code.data.enumjava.WalletType;
+import iclean.code.data.enumjava.WalletTypeEnum;
 import iclean.code.data.repository.MoneyRequestRepository;
 import iclean.code.data.repository.UserRepository;
 import iclean.code.data.repository.WalletRepository;
@@ -164,7 +164,7 @@ public class MoneyRequestServiceImpl implements MoneyRequestService {
                     : String.format(withdrawMessage, " - " + moneyRequest.getBalance().longValue());
 
             transactionService.createTransactionService(new TransactionRequestDto(moneyRequest.getBalance(), note,
-                    moneyRequest.getUser().getUserId(), moneyRequest.getRequestType().name(), WalletType.MONEY.name()));
+                    moneyRequest.getUser().getUserId(), moneyRequest.getRequestType().name(), WalletTypeEnum.MONEY.name()));
             moneyRequestRepository.save(moneyRequest);
 
             return ResponseEntity.status(HttpStatus.OK)

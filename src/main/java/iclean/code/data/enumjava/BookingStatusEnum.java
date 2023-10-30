@@ -4,19 +4,19 @@ import lombok.Getter;
 
 @Getter
 public enum BookingStatusEnum {
-    REJECT(0),///
+    REJECTED(0),///
     NOT_YET(1),
     APPROVED (2),//
-    EMPLOYEE_ACCEPT(3),//
-    RENTER_ASSIGN(4),//
-    RENTER_CANCEL(5),//
-    EMPLOYEE_CANCEL(6),//
+    EMPLOYEE_ACCEPTED(3),//
+    RENTER_ASSIGNED(4),//
+    RENTER_CANCELED(5),//
+    EMPLOYEE_CANCELED(6),//
     WAITING(7),
-    IN_PROCESS(8),//
-    FINISH(9);
+    IN_PROCESSING(8),//
+    FINISHED(9);
 
 
-    private int value;
+    private final int value;
 
     private BookingStatusEnum(int value) {
         this.value = value;

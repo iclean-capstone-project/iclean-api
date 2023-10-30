@@ -42,6 +42,6 @@ public class ServicePrice {
 
     @ManyToOne
     @JsonIgnore
-    @JoinColumn(name = "job_unit_id")
-    private JobUnit jobUnit;
+    @JoinColumn(name = "service_unit_id")
+    private ServiceUnit serviceUnit;
 }
