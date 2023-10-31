@@ -5,6 +5,7 @@ import iclean.code.data.dto.common.ResponseObject;
 import iclean.code.data.dto.request.service.CreateServiceRequest;
 import iclean.code.data.dto.request.service.UpdateServiceRequest;
 import iclean.code.data.dto.response.service.GetServiceActiveResponse;
+import iclean.code.data.dto.response.service.GetServiceDetailForHelperResponse;
 import iclean.code.data.dto.response.service.GetServiceDetailResponse;
 import iclean.code.data.dto.response.service.GetServiceResponse;
 import iclean.code.data.enumjava.DeleteStatusEnum;
@@ -163,6 +164,26 @@ public class ServiceServiceImpl implements ServiceService {
         try {
             Service service = findById(id);
             GetServiceDetailResponse response = modelMapper.map(service, GetServiceDetailResponse.class);
+            return ResponseEntity.status(HttpStatus.OK)
+                    .body(new ResponseObject(HttpStatus.OK.toString(),
+                            "Service Detail", response));
+        } catch (Exception e) {
+            if (e instanceof NotFoundException) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new ResponseObject(HttpStatus.NOT_FOUND.toString(),
+                                e.getMessage(), null));
+            }
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ResponseObject(HttpStatus.INTERNAL_SERVER_ERROR.toString(),
+                            "Something wrong occur!", null));
+        }
+    }
+
+    @Override
+    public ResponseEntity<ResponseObject> getServiceForHelper(Integer serviceId) {
+        try {
+            Service service = findById(serviceId);
+            GetServiceDetailForHelperResponse response = modelMapper.map(service, GetServiceDetailForHelperResponse.class);
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseObject(HttpStatus.OK.toString(),
                             "Service Detail", response));

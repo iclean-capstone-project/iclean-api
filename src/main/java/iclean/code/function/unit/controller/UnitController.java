@@ -1,9 +1,9 @@
-package iclean.code.function.serviceunit.controller;
+package iclean.code.function.unit.controller;
 
 import iclean.code.data.dto.common.ResponseObject;
 import iclean.code.data.dto.request.unit.CreateUnitRequest;
 import iclean.code.data.dto.request.unit.UpdateUnitRequest;
-import iclean.code.function.serviceunit.service.UnitService;
+import iclean.code.function.unit.service.UnitService;
 import iclean.code.utils.Utils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Schema;

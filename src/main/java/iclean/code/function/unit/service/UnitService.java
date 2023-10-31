@@ -1,4 +1,4 @@
-package iclean.code.function.serviceunit.service;
+package iclean.code.function.unit.service;
 
 import iclean.code.data.dto.common.ResponseObject;
 import iclean.code.data.dto.request.unit.CreateUnitRequest;

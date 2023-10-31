@@ -2,6 +2,7 @@ package iclean.code.data.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import iclean.code.utils.Utils;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -21,17 +22,14 @@ public class ServiceUnit {
     @Column(name = "default_price")
     private Double defaultPrice;
 
-    @Column(name = "employee_commission")
-    private Double employeeCommission;
+    @Column(name = "helper_commission")
+    private Double helperCommission;
 
     @Column(name = "is_deleted")
-    private Boolean isDeleted;
-
-    @Column(name = "service_unit_image")
-    private String serviceUnitImage;
+    private Boolean isDeleted = false;
 
     @Column(name = "create_at")
-    private LocalDateTime createAt;
+    private LocalDateTime createAt = Utils.getDateTimeNow();
 
     @Column(name = "update_at")
     private LocalDateTime updateAt;

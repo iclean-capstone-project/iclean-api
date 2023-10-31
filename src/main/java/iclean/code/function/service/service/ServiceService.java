@@ -18,4 +18,6 @@ public interface ServiceService {
     ResponseEntity<ResponseObject> getServiceActives();
 
     ResponseEntity<ResponseObject> getService(int id);
+
+    ResponseEntity<ResponseObject> getServiceForHelper(Integer serviceId);
 }
