@@ -2,7 +2,6 @@ package iclean.code.function.systemparameter.service.impl;
 
 import iclean.code.data.domain.SystemParameter;
 import iclean.code.data.dto.common.ResponseObject;
-import iclean.code.data.dto.request.systemparameter.CreateSystemParameter;
 import iclean.code.data.dto.request.systemparameter.UpdateSystemParameter;
 import iclean.code.data.repository.SystemParameterRepository;
 import iclean.code.exception.NotFoundException;
@@ -13,8 +12,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-
-import java.time.LocalDateTime;
 
 @Service
 public class SystemParameterServiceImpl implements SystemParameterService {
@@ -52,32 +49,9 @@ public class SystemParameterServiceImpl implements SystemParameterService {
     }
 
     @Override
-    public ResponseEntity<ResponseObject> addNewSystemParameter(CreateSystemParameter systemParameter) {
-        try {
-            SystemParameter systemParameterForCreate = modelMapper.map(systemParameter, SystemParameter.class);
-            systemParameterForCreate.setParameterField(systemParameter.getParameterField());
-            systemParameterForCreate.setParameterValue(systemParameter.getParameterValue());
-            systemParameterRepository.save(systemParameterForCreate);
-            return ResponseEntity.status(HttpStatus.OK)
-                    .body(new ResponseObject(HttpStatus.OK.toString()
-                            , "Create SystemParameter Successfully!", null));
-
-        } catch (Exception e) {
-            if (e instanceof NotFoundException) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(new ResponseObject(HttpStatus.NOT_FOUND.toString()
-                                , "Something wrong occur!", e.getMessage()));
-            }
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString()
-                            , "Something wrong occur!", null));
-        }
-    }
-
-    @Override
     public ResponseEntity<ResponseObject> updateSystemParameter(int systemId, UpdateSystemParameter systemParameter) {
         try {
-            SystemParameter systemParameterForUpdate = finSystemParameter(systemId);
+            SystemParameter systemParameterForUpdate = findSystemParameter(systemId);
                     //modelMapper.map(systemParameter, SystemParameter.class);
             systemParameterForUpdate.setUpdateAt(Utils.getDateTimeNow());
             systemParameterForUpdate.setUpdateVersion(systemParameter.getUpdateVersion());
@@ -94,35 +68,14 @@ public class SystemParameterServiceImpl implements SystemParameterService {
                         .body(new ResponseObject(HttpStatus.NOT_FOUND.toString()
                                 , "Something wrong occur!", e.getMessage()));
             }
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString()
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ResponseObject(HttpStatus.INTERNAL_SERVER_ERROR.toString()
                             , "Something wrong occur!", null));
         }
     }
 
-    @Override
-    public ResponseEntity<ResponseObject> deleteSystemParameter(int systemId) {
-        try {
-            SystemParameter systemParameterForDelete = finSystemParameter(systemId);
-            systemParameterRepository.delete(systemParameterForDelete);
-            return ResponseEntity.status(HttpStatus.CREATED)
-                    .body(new ResponseObject(HttpStatus.ACCEPTED.toString()
-                            , "Delete SystemParameter Successfully!", null));
-
-        } catch (Exception e) {
-            if (e instanceof NotFoundException) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(new ResponseObject(HttpStatus.NOT_FOUND.toString()
-                                , "Something wrong occur!", e.getMessage()));
-            }
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString()
-                            , "Something wrong occur!", null));
-        }
-    }
-
-    private SystemParameter finSystemParameter(int systemId) {
+    private SystemParameter findSystemParameter(int systemId) {
         return systemParameterRepository.findById(systemId)
-                .orElseThrow(() -> new NotFoundException("SystemParameter is not exist"));
+                .orElseThrow(() -> new NotFoundException("System-Parameter is not exist"));
     }
 }

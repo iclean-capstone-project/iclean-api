@@ -12,7 +12,6 @@ public class UserMapper {
     public UserMapper(ModelMapper modelMapper) {
         this.modelMapper = modelMapper;
 
-        modelMapper.addConverter(new LocalDateToStringConverter());
         modelMapper.addMappings(new PropertyMap<User, GetMoneyRequestUserDto>() {
             @Override
             protected void configure() {
