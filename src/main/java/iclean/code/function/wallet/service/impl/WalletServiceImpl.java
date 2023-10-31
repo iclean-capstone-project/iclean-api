@@ -30,16 +30,17 @@ public class WalletServiceImpl implements WalletService {
     public ResponseEntity<ResponseObject> getCurrentBalance(Integer userId, String walletTypeValue) {
         try {
             CurrentBalanceDto response = new CurrentBalanceDto();
-            finUser(userId);
+            findUser(userId);
             WalletTypeEnum walletTypeEnum = WalletTypeEnum.valueOf(walletTypeValue.toUpperCase());
             Wallet wallet = walletRepository.getWalletByUserIdAndType(userId, walletTypeEnum);
-//            CurrentBalanceDto response = modelMapper.map(wallet, CurrentBalanceDto.class);
+
             if (Objects.isNull(wallet)) {
                 response.setCurrentBalance(0D);
                 response.setWalletType(walletTypeValue);
+            } else {
+                response.setCurrentBalance(wallet.getBalance());
+                response.setWalletType(walletTypeEnum.name());
             }
-            response.setCurrentBalance(wallet.getBalance());
-            response.setWalletType(walletTypeEnum.name());
 
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseObject(HttpStatus.OK.toString(),
@@ -85,7 +86,7 @@ public class WalletServiceImpl implements WalletService {
 
         if (Objects.isNull(optionalWallet)) {
             optionalWallet = new Wallet();
-            optionalWallet.setUser(finUser(userId));
+            optionalWallet.setUser(findUser(userId));
             optionalWallet.setWalletTypeEnum(WalletTypeEnum.valueOf(updateBalance.getWalletType().toUpperCase()));
         }
         optionalWallet.setBalance(Double.valueOf(updateBalance.getBalance()));
@@ -93,7 +94,7 @@ public class WalletServiceImpl implements WalletService {
         return optionalWallet;
     }
 
-    private User finUser(int userId) {
+    private User findUser(int userId) {
         return userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("User is not exist"));
     }

@@ -10,4 +10,6 @@ public class GetTransactionResponseDto {
     private Double balance;
     private LocalDateTime createAt;
     private String transactionStatus;
+    private String transactionType;
+    private String note;
 }
