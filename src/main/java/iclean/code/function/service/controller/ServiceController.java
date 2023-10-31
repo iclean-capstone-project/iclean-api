@@ -94,14 +94,12 @@ public class ServiceController {
     })
     public ResponseEntity<ResponseObject> updateService(@PathVariable("id") int serviceId,
                                                         @Schema(example = "Quét nhà")
-                                                        @NotBlank(message = "Service name cannot be empty")
                                                         @RequestPart(required = false) String serviceName,
                                                         @Schema(example = "Là dịch vụ dọn dẹp quét nhà")
                                                         @RequestPart(required = false) String description,
-                                                        @Schema(example = "Active|Inactive")
-                                                        @Pattern(regexp = "(?i)(Active|Inactive)", message = "Is Deleted are not valid")
+                                                        @Schema(example = "Active")
+                                                        @Pattern(regexp = "(?i)(Active)", message = "Status are invalid")
                                                         @RequestPart(required = false) String serviceStatus,
-                                                        @NotNull(message = "File is required")
                                                         @RequestPart(required = false) MultipartFile serviceFileImage) {
         return serviceService.updateService(serviceId, new UpdateServiceRequest(serviceName, description, serviceStatus, serviceFileImage));
     }

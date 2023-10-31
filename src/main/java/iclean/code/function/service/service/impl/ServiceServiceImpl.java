@@ -84,7 +84,9 @@ public class ServiceServiceImpl implements ServiceService {
         try {
             Service serviceToUpdate = findById(serviceId);
             modelMapper.map(request, serviceToUpdate);
-            serviceToUpdate.setIsDeleted(DeleteStatusEnum.valueOf(request.getServiceStatus().toUpperCase()).getValue());
+            if (!Utils.isNullOrEmpty(request.getServiceStatus())) {
+                serviceToUpdate.setIsDeleted(DeleteStatusEnum.valueOf(request.getServiceStatus().toUpperCase()).getValue());
+            }
             if (request.getImgService() != null) {
                 storageService.deleteFile(serviceToUpdate.getServiceImage());
                 String jobImgLink = storageService.uploadFile(request.getImgService());

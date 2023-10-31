@@ -1,10 +1,10 @@
-package iclean.code.function.jobapplication.controller;
+package iclean.code.function.attachment.controller;
 
 import iclean.code.config.JwtUtils;
 import iclean.code.data.dto.common.ResponseObject;
 import iclean.code.data.dto.request.attachment.CreateAttachmentRequestDTO;
 import iclean.code.data.dto.request.attachment.UpdateAttachmentRequestDTO;
-import iclean.code.function.jobapplication.service.JobApplicationService;
+import iclean.code.function.attachment.service.JobApplicationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;

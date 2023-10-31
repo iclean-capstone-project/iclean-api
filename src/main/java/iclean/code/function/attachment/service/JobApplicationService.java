@@ -1,4 +1,4 @@
-package iclean.code.function.jobapplication.service;
+package iclean.code.function.attachment.service;
 
 import iclean.code.data.dto.common.ResponseObject;
 import iclean.code.data.dto.request.attachment.CreateAttachmentRequestDTO;

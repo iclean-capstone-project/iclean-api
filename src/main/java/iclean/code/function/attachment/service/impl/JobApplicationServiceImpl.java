@@ -1,4 +1,4 @@
-package iclean.code.function.jobapplication.service.impl;
+package iclean.code.function.attachment.service.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import iclean.code.data.domain.Attachment;
@@ -11,7 +11,7 @@ import iclean.code.data.dto.response.others.CMTFrontResponse;
 import iclean.code.data.repository.AttachmentRepository;
 import iclean.code.data.repository.RegisterEmployeeRepository;
 import iclean.code.exception.NotFoundException;
-import iclean.code.function.jobapplication.service.JobApplicationService;
+import iclean.code.function.attachment.service.JobApplicationService;
 import iclean.code.service.ExternalApiService;
 import iclean.code.service.StorageService;
 import iclean.code.utils.Utils;
