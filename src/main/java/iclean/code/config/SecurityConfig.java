@@ -20,6 +20,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
 
 import java.util.Arrays;
+import java.util.List;
 
 @Configuration
 @EnableGlobalMethodSecurity(prePostEnabled = true, securedEnabled = true, jsr250Enabled = true)
@@ -37,28 +38,15 @@ public class SecurityConfig {
     @Autowired
     private OtpAuthenticationProvider otpAuthenticationProvider;
 
-
     @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
+    CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(
-                Arrays.asList(
-                        "http://localhost:3000",
-                        "https://iclean.azurewebsites.net",
-                        "http://localhost:8080"
-                )
-        );
-        configuration.setAllowCredentials(true);
-
+        configuration.setAllowedOrigins(List.of("*"));
+        configuration.setAllowedMethods(List.of("*"));
+        configuration.setAllowedHeaders(List.of("*"));
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
-
         return source;
-    }
-
-    @Bean
-    public CorsFilter corsFilter() {
-        return new CorsFilter(corsConfigurationSource());
     }
 
     @Bean
