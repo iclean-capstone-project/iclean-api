@@ -1,21 +1,27 @@
 package iclean.code.function.booking.service.impl;
 
+import iclean.code.config.MessageVariable;
 import iclean.code.data.domain.*;
 import iclean.code.data.dto.common.ResponseObject;
 import iclean.code.data.dto.request.authen.NotificationRequestDto;
 import iclean.code.data.dto.request.booking.AddBookingRequest;
+import iclean.code.data.dto.request.booking.CheckOutCartRequest;
 import iclean.code.data.dto.request.booking.UpdateStatusBookingAsRenterRequest;
 import iclean.code.data.dto.request.booking.UpdateStatusBookingRequest;
+import iclean.code.data.dto.request.serviceprice.GetServicePriceRequest;
 import iclean.code.data.dto.response.PageResponseObject;
 import iclean.code.data.dto.response.booking.GetBookingHistoryResponse;
 import iclean.code.data.dto.response.booking.GetBookingResponse;
+import iclean.code.data.dto.response.booking.GetCartResponseDetail;
 import iclean.code.data.enumjava.BookingDetailHelperStatusEnum;
+import iclean.code.data.enumjava.BookingDetailStatusEnum;
 import iclean.code.data.enumjava.BookingStatusEnum;
 import iclean.code.data.enumjava.RoleEnum;
 import iclean.code.data.repository.*;
 import iclean.code.exception.NotFoundException;
 import iclean.code.exception.UserNotHavePermissionException;
 import iclean.code.function.booking.service.BookingService;
+import iclean.code.function.serviceprice.service.ServicePriceService;
 import iclean.code.service.FCMService;
 import iclean.code.utils.Utils;
 import lombok.extern.log4j.Log4j2;
@@ -28,9 +34,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -59,10 +67,16 @@ public class BookingServiceImpl implements BookingService {
     private ServiceUnitRepository serviceUnitRepository;
 
     @Autowired
+    private BookingDetailRepository bookingDetailRepository;
+
+    @Autowired
     private RejectionReasonRepository rejectionReasonRepository;
 
     @Autowired
     private DeviceTokenRepository deviceTokenRepository;
+
+    @Autowired
+    private ServicePriceService servicePriceService;
 
     @Autowired
     private ModelMapper modelMapper;
@@ -118,41 +132,52 @@ public class BookingServiceImpl implements BookingService {
         }
     }
 
+    private ServiceUnit findServiceUnitById(Integer id) {
+        return serviceUnitRepository.findById(id).orElseThrow(()
+                -> new NotFoundException(String.format("Service Unit %s ID is not exist!", id)));
+    }
+
     @Override
-    public ResponseEntity<ResponseObject> addBooking(AddBookingRequest request,
-                                                     Integer userId) {
+    public ResponseEntity<ResponseObject> createServiceToCart(AddBookingRequest request,
+                                                              Integer userId) {
         try {
             Booking booking = bookingRepository.findCartByRenterId(userId, BookingStatusEnum.ON_CART);
-            BookingDetail bookingDetail = new BookingDetail();
-//            ServiceUnit serviceUnit =
-//            bookingDetail.setServiceUnit();
+            if (booking == null) {
+                booking = new Booking();
+                BookingStatusHistory bookingStatusHistory = new BookingStatusHistory();
+                bookingStatusHistory.setBookingStatus(BookingStatusEnum.ON_CART);
+                booking.setBookingStatusHistories(List.of(bookingStatusHistory));
+            }
             Booking newBooking = bookingRepository.save(booking);
 
-            BookingStatusHistory bookingStatusHistory = new BookingStatusHistory();
-            bookingStatusHistory.setBooking(newBooking);
-            bookingStatusHistory.setBookingStatus(BookingStatusEnum.NOT_YET);
-            bookingStatusHistory.setCreateAt(Utils.getDateTimeNow());
-            bookingStatusHistoryRepository.save(bookingStatusHistory);
+            BookingDetail bookingDetail = new BookingDetail();
+            Optional<BookingDetail> checkCurrentDetail = bookingDetailRepository
+                    .findByServiceUnitIdAndBookingStatus(request.getServiceUnitId(), BookingStatusEnum.ON_CART);
+            if (checkCurrentDetail.isPresent()) {
+                bookingDetail = checkCurrentDetail.get();
+            } else {
+                ServiceUnit serviceUnit = findServiceUnitById(request.getServiceUnitId());
+                bookingDetail.setServiceUnit(serviceUnit);
+                bookingDetail.setBooking(newBooking);
+            }
+            Double priceDetail = servicePriceService
+                    .getServicePrice(new GetServicePriceRequest(request.getServiceUnitId(),
+                            request.getStartTime().toLocalTime().format(DateTimeFormatter.ofPattern("HH:mm:ss"))));
+            bookingDetail.setPriceDetail(priceDetail);
+            bookingDetail.setWorkStart(request.getStartTime().toLocalTime());
+            bookingDetail.setWorkDate(request.getStartTime().toLocalDate());
+            bookingDetail.setBookingDetailStatusEnum(BookingDetailStatusEnum.ON_CART);
+            bookingDetailRepository.save(bookingDetail);
 
-            //SEND NOTIFICATION
-            List<DeviceToken> deviceTokens = deviceTokenRepository.findByUserId(userId);
-
-            NotificationRequestDto notificationRequestDto = new NotificationRequestDto();
-            notificationRequestDto.setTarget(deviceTokens.get(0).getFcmToken());
-            notificationRequestDto.setTitle("iClean - Helping Hand Hub Platform");
-            notificationRequestDto.setBody("Đơn hàng " + booking.getBookingId() + " của bạn đã được đặt thành công!");
-
-            fcmService.sendPnsToTopic(notificationRequestDto);
-            //---------
             return ResponseEntity.status(HttpStatus.OK)
-                    .body(new ResponseObject(HttpStatus.OK.toString()
-                            , "Create Booking Successfully!", null));
+                    .body(new ResponseObject(HttpStatus.OK.toString(),
+                            "Create Booking Successfully!", null));
 
         } catch (Exception e) {
             if (e instanceof NotFoundException) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body(new ResponseObject(HttpStatus.NOT_FOUND.toString()
-                                , "Something wrong occur!", e.getMessage()));
+                                , e.getMessage(), null));
             }
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString()
@@ -160,6 +185,130 @@ public class BookingServiceImpl implements BookingService {
         }
     }
 
+    @Override
+    public ResponseEntity<ResponseObject> getCart(Integer userId) {
+        try {
+            Booking booking = bookingRepository.findCartByRenterId(userId, BookingStatusEnum.ON_CART);
+            GetCartResponseDetail responseDetail = modelMapper.map(booking, GetCartResponseDetail.class);
+            return ResponseEntity.status(HttpStatus.OK)
+                    .body(new ResponseObject(HttpStatus.OK.toString(),
+                            "Get Cart Successfully!", responseDetail));
+
+        } catch (Exception e) {
+            if (e instanceof NotFoundException) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new ResponseObject(HttpStatus.NOT_FOUND.toString(),
+                                e.getMessage(), null));
+            }
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString(),
+                            "Something wrong occur!", null));
+        }
+    }
+
+    @Override
+    public ResponseEntity<ResponseObject> deleteAllOnCart(Integer userId) {
+        try {
+            Booking booking = bookingRepository.findCartByRenterId(userId, BookingStatusEnum.ON_CART);
+            bookingRepository.delete(booking);
+            return ResponseEntity.status(HttpStatus.OK)
+                    .body(new ResponseObject(HttpStatus.OK.toString(),
+                            "Delete Cart Successfully!", null));
+
+        } catch (Exception e) {
+            log.error(e.getMessage());
+            if (e instanceof NotFoundException) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new ResponseObject(HttpStatus.NOT_FOUND.toString(),
+                                e.getMessage(), null));
+            }
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ResponseObject(HttpStatus.INTERNAL_SERVER_ERROR.toString(),
+                            "Something wrong occur!", null));
+        }
+    }
+
+    private boolean isPermission(Integer userId, BookingDetail booking) throws UserNotHavePermissionException {
+        if (!Objects.equals(booking.getBooking().getRenter().getUserId(), userId))
+            throw new UserNotHavePermissionException("User do not have permission to do this action");
+        return true;
+    }
+
+    @Override
+    public ResponseEntity<ResponseObject> deleteServiceOnCart(Integer userId, Integer detailId) {
+        try {
+            Optional<BookingDetail> bookingDetail = bookingDetailRepository
+                    .findByBookingDetailIdAndBookingStatus(detailId, BookingStatusEnum.ON_CART);
+            if (bookingDetail.isPresent()) {
+                isPermission(userId, bookingDetail.get());
+                bookingDetailRepository.delete(bookingDetail.get());
+                return ResponseEntity.status(HttpStatus.OK)
+                        .body(new ResponseObject(HttpStatus.OK.toString(),
+                                "Delete a service on cart successful", null));
+            }
+            throw new NotFoundException(String.format("The service with detail ID: %s is not on this cart!", detailId));
+
+        } catch (Exception e) {
+            log.error(e.getMessage());
+            if (e instanceof UserNotHavePermissionException) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(new ResponseObject(HttpStatus.FORBIDDEN.toString(),
+                                e.getMessage(), null));
+            }
+            if (e instanceof NotFoundException) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new ResponseObject(HttpStatus.NOT_FOUND.toString(),
+                                e.getMessage(), null));
+            }
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ResponseObject(HttpStatus.INTERNAL_SERVER_ERROR.toString(),
+                            "Something wrong occur!", null));
+        }
+    }
+
+    @Override
+    public ResponseEntity<ResponseObject> checkoutCart(Integer userId, CheckOutCartRequest request) {
+        try {
+            Booking booking = bookingRepository.findCartByRenterId(userId, BookingStatusEnum.ON_CART);
+
+            // --- CheckoutCartRequest ---
+
+            // ---
+            BookingStatusHistory bookingStatusHistory = new BookingStatusHistory();
+            bookingStatusHistory.setBookingStatus(BookingStatusEnum.NOT_YET);
+            bookingStatusHistory.setBooking(booking);
+            bookingStatusHistoryRepository.save(bookingStatusHistory);
+
+            //SEND NOTIFICATION
+            List<DeviceToken> deviceTokens = deviceTokenRepository.findByUserId(userId);
+            NotificationRequestDto notificationRequestDto = new NotificationRequestDto();
+            notificationRequestDto.setTarget(convertToListFcmToken(deviceTokens));
+            notificationRequestDto.setTitle(MessageVariable.TITLE_APP);
+            notificationRequestDto.setBody(String.format(MessageVariable.ORDER_SUCCESSFUL, booking.getBookingId()));
+
+            fcmService.sendPnsToTopic(notificationRequestDto);
+
+            return ResponseEntity.status(HttpStatus.OK)
+                    .body(new ResponseObject(HttpStatus.OK.toString(),
+                            "Checkout Successfully!", null));
+
+        } catch (Exception e) {
+            if (e instanceof NotFoundException) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new ResponseObject(HttpStatus.NOT_FOUND.toString(),
+                                e.getMessage(), null));
+            }
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString(),
+                            "Something wrong occur!", null));
+        }
+    }
+
+    private List<String> convertToListFcmToken(List<DeviceToken> deviceTokens) {
+        return deviceTokens.stream()
+                .map(DeviceToken::getFcmToken)
+                .collect(Collectors.toList());
+    }
     @Override
     public ResponseEntity<ResponseObject> updateStatusBooking(Integer bookingId,
                                                               Integer userId,
@@ -195,7 +344,7 @@ public class BookingServiceImpl implements BookingService {
             List<DeviceToken> deviceTokens = deviceTokenRepository.findByUserId(userId);
 
             NotificationRequestDto notificationRequestDto = new NotificationRequestDto();
-            notificationRequestDto.setTarget(deviceTokens.get(0).getFcmToken());
+            notificationRequestDto.setTarget(convertToListFcmToken(deviceTokens));
             notificationRequestDto.setTitle("iClean - Helping Hand Hub Platform");
             notificationRequestDto.setBody("Đơn hàng " + booking.getBookingId() + " của bạn đã được cập nhật trạng thái mới.");
 
@@ -254,7 +403,7 @@ public class BookingServiceImpl implements BookingService {
             List<DeviceToken> deviceTokens = deviceTokenRepository.findByUserId(userId);
 
             NotificationRequestDto notificationRequestDto = new NotificationRequestDto();
-            notificationRequestDto.setTarget(deviceTokens.get(0).getFcmToken());
+            notificationRequestDto.setTarget(convertToListFcmToken(deviceTokens));
             notificationRequestDto.setTitle("iClean - Helping Hand Hub Platform");
             notificationRequestDto.setBody("Đơn hàng " + booking.getBookingId() + " của bạn đã được cập nhật trạng thái mới.");
 
@@ -278,11 +427,6 @@ public class BookingServiceImpl implements BookingService {
                     .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString()
                             , "Something wrong occur!", null));
         }
-    }
-
-    @Override
-    public ResponseEntity<ResponseObject> deleteBooking(int bookingId) {
-        return null;
     }
 
     @Override

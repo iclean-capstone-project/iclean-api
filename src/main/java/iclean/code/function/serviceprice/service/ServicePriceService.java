@@ -8,4 +8,6 @@ import java.time.LocalTime;
 
 public interface ServicePriceService {
     ResponseEntity<ResponseObject> getServicePriceActive(GetServicePriceRequest request);
+
+    Double getServicePrice(GetServicePriceRequest request);
 }

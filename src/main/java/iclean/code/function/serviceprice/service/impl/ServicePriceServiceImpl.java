@@ -22,7 +22,7 @@ import java.util.List;
 
 @Service
 @Log4j2
-public class ServicePriceSerivceImpl implements ServicePriceService {
+public class ServicePriceServiceImpl implements ServicePriceService {
 
     @Autowired
     private ServicePriceRepository servicePriceRepository;
@@ -34,6 +34,21 @@ public class ServicePriceSerivceImpl implements ServicePriceService {
     private ModelMapper modelMapper;
     @Override
     public ResponseEntity<ResponseObject> getServicePriceActive(GetServicePriceRequest request) {
+        try {
+            Double totalPrice = getServicePrice(request);
+            return ResponseEntity.status(HttpStatus.OK)
+                    .body(new ResponseObject(HttpStatus.OK.toString(),
+                            "Not implement yet!", totalPrice));
+        } catch (Exception e) {
+            log.error(e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ResponseObject(HttpStatus.INTERNAL_SERVER_ERROR.toString(),
+                            "Something wrong occur!", null));
+        }
+    }
+
+    @Override
+    public Double getServicePrice(GetServicePriceRequest request) {
         try {
             GetServicePriceRequestDto requestDto = modelMapper.map(request, GetServicePriceRequestDto.class);
             ServiceUnit serviceUnit = findServiceUnitById(requestDto.getServiceUnitId());
@@ -71,14 +86,10 @@ public class ServicePriceSerivceImpl implements ServicePriceService {
             } else {
                 totalPrice = serviceUnit.getDefaultPrice() * serviceUnit.getUnit().getUnitValue();
             }
-            return ResponseEntity.status(HttpStatus.OK)
-                    .body(new ResponseObject(HttpStatus.OK.toString(),
-                            "Not implement yet!", totalPrice));
+            return totalPrice;
         } catch (Exception e) {
             log.error(e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new ResponseObject(HttpStatus.INTERNAL_SERVER_ERROR.toString(),
-                            "Something wrong occur!", null));
+            throw e;
         }
     }
 

@@ -1,6 +1,6 @@
 package iclean.code.data.enumjava;
 
 public enum BookingDetailStatusEnum {
-    NOT_YET,
+    ON_CART,
     IN_PROCESS
 }

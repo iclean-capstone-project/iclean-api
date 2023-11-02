@@ -106,7 +106,7 @@ public class BookingController {
     public ResponseEntity<ResponseObject> addBookings(
             @RequestBody @Valid AddBookingRequest request,
             Authentication authentication) {
-        return bookingService.addBooking(request, JwtUtils.decodeToAccountId(authentication));
+        return bookingService.createServiceToCart(request, JwtUtils.decodeToAccountId(authentication));
     }
 
 //    @PostMapping

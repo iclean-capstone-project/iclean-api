@@ -1,7 +1,8 @@
 package iclean.code.data.mapper;
 
 import iclean.code.data.domain.Service;
-import iclean.code.data.dto.response.service.GetServiceDetailForHelperResponse;
+import iclean.code.data.dto.response.service.*;
+import iclean.code.data.dto.response.serviceunit.GetServiceUnitResponseForHelper;
 import iclean.code.data.mapper.converter.ServiceImageToDtoResponseConverter;
 import iclean.code.data.mapper.converter.ServiceUnitToDtoResponseConverter;
 import org.modelmapper.ModelMapper;
@@ -20,10 +21,27 @@ public class ServiceMapper {
                 .addMappings(mapper -> {
                     mapper.map(Service::getServiceUnits, GetServiceDetailForHelperResponse::setDetails);
                 });
+
+        modelMapper.typeMap(Service.class, GetServiceDetailResponse.class)
+                .addMappings(mapper -> {
+                    mapper.map(Service::getServiceImages, GetServiceDetailResponse::setImages);
+                });
         modelMapper.addMappings(new PropertyMap<Service, GetServiceDetailForHelperResponse>() {
             @Override
             protected void configure() {
                 map().setServiceImage(source.getServiceImage());
+            }
+        });
+        modelMapper.addMappings(new PropertyMap<Service, GetServiceDetailResponse>() {
+            @Override
+            protected void configure() {
+                map().setServiceIcon(source.getServiceImage());
+            }
+        });
+        modelMapper.addMappings(new PropertyMap<Service, GetServiceActiveResponse>() {
+            @Override
+            protected void configure() {
+                map().setServiceIcon(source.getServiceImage());
             }
         });
     }

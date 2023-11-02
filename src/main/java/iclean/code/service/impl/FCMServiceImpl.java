@@ -40,6 +40,7 @@ public class FCMServiceImpl implements FCMService {
             log.error("Create FirebaseApp Error", e);
         }
     }
+
     @Override
     public void subscribeToTopic() {
 
@@ -53,22 +54,22 @@ public class FCMServiceImpl implements FCMService {
     @Override
     public String sendPnsToTopic(NotificationRequestDto notificationRequestDto) {
         Message.Builder builder = Message.builder();
-        builder.setToken(notificationRequestDto.getTarget());
-        builder.setNotification(Notification.builder().setTitle(notificationRequestDto.getTitle()).setBody(notificationRequestDto.getBody()).build());
-        builder.putData("content", notificationRequestDto.getTitle());
-        builder.putData("body", notificationRequestDto.getBody());
-        Message message = builder
-                .build();
-
-        try {
-
-            String res = FirebaseMessaging.getInstance(firebaseApp).sendAsync(message).get();
-            log.info("Res = {}", res);
-            log.info(notificationRequestDto.toString());
-        } catch (ExecutionException | InterruptedException e) {
-            e.printStackTrace();
+        for (String token :
+                notificationRequestDto.getTarget()) {
+            builder.setToken(token);
+            builder.setNotification(Notification.builder().setTitle(notificationRequestDto.getTitle()).setBody(notificationRequestDto.getBody()).build());
+            builder.putData("content", notificationRequestDto.getTitle());
+            builder.putData("body", notificationRequestDto.getBody());
+            Message message = builder
+                    .build();
+            try {
+                String res = FirebaseMessaging.getInstance(firebaseApp).sendAsync(message).get();
+                log.info("Res = {}", res);
+                log.info(notificationRequestDto.toString());
+            } catch (ExecutionException | InterruptedException e) {
+                e.printStackTrace();
+            }
         }
-
         return null;
     }
 }

@@ -27,7 +27,7 @@ public class ServiceController {
     @Autowired
     private ServiceService serviceService;
 
-    @GetMapping
+    @GetMapping("/inactive")
     @PreAuthorize("hasAnyAuthority('admin', 'manager')")
     @Operation(summary = "Get all service", description = "Return all service information")
     @ApiResponses(value = {
@@ -63,7 +63,7 @@ public class ServiceController {
         return serviceService.getService(id);
     }
 
-    @GetMapping("/active")
+    @GetMapping
     @PreAuthorize("hasAnyAuthority('admin', 'manager', 'renter', 'employee')")
     @Operation(summary = "Get all service active for user and employee", description = "Return all service information")
     @ApiResponses(value = {
