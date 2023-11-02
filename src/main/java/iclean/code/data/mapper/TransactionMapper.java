@@ -18,7 +18,7 @@ public class TransactionMapper {
             protected void configure() {
                 map().setTransactionType(String.valueOf(source.getTransactionTypeEnum()));
                 map().setTransactionStatus(String.valueOf(source.getTransactionStatusEnum()));
-                map().setBalance(source.getAmount());
+                map().setAmount(source.getAmount());
             }
         });
 
@@ -26,7 +26,7 @@ public class TransactionMapper {
             @Override
             protected void configure() {
                 map().setTransactionStatus(String.valueOf(source.getTransactionStatusEnum()));
-                map().setBalance(source.getAmount());
+                map().setAmount(source.getAmount());
             }
         });
     }

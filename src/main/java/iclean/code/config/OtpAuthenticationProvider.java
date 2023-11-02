@@ -6,6 +6,7 @@ import iclean.code.data.dto.request.security.OtpAuthentication;
 import iclean.code.data.dto.response.authen.UserPrinciple;
 import iclean.code.data.repository.UserRepository;
 import iclean.code.service.TwilioOTPService;
+import iclean.code.utils.Utils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -28,14 +29,16 @@ public class OtpAuthenticationProvider implements AuthenticationProvider {
         validateOTPRequest.setUserOtpInput(otp);
         validateOTPRequest.setOtpToken(user.getOtpToken());
 
-        if (twilioOTPService.validateOTP(validateOTPRequest)) {
+        if (twilioOTPService.validateOTP(validateOTPRequest) && user.getExpiredToken().isAfter(Utils.getDateTimeNow())) {
             user.setOtpToken(null);
             userRepository.save(user);
             User principal = userRepository.findUserByPhoneNumber(phoneNumber);
             return new OtpAuthentication(UserPrinciple.build(principal), otp);
 
+        } else if (twilioOTPService.validateOTP(validateOTPRequest) && !user.getExpiredToken().isAfter(Utils.getDateTimeNow())) {
+            throw new BadCredentialsException("The OTP had expired!");
         }
-        throw new BadCredentialsException("Bad Credentials");
+        throw new BadCredentialsException("Wrong OTP!");
     }
 
     @Override

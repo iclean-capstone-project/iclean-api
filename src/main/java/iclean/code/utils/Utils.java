@@ -7,13 +7,11 @@ import org.springframework.data.domain.Sort;
 import org.springframework.util.ObjectUtils;
 
 import javax.annotation.Nullable;
+import java.math.RoundingMode;
+import java.text.DecimalFormat;
 import java.text.Normalizer;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.ZoneId;
+import java.time.*;
 import java.time.format.DateTimeFormatter;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -26,6 +24,28 @@ public class Utils {
     public static LocalDateTime getDateTimeNow() {
         ZoneId gmtPlus7Zone = ZoneId.of("GMT+7");
         return LocalDateTime.now(gmtPlus7Zone);
+    }
+
+    public static boolean isBeforeOrEqual(LocalTime value, LocalTime other) {
+        return !value.isAfter(other);
+    }
+
+    public static boolean isAfterOrEqual(LocalTime value, LocalTime other) {
+        return !value.isBefore(other);
+    }
+
+    public static double minusLocalTime(LocalTime value, LocalTime other) {
+        Duration duration = Duration.between(value, other);
+        DecimalFormat df = new DecimalFormat("#.###");
+        df.setRoundingMode(RoundingMode.UP);
+        return Double.parseDouble(df.format(duration.toSeconds() / 3600.0));
+    }
+
+    public static LocalTime plusLocalTime(LocalTime value, double hoursToAdd) {
+        int wholeHours = (int) hoursToAdd;
+        int minutesToAdd = (int) ((hoursToAdd - wholeHours) * 60);
+        int secondsToAdd = (int) ((hoursToAdd - wholeHours) * 60) - minutesToAdd;
+        return value.plusHours(wholeHours).plusMinutes(minutesToAdd).plusSeconds(secondsToAdd);
     }
 
     public static String convertToTitleCase(String input) {
@@ -64,12 +84,6 @@ public class Utils {
     public static LocalDate convertStringToLocalDateTime(String dataString) {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
         return LocalDate.parse(dataString, formatter);
-    }
-
-    public static Double minusLocalTime(LocalTime start, LocalTime end) {
-        double numberHours = start.until(end, ChronoUnit.HOURS);
-        double numberMinutes = start.until(end, ChronoUnit.MINUTES);
-        return numberHours + numberMinutes / 60;
     }
 
     public static String removeSpace(String value) {

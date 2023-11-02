@@ -8,7 +8,7 @@ import iclean.code.data.dto.request.transaction.TransactionRequestDto;
 import iclean.code.data.dto.response.PageResponseObject;
 import iclean.code.data.dto.response.transaction.GetTransactionDetailResponseDto;
 import iclean.code.data.dto.response.transaction.GetTransactionResponseDto;
-import iclean.code.data.enumjava.Role;
+import iclean.code.data.enumjava.RoleEnum;
 import iclean.code.data.enumjava.TransactionStatusEnum;
 import iclean.code.data.enumjava.TransactionTypeEnum;
 import iclean.code.data.enumjava.WalletTypeEnum;
@@ -146,8 +146,8 @@ public class TransactionServiceImpl implements TransactionService {
     @Override
     public boolean createTransactionService(TransactionRequestDto request) throws BadRequestException {
             User user = findUserById(request.getUserId());
-            if (!Objects.equals(user.getRole().getTitle().toUpperCase(), Role.EMPLOYEE.name()) &&
-                    !user.getRole().getTitle().toUpperCase().equals(Role.RENTER.name())) {
+            if (!Objects.equals(user.getRole().getTitle().toUpperCase(), RoleEnum.EMPLOYEE.name()) &&
+                    !user.getRole().getTitle().toUpperCase().equals(RoleEnum.RENTER.name())) {
                 throw new BadRequestException("This user cannot have this information");
             }
             Wallet wallet = walletRepository.getWalletByUserIdAndType(request.getUserId(),

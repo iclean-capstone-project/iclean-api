@@ -6,7 +6,7 @@ import java.time.LocalDateTime;
 @Data
 public class GetTransactionDetailResponseDto {
     private Integer transactionId;
-    private Double balance;
+    private Double amount;
     private String note;
     private LocalDateTime createAt;
     private String transactionStatus;

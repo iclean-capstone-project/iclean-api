@@ -1,6 +1,7 @@
 package iclean.code.function.serviceprice.controller;
 
 import iclean.code.data.dto.common.ResponseObject;
+import iclean.code.data.dto.request.serviceprice.GetServicePriceRequest;
 import iclean.code.function.serviceprice.service.ServicePriceService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -22,7 +23,7 @@ public class ServicePriceController {
     @Autowired
     private ServicePriceService servicePriceService;
 
-    @GetMapping("/{jobUnitId}")
+    @GetMapping("/{serviceUnitId}")
     @Operation(summary = "Get Service Price", description = "Return Service Price detail")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Return Service Price detail"),
@@ -31,9 +32,8 @@ public class ServicePriceController {
             @ApiResponse(responseCode = "400", description = "Bad request - Missing some field required")
     })
     @PreAuthorize("hasAnyAuthority('renter', 'employee')")
-    public ResponseEntity<ResponseObject> getServicePriceActive(@PathVariable Integer jobUnitId,
-                                                                @RequestParam LocalTime startTime,
-                                                                @RequestParam Double hour) {
-        return servicePriceService.getServicePriceActive(jobUnitId, startTime, hour);
+    public ResponseEntity<ResponseObject> getServicePriceActive(@PathVariable Integer serviceUnitId,
+                                                                @RequestParam String startTime) {
+        return servicePriceService.getServicePriceActive(new GetServicePriceRequest(serviceUnitId, startTime));
     }
 }

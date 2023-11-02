@@ -11,7 +11,7 @@ import iclean.code.data.dto.response.booking.GetBookingHistoryResponse;
 import iclean.code.data.dto.response.booking.GetBookingResponse;
 import iclean.code.data.enumjava.BookingDetailHelperStatusEnum;
 import iclean.code.data.enumjava.BookingStatusEnum;
-import iclean.code.data.enumjava.Role;
+import iclean.code.data.enumjava.RoleEnum;
 import iclean.code.data.repository.*;
 import iclean.code.exception.NotFoundException;
 import iclean.code.exception.UserNotHavePermissionException;
@@ -67,9 +67,9 @@ public class BookingServiceImpl implements BookingService {
     @Override
     public ResponseEntity<ResponseObject> getAllBooking(Integer userId, Pageable pageable) {
         Page<Booking> bookings;
-        if (Role.EMPLOYEE.toString().equals(userRepository.findByUserId(userId).getRole().getTitle().toUpperCase())) {
+        if (RoleEnum.EMPLOYEE.toString().equals(userRepository.findByUserId(userId).getRole().getTitle().toUpperCase())) {
             bookings = bookingRepository.findByStaffId(userId, pageable);
-        } else if (Role.RENTER.toString().equals(userRepository.findByUserId(userId).getRole().getTitle().toUpperCase())) {
+        } else if (RoleEnum.RENTER.toString().equals(userRepository.findByUserId(userId).getRole().getTitle().toUpperCase())) {
             bookings = bookingRepository.findByRenterId(userId, pageable);
         } else
             bookings = bookingRepository.findAllBooking(pageable);
@@ -174,9 +174,9 @@ public class BookingServiceImpl implements BookingService {
             BookingStatusEnum optionalBookingStatus = BookingStatusEnum.valueOf(request.getBookingStatus().toUpperCase());
             User userUpdate = findAccount(userId);
 
-            if (Objects.equals(Role.MANAGER.name(), userUpdate.getRole().getTitle().toUpperCase())) {
+            if (Objects.equals(RoleEnum.MANAGER.name(), userUpdate.getRole().getTitle().toUpperCase())) {
                 bookingForUpdateStatus = mappingUpdateBookingForManager(booking, optionalBookingStatus, request);
-            } else if (Objects.equals(Role.EMPLOYEE.name(), userUpdate.getRole().getTitle().toUpperCase())) {
+            } else if (Objects.equals(RoleEnum.EMPLOYEE.name(), userUpdate.getRole().getTitle().toUpperCase())) {
 //                if (booking.getRenter() != null) {
 //                    if (!Objects.equals(booking.getEmployee().getUserId(), userId))
 //                        throw new UserNotHavePermissionException();
@@ -239,7 +239,7 @@ public class BookingServiceImpl implements BookingService {
                 }
             }
             User userUpdate = findAccount(userId);
-            if (Objects.equals(Role.RENTER.name(), userUpdate.getRole().getTitle().toUpperCase())) {
+            if (Objects.equals(RoleEnum.RENTER.name(), userUpdate.getRole().getTitle().toUpperCase())) {
                 bookingForUpdateStatus = mappingUpdateBookingForRenter(booking, optionalBookingStatus, bookingRequest.getEmpId(), bookingRequest);
             }
             bookingRepository.save(bookingForUpdateStatus);
@@ -295,7 +295,7 @@ public class BookingServiceImpl implements BookingService {
     private Booking mappingBookingForCreate(Integer userId,
                                             AddBookingRequest request) {
 
-        User optionalRenter = findAccount(userId, Role.RENTER.name());
+        User optionalRenter = findAccount(userId, RoleEnum.RENTER.name());
 //        User optionalStaff = findAccount(request.getEmployeeId(), Role.EMPLOYEE.name());
         Unit unit = findJobUnit(request.getJobUnitId());
 
@@ -383,7 +383,7 @@ public class BookingServiceImpl implements BookingService {
             bookingDetailHelper.setBookingDetailHelperStatus(BookingDetailHelperStatusEnum.ACTIVE);
             bookingEmployeeRepository.save(bookingDetailHelper);
 
-            User employee = findAccount(empId, Role.EMPLOYEE.name());
+            User employee = findAccount(empId, RoleEnum.EMPLOYEE.name());
 //            booking.setEmployee(employee);
 
         } else if (BookingStatusEnum.RENTER_CANCELED == optionalBookingStatus) {
@@ -407,7 +407,7 @@ public class BookingServiceImpl implements BookingService {
     }
 
     private void addBookingEmployee(Booking booking, Integer epmId) {
-        User employee = findAccount(epmId, Role.EMPLOYEE.name());
+        User employee = findAccount(epmId, RoleEnum.EMPLOYEE.name());
 
         BookingDetailHelper bookingDetailHelper = new BookingDetailHelper();
 //        bookingDetailHelper.setBooking(booking);

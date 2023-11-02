@@ -1,6 +1,6 @@
 package iclean.code.data.enumjava;
 
-public enum Role {
+public enum RoleEnum {
     RENTER(1),
     EMPLOYEE(2),
     MANAGER(3),
@@ -8,7 +8,7 @@ public enum Role {
 
     private int value;
 
-    private Role(int value) {
+    private RoleEnum(int value) {
         this.value = value;
     }
     public Integer getValue() {

@@ -20,7 +20,7 @@ public class Wallet {
     private Integer walletId;
 
     @Column(nullable = false)
-    private Double balance;
+    private Double balance = 0D;
 
     @Column(name = "wallet_type")
     private WalletTypeEnum walletTypeEnum;
