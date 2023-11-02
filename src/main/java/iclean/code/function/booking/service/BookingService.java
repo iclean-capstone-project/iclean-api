@@ -8,7 +8,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 
 public interface BookingService {
-    ResponseEntity<ResponseObject> getAllBooking(Integer userId, Pageable pageable);
+    ResponseEntity<ResponseObject> getBookings(Integer userId, Pageable pageable);
 
     ResponseEntity<ResponseObject> getBookingById(Integer bookingId, Integer userId, Pageable pageable);
 

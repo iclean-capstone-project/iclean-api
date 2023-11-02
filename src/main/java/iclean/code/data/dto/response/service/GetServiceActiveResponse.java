@@ -8,6 +8,6 @@ import java.time.LocalDateTime;
 public class GetServiceActiveResponse {
     private Integer serviceId;
     private String serviceName;
-    private String serviceImage;
+    private String serviceIcon;
     private LocalDateTime createAt;
 }

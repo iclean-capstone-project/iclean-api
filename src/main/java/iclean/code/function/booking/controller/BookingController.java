@@ -42,7 +42,7 @@ public class BookingController {
             @ApiResponse(responseCode = "400", description = "Bad request - Missing some field required")
     })
     @PreAuthorize("hasAnyAuthority('renter', 'employee', 'manager')")
-    public ResponseEntity<ResponseObject> getAllBooking(
+    public ResponseEntity<ResponseObject> getBookings(
             @RequestParam(name = "page", defaultValue = "1") int page,
             @RequestParam(name = "size", defaultValue = "10") int size,
             @RequestParam(name = "sort", required = false) @ValidSortFields(value = GetBookingResponse.class) List<String> sortFields,
@@ -52,7 +52,7 @@ public class BookingController {
         if (sortFields != null && !sortFields.isEmpty()) {
             pageable = PageRequestBuilder.buildPageRequest(page, size, sortFields);
         }
-        return bookingService.getAllBooking(JwtUtils.decodeToAccountId(authentication), pageable);
+        return bookingService.getBookings(JwtUtils.decodeToAccountId(authentication), pageable);
     }
 
     @GetMapping(value = "/history")
@@ -103,11 +103,26 @@ public class BookingController {
             @ApiResponse(responseCode = "403", description = "Forbidden - You don't have permission to access on this api"),
             @ApiResponse(responseCode = "400", description = "Bad request - Missing some field required")
     })
-    public ResponseEntity<ResponseObject> addBooking(
+    public ResponseEntity<ResponseObject> addBookings(
             @RequestBody @Valid AddBookingRequest request,
             Authentication authentication) {
         return bookingService.addBooking(request, JwtUtils.decodeToAccountId(authentication));
     }
+
+//    @PostMapping
+//    @PreAuthorize("hasAnyAuthority('renter')")
+//    @Operation(summary = "Create new booking of a user", description = "Return message fail or successful")
+//    @ApiResponses(value = {
+//            @ApiResponse(responseCode = "200", description = "Create new booking Successful"),
+//            @ApiResponse(responseCode = "401", description = "Unauthorized - Login please"),
+//            @ApiResponse(responseCode = "403", description = "Forbidden - You don't have permission to access on this api"),
+//            @ApiResponse(responseCode = "400", description = "Bad request - Missing some field required")
+//    })
+//    public ResponseEntity<ResponseObject> addBookingToCard(
+//            @RequestBody @Valid AddBookingRequest request,
+//            Authentication authentication) {
+//        return bookingService.addBooking(request, JwtUtils.decodeToAccountId(authentication));
+//    }
 
     //PENDING
     @PutMapping(value = "status/{bookingId}")

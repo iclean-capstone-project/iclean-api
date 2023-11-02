@@ -56,6 +56,9 @@ public class BookingServiceImpl implements BookingService {
     private BookingEmployeeRepository bookingEmployeeRepository;
 
     @Autowired
+    private ServiceUnitRepository serviceUnitRepository;
+
+    @Autowired
     private RejectionReasonRepository rejectionReasonRepository;
 
     @Autowired
@@ -65,7 +68,7 @@ public class BookingServiceImpl implements BookingService {
     private ModelMapper modelMapper;
 
     @Override
-    public ResponseEntity<ResponseObject> getAllBooking(Integer userId, Pageable pageable) {
+    public ResponseEntity<ResponseObject> getBookings(Integer userId, Pageable pageable) {
         Page<Booking> bookings;
         if (RoleEnum.EMPLOYEE.toString().equals(userRepository.findByUserId(userId).getRole().getTitle().toUpperCase())) {
             bookings = bookingRepository.findByStaffId(userId, pageable);
@@ -119,7 +122,10 @@ public class BookingServiceImpl implements BookingService {
     public ResponseEntity<ResponseObject> addBooking(AddBookingRequest request,
                                                      Integer userId) {
         try {
-            Booking booking = mappingBookingForCreate(userId, request);
+            Booking booking = bookingRepository.findCartByRenterId(userId, BookingStatusEnum.ON_CART);
+            BookingDetail bookingDetail = new BookingDetail();
+//            ServiceUnit serviceUnit =
+//            bookingDetail.setServiceUnit();
             Booking newBooking = bookingRepository.save(booking);
 
             BookingStatusHistory bookingStatusHistory = new BookingStatusHistory();
@@ -297,7 +303,7 @@ public class BookingServiceImpl implements BookingService {
 
         User optionalRenter = findAccount(userId, RoleEnum.RENTER.name());
 //        User optionalStaff = findAccount(request.getEmployeeId(), Role.EMPLOYEE.name());
-        Unit unit = findJobUnit(request.getJobUnitId());
+        Unit unit = findJobUnit(request.getServiceUnitId());
 
         Booking booking = modelMapper.map(request, Booking.class);
         booking.setRenter(optionalRenter);
