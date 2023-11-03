@@ -48,7 +48,7 @@ public class BookingDetail {
     @Column(name = "feedback_time")
     private LocalDateTime feedbackTime;
 
-    @Column(name = "work_end")
+    @Column(name = "create_at")
     private LocalDateTime createAt = Utils.getDateTimeNow();
 
     @ManyToOne
