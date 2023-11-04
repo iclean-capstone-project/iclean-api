@@ -8,6 +8,7 @@ public class GetBookingDetailResponse {
     private String serviceName;
     private String serviceIcon;
     private String workDate;
+    private String note;
     private String workTime;
     private String unitValue;
     private Double price;

@@ -9,9 +9,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 
 public interface BookingService {
-    ResponseEntity<ResponseObject> getBookings(Integer userId, Pageable pageable);
+    ResponseEntity<ResponseObject> getBookings(Integer userId, Pageable pageable, boolean isAll);
 
-    ResponseEntity<ResponseObject> getBookingById(Integer bookingId, Integer userId, Pageable pageable);
+    ResponseEntity<ResponseObject> getBookingDetailById(Integer bookingId, Integer userId);
 
     ResponseEntity<ResponseObject> createServiceToCart(AddBookingRequest bookingRequest, Integer userId);
 
@@ -28,5 +28,4 @@ public interface BookingService {
     ResponseEntity<ResponseObject> updateStatusBookingAsRenter(Integer bookingId, Integer userId, UpdateStatusBookingAsRenterRequest bookingRequest);
 
     ResponseEntity<ResponseObject> getBookingHistory(int userId, Pageable pageable);
-
 }
