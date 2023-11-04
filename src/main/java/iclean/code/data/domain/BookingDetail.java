@@ -3,11 +3,14 @@ package iclean.code.data.domain;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import iclean.code.data.enumjava.BookingDetailStatusEnum;
+import iclean.code.utils.Utils;
 import lombok.Getter;
 import lombok.Setter;
 
 import javax.persistence.*;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 
 @Entity
@@ -26,17 +29,14 @@ public class BookingDetail {
     @Column(name = "booking_detail_status")
     private BookingDetailStatusEnum bookingDetailStatusEnum;
 
-    @Column(name = "work_hour")
-    private Double workHour;
-
     @Column(name = "work_date")
-    private LocalDateTime workDate;
+    private LocalDate workDate;
 
     @Column(name = "work_start")
-    private LocalDateTime workStart;
+    private LocalTime workStart;
 
     @Column(name = "work_end")
-    private LocalDateTime workEnd;
+    private LocalTime workEnd;
 
     @Column(name = "work_hour_actual")
     private Double workHourActual;
@@ -47,6 +47,9 @@ public class BookingDetail {
 
     @Column(name = "feedback_time")
     private LocalDateTime feedbackTime;
+
+    @Column(name = "create_at")
+    private LocalDateTime createAt = Utils.getDateTimeNow();
 
     @ManyToOne
     @JsonIgnore

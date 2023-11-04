@@ -13,7 +13,8 @@ public enum BookingStatusEnum {
     EMPLOYEE_CANCELED(6),//
     WAITING(7),
     IN_PROCESSING(8),//
-    FINISHED(9);
+    FINISHED(9),
+    ON_CART(10);
 
 
     private final int value;

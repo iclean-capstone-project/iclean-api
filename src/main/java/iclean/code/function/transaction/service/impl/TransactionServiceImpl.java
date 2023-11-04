@@ -5,9 +5,10 @@ import iclean.code.data.domain.Transaction;
 import iclean.code.data.domain.Wallet;
 import iclean.code.data.dto.common.ResponseObject;
 import iclean.code.data.dto.request.transaction.TransactionRequestDto;
+import iclean.code.data.dto.response.PageResponseObject;
 import iclean.code.data.dto.response.transaction.GetTransactionDetailResponseDto;
 import iclean.code.data.dto.response.transaction.GetTransactionResponseDto;
-import iclean.code.data.enumjava.Role;
+import iclean.code.data.enumjava.RoleEnum;
 import iclean.code.data.enumjava.TransactionStatusEnum;
 import iclean.code.data.enumjava.TransactionTypeEnum;
 import iclean.code.data.enumjava.WalletTypeEnum;
@@ -21,6 +22,10 @@ import iclean.code.utils.Utils;
 import lombok.extern.log4j.Log4j2;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -41,18 +46,22 @@ public class TransactionServiceImpl implements TransactionService {
     @Autowired
     private ModelMapper modelMapper;
     @Override
-    public ResponseEntity<ResponseObject> getTransactions(Integer userId) {
+    public ResponseEntity<ResponseObject> getTransactions(Integer userId, String walletType, Pageable pageable) {
         try {
-            List<Transaction> transactions = transactionRepository.findByUserUserId(userId);
+            Sort order = Sort.by(Sort.Order.desc("createAt"));
+            pageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), order);
+            Page<Transaction> transactions = transactionRepository
+                    .findByUserUserId(userId, WalletTypeEnum.valueOf(walletType.toUpperCase()), pageable);
             List<GetTransactionResponseDto> responses = transactions
                     .stream()
                     .map(transaction -> modelMapper.map(transaction, GetTransactionResponseDto.class))
                     .collect(Collectors.toList());
 
+            PageResponseObject pageResponseObject = Utils.convertToPageResponse(transactions, responses);
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseObject(HttpStatus.OK.toString(),
-                            "Wallet History List",
-                            responses));
+                            "Transaction List",
+                            pageResponseObject));
         } catch (Exception e) {
             log.error(e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -137,8 +146,8 @@ public class TransactionServiceImpl implements TransactionService {
     @Override
     public boolean createTransactionService(TransactionRequestDto request) throws BadRequestException {
             User user = findUserById(request.getUserId());
-            if (!Objects.equals(user.getRole().getTitle().toUpperCase(), Role.EMPLOYEE.name()) &&
-                    !user.getRole().getTitle().toUpperCase().equals(Role.RENTER.name())) {
+            if (!Objects.equals(user.getRole().getTitle().toUpperCase(), RoleEnum.EMPLOYEE.name()) &&
+                    !user.getRole().getTitle().toUpperCase().equals(RoleEnum.RENTER.name())) {
                 throw new BadRequestException("This user cannot have this information");
             }
             Wallet wallet = walletRepository.getWalletByUserIdAndType(request.getUserId(),

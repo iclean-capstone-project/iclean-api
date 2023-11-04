@@ -9,9 +9,6 @@ import java.util.List;
 
 @Repository
 public interface ServiceRepository extends JpaRepository<Service, Integer> {
-
     @Query("SELECT t FROM Service t WHERE t.isDeleted = FALSE AND size(t.serviceUnits) > 0")
     List<Service> findAllActive();
-
-    Service findByServiceId(int serviceId);
 }

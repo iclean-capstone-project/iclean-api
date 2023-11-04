@@ -5,7 +5,7 @@ import iclean.code.data.dto.common.ResponseObject;
 import iclean.code.data.dto.request.report.AddReportRequest;
 import iclean.code.data.dto.request.report.UpdateReportRequest;
 import iclean.code.data.dto.response.PageResponseObject;
-import iclean.code.data.enumjava.Role;
+import iclean.code.data.enumjava.RoleEnum;
 import iclean.code.data.repository.BookingRepository;
 import iclean.code.data.repository.ReportRepository;
 import iclean.code.data.repository.ReportTypeRepository;
@@ -55,9 +55,9 @@ public class ReportServiceImpl implements ReportService {
     public ResponseEntity<ResponseObject> getAllReport(Integer userId, Pageable pageable) {
         Page<Report> reportPageable = null;
         User user = findUser(userId);
-        if(Objects.equals(Role.RENTER.toString(),user.getRole().getTitle().toUpperCase())){
+        if(Objects.equals(RoleEnum.RENTER.toString(),user.getRole().getTitle().toUpperCase())){
             reportPageable = reportRepository.finAllReportAsRenter(userId, pageable);
-        } else if(Objects.equals(Role.EMPLOYEE.toString(),user.getRole().getTitle().toUpperCase())){
+        } else if(Objects.equals(RoleEnum.EMPLOYEE.toString(),user.getRole().getTitle().toUpperCase())){
             reportPageable = reportRepository.finAllReportAsStaff(userId, pageable);
         } else {
             reportPageable = reportRepository.findAllAsAdminOrManager(pageable);
@@ -73,14 +73,14 @@ public class ReportServiceImpl implements ReportService {
         try {
             User user = findUser(userId);
             Report report = findReport(reportId);
-            if(Objects.equals(Role.RENTER.toString(),user.getRole().getTitle().toUpperCase())){
+            if(Objects.equals(RoleEnum.RENTER.toString(),user.getRole().getTitle().toUpperCase())){
                 if(!Objects.equals(user.getUserId(), report.getBooking().getRenter().getUserId())){
                     throw new UserNotHavePermissionException();
                 }
                 return ResponseEntity.status(HttpStatus.OK)
                         .body(new ResponseObject(HttpStatus.OK.toString()
                                 , "Report", reportRepository.findById(reportId)));
-            } else if (Objects.equals(Role.EMPLOYEE.toString(),user.getRole().getTitle().toUpperCase())) {
+            } else if (Objects.equals(RoleEnum.EMPLOYEE.toString(),user.getRole().getTitle().toUpperCase())) {
 //                if(!Objects.equals(user.getUserId(), report.getBooking().getEmployee().getUserId())){
 //                    throw new UserNotHavePermissionException();
 //                }

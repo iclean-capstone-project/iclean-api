@@ -13,7 +13,6 @@ import javax.validation.constraints.NotNull;
 @NoArgsConstructor
 @AllArgsConstructor
 public class UpdateSystemParameter {
-
     @NotNull(message = "updateVersion not null")
     @NotBlank(message = "updateVersion not blank")
     private String updateVersion;

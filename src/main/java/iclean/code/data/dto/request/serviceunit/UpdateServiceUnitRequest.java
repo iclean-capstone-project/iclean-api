@@ -1,18 +1,20 @@
 package iclean.code.data.dto.request.serviceunit;
 
-import lombok.AllArgsConstructor;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
-import org.springframework.web.multipart.MultipartFile;
+import org.hibernate.validator.constraints.Range;
+
+import javax.validation.constraints.Pattern;
 
 @Data
-@AllArgsConstructor
 public class UpdateServiceUnitRequest {
-
-    private Double priceDefault;
-
-    private Double employeeCommission;
-
-    private MultipartFile imgUnitFile;
-
-    private String unitValue;
+    @Schema(example = "100000")
+    @Range(min = 10000, max = 10000000, message = "Helper commission cannot be greater than 10 000 000 and smaller than 10 000")
+    private Double defaultPrice;
+    @Schema(example = "65")
+    @Range(min = 1, max = 95, message = "Helper commission cannot be greater than 70 and smaller than 1")
+    private Double helperCommission;
+    @Pattern(regexp = "(?i)(Active)", message = "Status are invalid")
+    @Schema(example = "Active")
+    private String serviceUnitStatus;
 }

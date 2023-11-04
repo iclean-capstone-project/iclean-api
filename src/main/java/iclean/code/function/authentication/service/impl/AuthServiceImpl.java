@@ -4,10 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseToken;
 import iclean.code.config.JwtUtils;
-import iclean.code.data.domain.Address;
-import iclean.code.data.domain.DeviceToken;
-import iclean.code.data.domain.RefreshToken;
-import iclean.code.data.domain.User;
+import iclean.code.data.domain.*;
 import iclean.code.data.dto.common.ResponseObject;
 import iclean.code.data.dto.request.authen.*;
 import iclean.code.data.dto.request.security.OtpAuthentication;
@@ -15,11 +12,9 @@ import iclean.code.data.dto.response.authen.JwtResponse;
 import iclean.code.data.dto.response.authen.TokenRefreshResponse;
 import iclean.code.data.dto.response.authen.UserInformationDto;
 import iclean.code.data.dto.response.authen.UserPrinciple;
-import iclean.code.data.enumjava.Role;
-import iclean.code.data.repository.AddressRepository;
-import iclean.code.data.repository.DeviceTokenRepository;
-import iclean.code.data.repository.RoleRepository;
-import iclean.code.data.repository.UserRepository;
+import iclean.code.data.enumjava.RoleEnum;
+import iclean.code.data.enumjava.WalletTypeEnum;
+import iclean.code.data.repository.*;
 import iclean.code.exception.NotFoundException;
 import iclean.code.exception.UserNotHavePermissionException;
 import iclean.code.function.authentication.service.AuthService;
@@ -52,6 +47,8 @@ public class AuthServiceImpl implements AuthService {
     private UserRepository userRepository;
     @Autowired
     private RoleRepository roleRepository;
+    @Autowired
+    private WalletRepository walletRepository;
     @Autowired
     private DeviceTokenRepository deviceTokenRepository;
     @Autowired
@@ -122,8 +119,8 @@ public class AuthServiceImpl implements AuthService {
             }
 
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body(new ResponseObject(HttpStatus.UNAUTHORIZED.toString(),
-                                "Account is not NULL.", null));
+                    .body(new ResponseObject(HttpStatus.UNAUTHORIZED.toString(),
+                            "Account is not NULL.", null));
         }
     }
 
@@ -254,8 +251,19 @@ public class AuthServiceImpl implements AuthService {
                 String otpHashToken = twilioOTPService.sendAndGetOTPToken(phoneNumber);
                 user.setPhoneNumber(phoneNumber);
                 user.setOtpToken(otpHashToken);
-                userRepository.save(user);
+                User newUser = userRepository.save(user);
+                Wallet walletMoney = new Wallet();
+                walletMoney.setUser(newUser);
+                walletMoney.setWalletTypeEnum(WalletTypeEnum.MONEY);
+                walletMoney.setUpdateAt(Utils.getDateTimeNow());
 
+                Wallet walletPoint = new Wallet();
+                walletPoint.setUser(newUser);
+                walletPoint.setWalletTypeEnum(WalletTypeEnum.POINT);
+                walletMoney.setUpdateAt(Utils.getDateTimeNow());
+
+                walletRepository.save(walletMoney);
+                walletRepository.save(walletPoint);
                 return ResponseEntity.status(HttpStatus.OK)
                         .body(new ResponseObject(HttpStatus.OK.toString(),
                                 "New Account Created",
@@ -311,7 +319,6 @@ public class AuthServiceImpl implements AuthService {
                                 new JwtResponse(accessToken, refreshToken, userInformationDto)));
 
 
-
             } else ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(new ResponseObject(HttpStatus.UNAUTHORIZED.toString(),
                             "Wrong username or password.", null));
@@ -321,24 +328,32 @@ public class AuthServiceImpl implements AuthService {
                             "No username or password.", null));
         } catch (Exception e) {
             log.error(e.getMessage());
+            if (e instanceof BadCredentialsException) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(new ResponseObject(HttpStatus.UNAUTHORIZED.toString(),
+                                e.getMessage(), null));
+            }
             if (e instanceof DisabledException) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(new ResponseObject(HttpStatus.UNAUTHORIZED.toString(),
                                 "Account has been locked. Please contact " +
                                         "companyEmail" + " for more information", null));
-            } else if (e instanceof AccountExpiredException) {
+            }
+            if (e instanceof AccountExpiredException) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(new ResponseObject(HttpStatus.UNAUTHORIZED.toString(),
                                 "The account has expired. Please contact "
                                         + "companyEmail" + " for more information", null));
-            } else if (e instanceof AuthenticationException) {
+            }
+            if (e instanceof AuthenticationException) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(new ResponseObject(HttpStatus.UNAUTHORIZED.toString(),
                                 "Wrong OTP.", null));
-            } else
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body(new ResponseObject(HttpStatus.UNAUTHORIZED.toString(),
-                                "Account is not NULL.", null));
+            }
+
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new ResponseObject(HttpStatus.UNAUTHORIZED.toString(),
+                            "Account is not NULL.", null));
         }
     }
 
@@ -358,12 +373,12 @@ public class AuthServiceImpl implements AuthService {
                 throw new UserNotHavePermissionException();
             }
             form.setFullName(Utils.convertToTitleCase(form.getFullName()));
-            if (form.getRole().equalsIgnoreCase(Role.RENTER.name())) {
+            if (form.getRole().equalsIgnoreCase(RoleEnum.RENTER.name())) {
                 modelMapper.map(form, user);
-                user.setRoleId(roleRepository.findByTitle(Role.RENTER.name().toLowerCase()).getRoleId());
-            } else if (form.getRole().equalsIgnoreCase(Role.EMPLOYEE.name())) {
+                user.setRoleId(roleRepository.findByTitle(RoleEnum.RENTER.name().toLowerCase()).getRoleId());
+            } else if (form.getRole().equalsIgnoreCase(RoleEnum.EMPLOYEE.name())) {
                 modelMapper.map(form, user);
-                user.setRoleId(roleRepository.findByTitle(Role.EMPLOYEE.name().toLowerCase()).getRoleId());
+                user.setRoleId(roleRepository.findByTitle(RoleEnum.EMPLOYEE.name().toLowerCase()).getRoleId());
             }
             user.setDateOfBirth(Utils.convertStringToLocalDateTime(form.getDateOfBirth()));
             if (Objects.nonNull(form.getFileImage())) {
@@ -423,7 +438,7 @@ public class AuthServiceImpl implements AuthService {
             DeviceToken deviceToken = findFcmToken(dto.getFcmToken());
             if (!Objects.equals(deviceToken.getUser().getUserId(), userId))
                 throw new UserNotHavePermissionException();
- 
+
             refreshTokenService.deleteByRefreshToken(dto.getRefreshToken());
             deviceTokenRepository.delete(deviceToken);
 

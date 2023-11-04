@@ -20,11 +20,14 @@ public class Unit {
     @Column(name = "unit_id")
     private Integer unitId;
 
+    @Column(name = "unit_image")
+    private String unitImage;
+
     @Column(name = "unit_detail")
     private String unitDetail;
 
     @Column(name = "unit_value")
-    private String unitValue;
+    private Double unitValue;
 
     @Column(name = "is_deleted")
     private Boolean isDeleted = false;

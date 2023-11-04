@@ -7,7 +7,7 @@ import iclean.code.data.dto.request.feedback.CreateFeedbackDto;
 import iclean.code.data.dto.request.feedback.FeedbackRequest;
 import iclean.code.data.dto.response.PageResponseObject;
 import iclean.code.data.dto.response.feedback.GetFeedbackResponse;
-import iclean.code.data.enumjava.Role;
+import iclean.code.data.enumjava.RoleEnum;
 import iclean.code.data.repository.BookingDetailRepository;
 import iclean.code.data.repository.UserRepository;
 import iclean.code.exception.NotFoundException;
@@ -77,7 +77,7 @@ public class FeedbackServiceImpl implements FeedbackService {
     private boolean isPermission(Integer userId, BookingDetail bookingDetail) throws UserNotHavePermissionException {
         User user = findUser(userId);
         if (!Objects.equals(bookingDetail.getBooking().getRenter().getUserId(), userId) ||
-                !Objects.equals(user.getRole().getRoleId(), Role.MANAGER.getValue()))
+                !Objects.equals(user.getRole().getRoleId(), RoleEnum.MANAGER.getValue()))
             throw new UserNotHavePermissionException("User do not have permission to do this action");
         return true;
     }

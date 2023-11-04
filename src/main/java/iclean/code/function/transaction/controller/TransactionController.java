@@ -1,22 +1,29 @@
 package iclean.code.function.transaction.controller;
 
 import iclean.code.config.JwtUtils;
+import iclean.code.data.dto.common.PageRequestBuilder;
 import iclean.code.data.dto.common.ResponseObject;
 import iclean.code.data.dto.request.transaction.TransactionRequestDto;
 import iclean.code.function.transaction.service.TransactionService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Pattern;
 
 @RestController
+@Validated
 @RequestMapping("api/v1/transaction")
 @Tag(name = "Transaction API")
 public class TransactionController {
@@ -31,8 +38,16 @@ public class TransactionController {
             @ApiResponse(responseCode = "401", description = "Unauthorized - Login please"),
             @ApiResponse(responseCode = "400", description = "Bad request - Missing some field required")
     })
-    public ResponseEntity<ResponseObject> getTransactions(Authentication authentication) {
-        return transactionService.getTransactions(JwtUtils.decodeToAccountId(authentication));
+    public ResponseEntity<ResponseObject> getTransactions(@RequestParam(value = "type")
+                                                              @Schema(example = "money|point")
+                                                              @Pattern(regexp = "(?i)(money|point)", message = "Wallet Type is not valid")
+                                                              @NotNull(message = "Wallet Type are invalid")
+                                                              String type,
+                                                          @RequestParam(name = "page", defaultValue = "1") int page,
+                                                          @RequestParam(name = "size", defaultValue = "10") int size,
+                                                          Authentication authentication) {
+        Pageable pageable = PageRequestBuilder.buildPageRequest(page, size);
+        return transactionService.getTransactions(JwtUtils.decodeToAccountId(authentication), type, pageable);
     }
 
     @GetMapping("/{id}")

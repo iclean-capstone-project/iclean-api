@@ -41,5 +41,10 @@ public class Service {
     @JsonIgnore
     private List<ServiceUnit> serviceUnits;
 
+    @OneToMany(mappedBy = "service")
+    @JsonIgnoreProperties("service")
+    @JsonIgnore
+    private List<ServiceImage> serviceImages;
+
 }
 
