@@ -44,6 +44,9 @@ public class Booking {
     @Column(name = "total_price")
     private Double totalPrice;
 
+    @Column(name = "total_price_actual")
+    private Double totalPriceActual;
+
     @Column(name = "update_at")
     private LocalDateTime updateAt;
 

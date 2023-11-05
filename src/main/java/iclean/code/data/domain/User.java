@@ -45,6 +45,9 @@ public class User {
     @Column(name = "expired_token")
     private LocalDateTime expiredToken;
 
+    @Column(name = "create_at")
+    private LocalDateTime createAt;
+
     @Column(name = "is_locked")
     private Boolean isLocked = false;
 

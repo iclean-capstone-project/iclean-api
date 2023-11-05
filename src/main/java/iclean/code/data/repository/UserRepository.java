@@ -24,4 +24,10 @@ public interface UserRepository extends JpaRepository<User, Integer> {
 
     @Query("SELECT t FROM User t WHERE t.role.title LIKE 'manager'")
     List<User> findAllManager();
+
+    @Query("SELECT t FROM User t WHERE t.role.title not LIKE 'admin' ")
+    List<User> findAllUserWithoutAdmin();
+
+    @Query(value = "SELECT * FROM user WHERE WEEK(create_at) = WEEK(CURDATE())", nativeQuery = true)
+    List<User> findNewUserInCurrentWeek();
 }
