@@ -7,7 +7,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
-
 import java.util.List;
 
 @Repository
@@ -45,4 +44,18 @@ public interface BookingRepository extends JpaRepository<Booking, Integer> {
             "LEFT JOIN booking.bookingDetails bd " +
             "WHERE booking.manager.userId = ?1")
     Page<Booking> findByManagerId(Integer userId, Pageable pageable);
+
+    @Query("SELECT e FROM Booking e WHERE DATE(e.orderDate) = ?1")
+    List<Booking> getBookingByOrderDate(String orderDate);
+
+    @Query("SELECT e FROM Booking e WHERE MONTH(e.orderDate) = CAST(?1 AS int) AND YEAR(e.orderDate) = YEAR(CURRENT_DATE)")
+    List<Booking> getBookingByMoth(String orderDate);
+
+    @Query("SELECT b FROM Booking b WHERE WEEK(b.orderDate) = WEEK(CURRENT_DATE)")
+    List<Booking> getBookingInCurrentWeek();
+
+    @Query("select sum(b.totalPriceActual) from Booking b")
+    Double getSumOfIncome();
+
+
 }
