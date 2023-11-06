@@ -4,7 +4,6 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.hibernate.validator.constraints.Range;
 
 import javax.annotation.Nullable;
 
@@ -16,7 +15,6 @@ import javax.annotation.Nullable;
 public class UpdateStatusBookingRequest {
 
     private String bookingStatus;
-
     @Nullable
     private Integer rejectReasonId;
 }

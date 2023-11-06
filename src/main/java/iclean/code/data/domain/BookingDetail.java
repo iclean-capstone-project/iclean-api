@@ -29,6 +29,9 @@ public class BookingDetail {
     @Column(name = "booking_detail_status")
     private BookingDetailStatusEnum bookingDetailStatusEnum;
 
+    @Column(name = "note")
+    private String note;
+
     @Column(name = "work_date")
     private LocalDate workDate;
 

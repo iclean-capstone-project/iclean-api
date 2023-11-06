@@ -23,7 +23,7 @@ public interface BookingDetailRepository extends JpaRepository<BookingDetail, In
             "LEFT JOIN booking.bookingStatusHistories bsh " +
             "WHERE bookingDetail.serviceUnit.serviceUnitId = ?1 " +
             "AND bsh.bookingStatus = ?2 " +
-            "AND booking.bookingStatusHistories.size = 1")
+            "AND size(booking.bookingStatusHistories) = 1")
     Optional<BookingDetail> findByServiceUnitIdAndBookingStatus(Integer id, BookingStatusEnum bookingStatusEnum);
 
     @Query(value = "SELECT bookingDetail FROM BookingDetail bookingDetail " +
@@ -31,6 +31,6 @@ public interface BookingDetailRepository extends JpaRepository<BookingDetail, In
             "LEFT JOIN booking.bookingStatusHistories bsh " +
             "WHERE bookingDetail.bookingDetailId = ?1 " +
             "AND bsh.bookingStatus = ?2 " +
-            "AND booking.bookingStatusHistories.size = 1")
+            "AND size(booking.bookingStatusHistories) = 1")
     Optional<BookingDetail> findByBookingDetailIdAndBookingStatus(Integer id, BookingStatusEnum bookingStatusEnum);
 }

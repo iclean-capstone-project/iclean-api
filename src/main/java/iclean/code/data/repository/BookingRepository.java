@@ -29,17 +29,7 @@ public interface BookingRepository extends JpaRepository<Booking, Integer> {
             "LEFT JOIN sr.helperInformation hi " +
             "LEFT JOIN hi.user u " +
             "WHERE u.userId = ?1")
-    Page<Booking> findByStaffId(Integer userId, Pageable pageable);
-
-    @Query("SELECT booking FROM Booking booking " +
-            "LEFT JOIN booking.bookingDetails bd " +
-            "LEFT JOIN bd.bookingDetailHelpers bdh " +
-            "LEFT JOIN bdh.serviceRegistration sr " +
-            "LEFT JOIN sr.helperInformation hi " +
-            "LEFT JOIN hi.user u " +
-            "WHERE u.userId = ?2 " +
-            "AND booking.bookingId = ?1")
-    Page<Booking> findBookingByBookingId(Integer bookingId, Integer userId, Pageable pageable);
+    Page<Booking> findByHelperId(Integer userId, Pageable pageable);
 
     @Query("SELECT b FROM Booking b  WHERE b.renter.userId = ?1")
     Page<Booking> findBookingHistoryByUserId(Integer userId, Pageable pageable);
@@ -48,6 +38,11 @@ public interface BookingRepository extends JpaRepository<Booking, Integer> {
             "LEFT JOIN b.bookingStatusHistories bds " +
             "WHERE b.renter.userId = ?1 " +
             "AND bds.bookingStatus = ?2 " +
-            "AND b.bookingStatusHistories.size <= 1")
+            "AND size(b.bookingStatusHistories) <= 1")
     Booking findCartByRenterId(Integer userId, BookingStatusEnum statusEnum);
+
+    @Query("SELECT booking FROM Booking booking " +
+            "LEFT JOIN booking.bookingDetails bd " +
+            "WHERE booking.manager.userId = ?1")
+    Page<Booking> findByManagerId(Integer userId, Pageable pageable);
 }

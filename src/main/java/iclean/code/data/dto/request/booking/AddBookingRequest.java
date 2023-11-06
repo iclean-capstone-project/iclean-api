@@ -12,4 +12,6 @@ public class AddBookingRequest {
     private LocalDateTime startTime;
 
     private Integer serviceUnitId;
+
+    private String note;
 }

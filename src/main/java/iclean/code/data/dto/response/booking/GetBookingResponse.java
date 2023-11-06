@@ -3,6 +3,7 @@ package iclean.code.data.dto.response.booking;
 import lombok.Data;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 public class GetBookingResponse {
@@ -11,9 +12,9 @@ public class GetBookingResponse {
 
     private String renterName;
 
-    private String employeeName;
+    private String serviceName;
 
-    private String jobName;
+    private List<String> serviceImages;
 
     private LocalDateTime orderDate;
 
@@ -21,8 +22,9 @@ public class GetBookingResponse {
 
     private Double totalPrice;
 
+    private Double totalPriceActual;
+
     private LocalDateTime updateAt;
 
     private String bookingStatus;
-
 }

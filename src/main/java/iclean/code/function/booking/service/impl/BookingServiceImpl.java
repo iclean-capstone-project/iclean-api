@@ -4,15 +4,13 @@ import iclean.code.config.MessageVariable;
 import iclean.code.data.domain.*;
 import iclean.code.data.dto.common.ResponseObject;
 import iclean.code.data.dto.request.authen.NotificationRequestDto;
-import iclean.code.data.dto.request.booking.AddBookingRequest;
-import iclean.code.data.dto.request.booking.CheckOutCartRequest;
-import iclean.code.data.dto.request.booking.UpdateStatusBookingAsRenterRequest;
-import iclean.code.data.dto.request.booking.UpdateStatusBookingRequest;
+import iclean.code.data.dto.request.booking.*;
 import iclean.code.data.dto.request.serviceprice.GetServicePriceRequest;
 import iclean.code.data.dto.response.PageResponseObject;
 import iclean.code.data.dto.response.booking.GetBookingHistoryResponse;
 import iclean.code.data.dto.response.booking.GetBookingResponse;
 import iclean.code.data.dto.response.booking.GetCartResponseDetail;
+import iclean.code.data.dto.response.bookingdetail.GetBookingDetailResponse;
 import iclean.code.data.enumjava.BookingDetailHelperStatusEnum;
 import iclean.code.data.enumjava.BookingDetailStatusEnum;
 import iclean.code.data.enumjava.BookingStatusEnum;
@@ -41,6 +39,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import static iclean.code.data.enumjava.RoleEnum.EMPLOYEE;
+
 @Service
 @Log4j2
 public class BookingServiceImpl implements BookingService {
@@ -50,6 +50,9 @@ public class BookingServiceImpl implements BookingService {
 
     @Autowired
     private BookingRepository bookingRepository;
+
+    @Autowired
+    private AddressRepository addressRepository;
 
     @Autowired
     private UserRepository userRepository;
@@ -82,55 +85,101 @@ public class BookingServiceImpl implements BookingService {
     private ModelMapper modelMapper;
 
     @Override
-    public ResponseEntity<ResponseObject> getBookings(Integer userId, Pageable pageable) {
-        Page<Booking> bookings;
-        if (RoleEnum.EMPLOYEE.toString().equals(userRepository.findByUserId(userId).getRole().getTitle().toUpperCase())) {
-            bookings = bookingRepository.findByStaffId(userId, pageable);
-        } else if (RoleEnum.RENTER.toString().equals(userRepository.findByUserId(userId).getRole().getTitle().toUpperCase())) {
-            bookings = bookingRepository.findByRenterId(userId, pageable);
-        } else
-            bookings = bookingRepository.findAllBooking(pageable);
-
-        List<GetBookingResponse> dtoList = bookings
-                .stream()
-                .map(booking -> modelMapper.map(booking, GetBookingResponse.class))
-                .collect(Collectors.toList());
-
-        PageResponseObject pageResponseObject = Utils.convertToPageResponse(bookings, Collections.singletonList(dtoList));
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(new ResponseObject(HttpStatus.OK.toString(), "All Booking", pageResponseObject));
-    }
-
-    @Override
-    public ResponseEntity<ResponseObject> getBookingById(Integer bookingId, Integer userId, Pageable pageable) {
+    public ResponseEntity<ResponseObject> getBookings(Integer userId, Pageable pageable, boolean isAll) {
         try {
-            Booking booking = finBooking(bookingId);
-//            if (!Objects.equals(booking.getRenter().getUserId(), userId) ||
-//                    !Objects.equals(booking.getEmployee().getUserId(), userId))
-//                throw new UserNotHavePermissionException();
-
-            Page<Booking> bookings = bookingRepository.findBookingByBookingId(bookingId, userId, pageable);
-
+            Page<Booking> bookings = Page.empty();
+            String roleUser = userRepository.findByUserId(userId).getRole().getTitle().toUpperCase();
+            if (Utils.isNullOrEmpty(roleUser))
+                throw new UserNotHavePermissionException("User do not have permission to do this action");
+            RoleEnum roleEnum = RoleEnum.valueOf(roleUser);
+            switch (roleEnum) {
+                case EMPLOYEE:
+                    bookingRepository.findByHelperId(userId, pageable);
+                    break;
+                case RENTER:
+                    bookings = bookingRepository.findByRenterId(userId, pageable);
+                    break;
+                case MANAGER:
+                    if (isAll) {
+                        bookings = bookingRepository.findAllBooking(pageable);
+                    } else {
+                        bookings = bookingRepository.findByManagerId(userId, pageable);
+                    }
+                    break;
+                case ADMIN:
+                    bookings = bookingRepository.findAllBooking(pageable);
+                    break;
+                default:
+                    throw new UserNotHavePermissionException("User do not have permission to do this action");
+            }
             List<GetBookingResponse> dtoList = bookings
                     .stream()
-                    .map(bookingMapper -> modelMapper.map(bookingMapper, GetBookingResponse.class))
+                    .map(booking -> {
+                                GetBookingResponse response = modelMapper.map(booking, GetBookingResponse.class);
+                                response.setServiceName(booking.getBookingDetails()
+                                        .stream()
+                                        .map(detail -> detail.getServiceUnit()
+                                                .getService().getServiceName())
+                                        .collect(Collectors.joining(",")));
+                                if (booking.getBookingStatusHistories().size() > 0) {
+                                    response.setBookingStatus(booking.getBookingStatusHistories()
+                                            .get(booking.getBookingStatusHistories().size() - 1).getBookingStatus().getValue());
+                                }
+                                return response;
+                            }
+                    )
                     .collect(Collectors.toList());
 
             PageResponseObject pageResponseObject = Utils.convertToPageResponse(bookings, Collections.singletonList(dtoList));
-
             return ResponseEntity.status(HttpStatus.OK)
-                    .body(new ResponseObject(HttpStatus.OK.toString(), "Booking", pageResponseObject));
+                    .body(new ResponseObject(HttpStatus.OK.toString(), "All Booking", pageResponseObject));
+        } catch (Exception e) {
+            log.error(e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ResponseObject(HttpStatus.INTERNAL_SERVER_ERROR.toString(),
+                            "Something wrong occur!", null));
+        }
+    }
+
+    @Override
+    public ResponseEntity<ResponseObject> getBookingDetailById(Integer bookingId, Integer userId) {
+        try {
+            Booking booking = findBookingById(bookingId);
+            String roleUser = userRepository.findByUserId(userId).getRole().getTitle().toUpperCase();
+            if (Utils.isNullOrEmpty(roleUser))
+                throw new UserNotHavePermissionException("User do not have permission to do this action");
+            RoleEnum roleEnum = RoleEnum.valueOf(roleUser);
+            switch (roleEnum) {
+                case RENTER:
+                    isPermission(userId, booking);
+                    break;
+                case EMPLOYEE:
+                case MANAGER:
+                case ADMIN:
+                    break;
+                default:
+                    throw new UserNotHavePermissionException("User do not have permission to do this action");
+            }
+
+            GetDetailBookingResponse response = modelMapper.map(booking, GetDetailBookingResponse.class);
+            return ResponseEntity.status(HttpStatus.OK)
+                    .body(new ResponseObject(HttpStatus.OK.toString(), "Booking", response));
         } catch (Exception e) {
             if (e instanceof UserNotHavePermissionException)
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
                         .body(new ResponseObject(HttpStatus.FORBIDDEN.toString(),
                                 e.getMessage(),
                                 null));
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString()
-                            , "Something wrong occur!", null));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ResponseObject(HttpStatus.INTERNAL_SERVER_ERROR.toString(),
+                            "Something wrong occur!", null));
         }
     }
+
+//    private void isPermissionForHelper(Integer userId, Booking booking) throws UserNotHavePermissionException {
+//            if (!Objects.equals(booking.getRenter().getUserId(), userId))
+//                throw new UserNotHavePermissionException("User do not have permission to do this action");
+//    }
 
     private ServiceUnit findServiceUnitById(Integer id) {
         return serviceUnitRepository.findById(id).orElseThrow(()
@@ -142,31 +191,44 @@ public class BookingServiceImpl implements BookingService {
                                                               Integer userId) {
         try {
             Booking booking = bookingRepository.findCartByRenterId(userId, BookingStatusEnum.ON_CART);
+            BookingStatusHistory bookingStatusHistory = null;
+            Double priceDetail = servicePriceService
+                    .getServicePrice(new GetServicePriceRequest(request.getServiceUnitId(),
+                            request.getStartTime().toLocalTime().format(DateTimeFormatter.ofPattern("HH:mm:ss"))));
             if (booking == null) {
+                bookingStatusHistory = new BookingStatusHistory();
                 booking = new Booking();
-                BookingStatusHistory bookingStatusHistory = new BookingStatusHistory();
+                booking.setRenter(findAccount(userId));
+                booking.setTotalPrice(0.0);
                 bookingStatusHistory.setBookingStatus(BookingStatusEnum.ON_CART);
-                booking.setBookingStatusHistories(List.of(bookingStatusHistory));
             }
-            Booking newBooking = bookingRepository.save(booking);
-
+            double price;
             BookingDetail bookingDetail = new BookingDetail();
             Optional<BookingDetail> checkCurrentDetail = bookingDetailRepository
                     .findByServiceUnitIdAndBookingStatus(request.getServiceUnitId(), BookingStatusEnum.ON_CART);
             if (checkCurrentDetail.isPresent()) {
                 bookingDetail = checkCurrentDetail.get();
+                price = booking.getTotalPrice() - bookingDetail.getPriceDetail() + priceDetail;
             } else {
                 ServiceUnit serviceUnit = findServiceUnitById(request.getServiceUnitId());
                 bookingDetail.setServiceUnit(serviceUnit);
-                bookingDetail.setBooking(newBooking);
+                price = booking.getTotalPrice() + priceDetail;
             }
-            Double priceDetail = servicePriceService
-                    .getServicePrice(new GetServicePriceRequest(request.getServiceUnitId(),
-                            request.getStartTime().toLocalTime().format(DateTimeFormatter.ofPattern("HH:mm:ss"))));
+            booking.setTotalPrice(price);
+            booking.setTotalPriceActual(price);
+            bookingRepository.save(booking);
+            if (bookingStatusHistory != null) {
+                bookingStatusHistory.setBooking(booking);
+                bookingStatusHistoryRepository.save(bookingStatusHistory);
+            }
+
+            bookingDetail.setBooking(booking);
             bookingDetail.setPriceDetail(priceDetail);
             bookingDetail.setWorkStart(request.getStartTime().toLocalTime());
             bookingDetail.setWorkDate(request.getStartTime().toLocalDate());
             bookingDetail.setBookingDetailStatusEnum(BookingDetailStatusEnum.ON_CART);
+            bookingDetail.setNote(request.getNote());
+
             bookingDetailRepository.save(bookingDetail);
 
             return ResponseEntity.status(HttpStatus.OK)
@@ -174,6 +236,7 @@ public class BookingServiceImpl implements BookingService {
                             "Create Booking Successfully!", null));
 
         } catch (Exception e) {
+            log.error(e.getMessage());
             if (e instanceof NotFoundException) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body(new ResponseObject(HttpStatus.NOT_FOUND.toString()
@@ -189,10 +252,15 @@ public class BookingServiceImpl implements BookingService {
     public ResponseEntity<ResponseObject> getCart(Integer userId) {
         try {
             Booking booking = bookingRepository.findCartByRenterId(userId, BookingStatusEnum.ON_CART);
-            GetCartResponseDetail responseDetail = modelMapper.map(booking, GetCartResponseDetail.class);
+            if (booking != null && !booking.getBookingDetails().isEmpty()) {
+                GetCartResponseDetail responseDetail = modelMapper.map(booking, GetCartResponseDetail.class);
+                return ResponseEntity.status(HttpStatus.OK)
+                        .body(new ResponseObject(HttpStatus.OK.toString(),
+                                "Get Cart Successfully!", responseDetail));
+            }
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseObject(HttpStatus.OK.toString(),
-                            "Get Cart Successfully!", responseDetail));
+                            "Get Cart Successfully!", null));
 
         } catch (Exception e) {
             if (e instanceof NotFoundException) {
@@ -210,6 +278,8 @@ public class BookingServiceImpl implements BookingService {
     public ResponseEntity<ResponseObject> deleteAllOnCart(Integer userId) {
         try {
             Booking booking = bookingRepository.findCartByRenterId(userId, BookingStatusEnum.ON_CART);
+            bookingStatusHistoryRepository.deleteAll(booking.getBookingStatusHistories());
+            bookingDetailRepository.deleteAll(booking.getBookingDetails());
             bookingRepository.delete(booking);
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseObject(HttpStatus.OK.toString(),
@@ -234,13 +304,24 @@ public class BookingServiceImpl implements BookingService {
         return true;
     }
 
+    private boolean isPermission(Integer userId, Booking booking) throws UserNotHavePermissionException {
+        if (!Objects.equals(booking.getRenter().getUserId(), userId))
+            throw new UserNotHavePermissionException("User do not have permission to do this action");
+        return true;
+    }
+
     @Override
     public ResponseEntity<ResponseObject> deleteServiceOnCart(Integer userId, Integer detailId) {
         try {
             Optional<BookingDetail> bookingDetail = bookingDetailRepository
                     .findByBookingDetailIdAndBookingStatus(detailId, BookingStatusEnum.ON_CART);
             if (bookingDetail.isPresent()) {
+                Booking booking = bookingDetail.get().getBooking();
+                Double totalPrice = booking.getTotalPrice() - bookingDetail.get().getPriceDetail();
+                booking.setTotalPriceActual(totalPrice);
+                booking.setTotalPrice(totalPrice);
                 isPermission(userId, bookingDetail.get());
+                bookingRepository.save(booking);
                 bookingDetailRepository.delete(bookingDetail.get());
                 return ResponseEntity.status(HttpStatus.OK)
                         .body(new ResponseObject(HttpStatus.OK.toString(),
@@ -266,10 +347,24 @@ public class BookingServiceImpl implements BookingService {
         }
     }
 
+    private Address findAddressById(Integer id) {
+        return addressRepository.findById(id).orElseThrow(() -> new NotFoundException(String.format("Address ID %s is not found", id)));
+    }
+
     @Override
     public ResponseEntity<ResponseObject> checkoutCart(Integer userId, CheckOutCartRequest request) {
         try {
             Booking booking = bookingRepository.findCartByRenterId(userId, BookingStatusEnum.ON_CART);
+            Address address = findAddressById(request.getAddressId());
+            if (!Objects.equals(address.getUser().getUserId(), userId)) {
+                throw new UserNotHavePermissionException("Address is not available!");
+            }
+            booking.setLongitude(address.getLongitude());
+            booking.setLatitude(address.getLatitude());
+            booking.setLocation(address.getLocationName());
+            booking.setLocationDescription(address.getDescription());
+            booking.setRequestCount(1);
+            booking.setUpdateAt(Utils.getDateTimeNow());
 
             // --- CheckoutCartRequest ---
 
@@ -281,12 +376,14 @@ public class BookingServiceImpl implements BookingService {
 
             //SEND NOTIFICATION
             List<DeviceToken> deviceTokens = deviceTokenRepository.findByUserId(userId);
-            NotificationRequestDto notificationRequestDto = new NotificationRequestDto();
-            notificationRequestDto.setTarget(convertToListFcmToken(deviceTokens));
-            notificationRequestDto.setTitle(MessageVariable.TITLE_APP);
-            notificationRequestDto.setBody(String.format(MessageVariable.ORDER_SUCCESSFUL, booking.getBookingId()));
+            if (!deviceTokens.isEmpty()) {
+                NotificationRequestDto notificationRequestDto = new NotificationRequestDto();
+                notificationRequestDto.setTarget(convertToListFcmToken(deviceTokens));
+                notificationRequestDto.setTitle(MessageVariable.TITLE_APP);
+                notificationRequestDto.setBody(String.format(MessageVariable.ORDER_SUCCESSFUL, booking.getBookingId()));
 
-            fcmService.sendPnsToTopic(notificationRequestDto);
+                fcmService.sendPnsToTopic(notificationRequestDto);
+            }
 
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseObject(HttpStatus.OK.toString(),
@@ -309,6 +406,7 @@ public class BookingServiceImpl implements BookingService {
                 .map(DeviceToken::getFcmToken)
                 .collect(Collectors.toList());
     }
+
     @Override
     public ResponseEntity<ResponseObject> updateStatusBooking(Integer bookingId,
                                                               Integer userId,
@@ -316,7 +414,7 @@ public class BookingServiceImpl implements BookingService {
         try {
 
             Booking bookingForUpdateStatus = new Booking();
-            Booking booking = finBooking(bookingId);
+            Booking booking = findBookingById(bookingId);
 
             BookingStatusHistory bookingStatusHistory = bookingStatusHistoryRepository.findTheLatestBookingStatusByBookingId(bookingId);
             if (bookingStatusHistory != null) {
@@ -331,7 +429,7 @@ public class BookingServiceImpl implements BookingService {
 
             if (Objects.equals(RoleEnum.MANAGER.name(), userUpdate.getRole().getTitle().toUpperCase())) {
                 bookingForUpdateStatus = mappingUpdateBookingForManager(booking, optionalBookingStatus, request);
-            } else if (Objects.equals(RoleEnum.EMPLOYEE.name(), userUpdate.getRole().getTitle().toUpperCase())) {
+            } else if (Objects.equals(EMPLOYEE.name(), userUpdate.getRole().getTitle().toUpperCase())) {
 //                if (booking.getRenter() != null) {
 //                    if (!Objects.equals(booking.getEmployee().getUserId(), userId))
 //                        throw new UserNotHavePermissionException();
@@ -378,7 +476,7 @@ public class BookingServiceImpl implements BookingService {
                                                                       UpdateStatusBookingAsRenterRequest bookingRequest) {
         try {
             Booking bookingForUpdateStatus = new Booking();
-            Booking booking = finBooking(bookingId);
+            Booking booking = findBookingById(bookingId);
 
             if (!Objects.equals(booking.getRenter().getUserId(), userId))
                 throw new UserNotHavePermissionException();
@@ -440,23 +538,6 @@ public class BookingServiceImpl implements BookingService {
         PageResponseObject pageResponseObject = Utils.convertToPageResponse(bookings, Collections.singletonList(dtoList));
         return ResponseEntity.status(HttpStatus.OK)
                 .body(new ResponseObject(HttpStatus.OK.toString(), "All Booking", pageResponseObject));
-    }
-
-    private Booking mappingBookingForCreate(Integer userId,
-                                            AddBookingRequest request) {
-
-        User optionalRenter = findAccount(userId, RoleEnum.RENTER.name());
-//        User optionalStaff = findAccount(request.getEmployeeId(), Role.EMPLOYEE.name());
-        Unit unit = findJobUnit(request.getServiceUnitId());
-
-        Booking booking = modelMapper.map(request, Booking.class);
-        booking.setRenter(optionalRenter);
-//        booking.setEmployee(optionalStaff);
-//        booking.setUnit(unit);
-        booking.setOrderDate(Utils.getDateTimeNow());
-        booking.setRequestCount(1);
-
-        return booking;
     }
 
     private Booking mappingUpdateBookingForManager(Booking optionalBooking,
@@ -533,7 +614,7 @@ public class BookingServiceImpl implements BookingService {
             bookingDetailHelper.setBookingDetailHelperStatus(BookingDetailHelperStatusEnum.ACTIVE);
             bookingEmployeeRepository.save(bookingDetailHelper);
 
-            User employee = findAccount(empId, RoleEnum.EMPLOYEE.name());
+            User employee = findAccount(empId, EMPLOYEE.name());
 //            booking.setEmployee(employee);
 
         } else if (BookingStatusEnum.RENTER_CANCELED == optionalBookingStatus) {
@@ -557,7 +638,7 @@ public class BookingServiceImpl implements BookingService {
     }
 
     private void addBookingEmployee(Booking booking, Integer epmId) {
-        User employee = findAccount(epmId, RoleEnum.EMPLOYEE.name());
+        User employee = findAccount(epmId, EMPLOYEE.name());
 
         BookingDetailHelper bookingDetailHelper = new BookingDetailHelper();
 //        bookingDetailHelper.setBooking(booking);
@@ -580,7 +661,7 @@ public class BookingServiceImpl implements BookingService {
                 .orElseThrow(() -> new NotFoundException("Employee is not exist"));
     }
 
-    private Booking finBooking(int bookingId) {
+    private Booking findBookingById(int bookingId) {
         return bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new NotFoundException("Booking is not exist"));
     }
