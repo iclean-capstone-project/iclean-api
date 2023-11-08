@@ -17,4 +17,6 @@ public class GetNotificationDTO {
     private LocalDateTime createAt;
 
     private Boolean isRead;
+
+    private Boolean isEmployee;
 }
