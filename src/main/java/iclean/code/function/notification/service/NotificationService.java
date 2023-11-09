@@ -1,7 +1,6 @@
 package iclean.code.function.notification.service;
 
 import iclean.code.data.dto.common.ResponseObject;
-import iclean.code.data.dto.request.notification.AddNotificationRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 

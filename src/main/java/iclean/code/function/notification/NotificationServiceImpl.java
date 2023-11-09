@@ -4,8 +4,11 @@ import iclean.code.data.domain.*;
 import iclean.code.data.dto.common.ResponseObject;
 import iclean.code.data.dto.request.notification.GetNotificationDTO;
 import iclean.code.data.dto.response.PageResponseObject;
+import iclean.code.data.enumjava.NotificationEnum;
 import iclean.code.data.enumjava.NotificationStatusEnum;
+import iclean.code.data.enumjava.RoleEnum;
 import iclean.code.data.repository.NotificationRepository;
+import iclean.code.data.repository.UserRepository;
 import iclean.code.exception.NotFoundException;
 import iclean.code.exception.UserNotHavePermissionException;
 import iclean.code.function.notification.service.NotificationService;
@@ -29,6 +32,9 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Autowired
     private NotificationRepository notificationRepository;
+
+    @Autowired
+    private UserRepository userRepository;
 
     @Autowired
     private ModelMapper modelMapper;
@@ -61,9 +67,25 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     public ResponseEntity<ResponseObject> getNotifications(Integer userIdAuth, Pageable pageable) {
         try {
+            Page<Notification> notifications;
             Sort order = Sort.by(Sort.Order.desc("createAt"));
             pageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), order);
-            Page<Notification> notifications = notificationRepository.findByUserIdPageable(userIdAuth, pageable);
+            String roleUser = userRepository.findByUserId(userIdAuth).getRole().getTitle().toUpperCase();
+
+            if (Utils.isNullOrEmpty(roleUser))
+                throw new UserNotHavePermissionException("User do not have permission to do this action");
+            RoleEnum roleEnum = RoleEnum.valueOf(roleUser);
+            switch (roleEnum) {
+                case EMPLOYEE:
+                    notifications = notificationRepository.findByUserIdPageable(userIdAuth, Boolean.parseBoolean(NotificationEnum.IS_EMPLOYEE.toString()), pageable);
+                    break;
+                case RENTER:
+                    notifications = notificationRepository.findByUserIdPageable(userIdAuth, Boolean.parseBoolean(NotificationEnum.NOT_EMPLOYEE.toString()), pageable);
+                    break;
+                default:
+                    notifications = notificationRepository.findByUserIdPageable(userIdAuth, pageable);
+            }
+
             List<GetNotificationDTO> dtoList = notifications
                     .stream()
                     .map(notificationMapper -> modelMapper.map(notificationMapper, GetNotificationDTO.class))
@@ -129,7 +151,22 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     public ResponseEntity<ResponseObject> readAllNotification(int userId) {
         try {
-            List<Notification> notifications = notificationRepository.findAllByUserIdAndRead(userId, false);
+            List<Notification> notifications;
+            String roleUser = userRepository.findByUserId(userId).getRole().getTitle().toUpperCase();
+
+            if (Utils.isNullOrEmpty(roleUser))
+                throw new UserNotHavePermissionException("User do not have permission to do this action");
+            RoleEnum roleEnum = RoleEnum.valueOf(roleUser);
+            switch (roleEnum) {
+                case EMPLOYEE:
+                    notifications = notificationRepository.findAllByUserIdAndRead(userId, false, Boolean.parseBoolean(NotificationEnum.IS_EMPLOYEE.toString()));
+                    break;
+                case RENTER:
+                    notifications = notificationRepository.findAllByUserIdAndRead(userId, false, Boolean.parseBoolean(NotificationEnum.NOT_EMPLOYEE.toString()));
+                    break;
+                default:
+                    notifications = notificationRepository.findAllByUserIdAndRead(userId, false);
+            }
             for (Notification notification :
                     notifications) {
                 notification.setIsRead(true);
