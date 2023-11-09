@@ -1,5 +1,6 @@
 package iclean.code.data.dto.request.notification;
 
+import iclean.code.utils.anotation.SortValue;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -10,7 +11,8 @@ public class GetNotificationDTO {
 
     private String title;
 
-    private String content;
+    @SortValue(value = "content")
+    private String detail;
 
     private String notificationImgLink;
 

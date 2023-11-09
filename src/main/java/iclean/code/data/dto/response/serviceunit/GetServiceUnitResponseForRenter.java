@@ -6,6 +6,7 @@ import lombok.Data;
 public class GetServiceUnitResponseForRenter {
     private Integer serviceUnitId;
     private Double defaultPrice;
-    private String valueUnit;
+    private String value;
+    private Double equivalent;
     private String serviceUnitImage;
 }

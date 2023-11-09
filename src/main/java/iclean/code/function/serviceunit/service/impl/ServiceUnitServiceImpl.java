@@ -43,7 +43,12 @@ public class ServiceUnitServiceImpl implements ServiceUnitService {
             List<ServiceUnit> serviceUnits = serviceUnitRepository.findByServiceActive(serviceId);
             List<GetServiceUnitResponseForRenter> dtoList = serviceUnits
                     .stream()
-                    .map(serviceUnit -> modelMapper.map(serviceUnit, GetServiceUnitResponseForRenter.class))
+                    .map(serviceUnit ->  {
+                        GetServiceUnitResponseForRenter response = modelMapper.map(serviceUnit, GetServiceUnitResponseForRenter.class);
+                        response.setValue(serviceUnit.getUnit().getUnitDetail());
+                        response.setEquivalent(serviceUnit.getUnit().getUnitValue());
+                        return response;
+                    })
                     .collect(Collectors.toList());
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseObject(HttpStatus.OK.toString(),

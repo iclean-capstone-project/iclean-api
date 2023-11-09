@@ -40,9 +40,9 @@ public class TestController {
 
     }
 
-    @PostMapping("/send-html-email")
-    public String sendHtmlEmail(@RequestBody SendMailRequest emailRequest) {
-        emailSenderService.sendEmailWithHtmlTemplate(emailRequest);
-        return "HTML email sent successfully!";
-    }
+//    @PostMapping("/send-html-email")
+//    public String sendHtmlEmail(@RequestBody SendMailRequest emailRequest) {
+//        emailSenderService.sendEmailWithHtmlTemplate(emailRequest);
+//        return "HTML email sent successfully!";
+//    }
 }

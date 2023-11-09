@@ -3,10 +3,7 @@ package iclean.code.function.booking.controller;
 import iclean.code.config.JwtUtils;
 import iclean.code.data.dto.common.PageRequestBuilder;
 import iclean.code.data.dto.common.ResponseObject;
-import iclean.code.data.dto.request.booking.AddBookingRequest;
-import iclean.code.data.dto.request.booking.CheckOutCartRequest;
-import iclean.code.data.dto.request.booking.UpdateStatusBookingAsRenterRequest;
-import iclean.code.data.dto.request.booking.UpdateStatusBookingRequest;
+import iclean.code.data.dto.request.booking.*;
 import iclean.code.data.dto.response.booking.GetBookingHistoryResponse;
 import iclean.code.data.dto.response.booking.GetBookingResponse;
 import iclean.code.function.booking.service.BookingService;
@@ -56,6 +53,32 @@ public class BookingController {
         return bookingService.getBookings(JwtUtils.decodeToAccountId(authentication), pageable, isAll);
     }
 
+    @GetMapping("/helper")
+    @Operation(summary = "Get all booking of a user", description = "Return all booking information")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Booking Information"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - Login please"),
+            @ApiResponse(responseCode = "403", description = "Forbidden - You don't have permission to access on this api"),
+            @ApiResponse(responseCode = "400", description = "Bad request - Missing some field required")
+    })
+    @PreAuthorize("hasAuthority('employee')")
+    public ResponseEntity<ResponseObject> getBookingsAround(Authentication authentication) {
+        return bookingService.getBookingsAround(JwtUtils.decodeToAccountId(authentication));
+    }
+
+    @PostMapping("/helper")
+    @Operation(summary = "Get all booking of a user", description = "Return all booking information")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Booking Information"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - Login please"),
+            @ApiResponse(responseCode = "403", description = "Forbidden - You don't have permission to access on this api"),
+            @ApiResponse(responseCode = "400", description = "Bad request - Missing some field required")
+    })
+    @PreAuthorize("hasAuthority('employee')")
+    public ResponseEntity<ResponseObject> acceptBookingForHelper(@RequestBody CreateBookingHelperRequest request, Authentication authentication) {
+        return bookingService.acceptBookingForHelper(request, JwtUtils.decodeToAccountId(authentication));
+    }
+
     @GetMapping("/cart")
     @Operation(summary = "Get cart of a user", description = "Return Cart information")
     @ApiResponses(value = {
@@ -79,6 +102,7 @@ public class BookingController {
             @ApiResponse(responseCode = "400", description = "Bad request - Missing some field required")
     })
     public ResponseEntity<ResponseObject> getBookingHistory(
+            @RequestParam(name = "status") String status,
             @RequestParam(name = "page", defaultValue = "1") int page,
             @RequestParam(name = "size", defaultValue = "10") int size,
             @RequestParam(name = "sort", required = false) @ValidSortFields(value = GetBookingHistoryResponse.class) List<String> sortFields,
@@ -88,7 +112,7 @@ public class BookingController {
         if (sortFields != null && !sortFields.isEmpty()) {
             pageable = PageRequestBuilder.buildPageRequest(page, size, sortFields);
         }
-        return bookingService.getBookingHistory(JwtUtils.decodeToAccountId(authentication), pageable);
+        return bookingService.getBookingHistory(JwtUtils.decodeToAccountId(authentication), status, pageable);
     }
 
     @GetMapping(value = "{bookingId}")
@@ -187,5 +211,34 @@ public class BookingController {
     @PreAuthorize("hasAuthority('renter')")
     public ResponseEntity<ResponseObject> deleteServiceOnCart(Authentication authentication, @PathVariable Integer id) {
         return bookingService.deleteServiceOnCart(JwtUtils.decodeToAccountId(authentication), id);
+    }
+
+    @GetMapping("/validate/{detailId}")
+    @Operation(summary = "Validate QR a booking detail to start", description = "Return message fail or successful")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Return successful"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - Login please"),
+            @ApiResponse(responseCode = "403", description = "Forbidden - You don't have permission to access on this api"),
+            @ApiResponse(responseCode = "400", description = "Bad request - Missing some field required")
+    })
+    @PreAuthorize("hasAuthority('renter')")
+    public ResponseEntity<ResponseObject> generateQrCode(Authentication authentication,
+                                                                 @PathVariable Integer detailId) {
+        return bookingService.generateQrCode(JwtUtils.decodeToAccountId(authentication), detailId);
+    }
+
+    @PostMapping("/validate/{detailId}")
+    @Operation(summary = "Validate QR a booking detail to start", description = "Return message fail or successful")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Return successful"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - Login please"),
+            @ApiResponse(responseCode = "403", description = "Forbidden - You don't have permission to access on this api"),
+            @ApiResponse(responseCode = "400", description = "Bad request - Missing some field required")
+    })
+    @PreAuthorize("hasAuthority('employee')")
+    public ResponseEntity<ResponseObject> validateBookingToStart(Authentication authentication,
+                                                                 @PathVariable Integer detailId,
+                                                                 @RequestBody @Valid QRCodeValidate request) {
+        return bookingService.validateBookingToStart(JwtUtils.decodeToAccountId(authentication), detailId, request);
     }
 }

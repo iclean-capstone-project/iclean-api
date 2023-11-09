@@ -6,7 +6,8 @@ import java.time.LocalDateTime;
 
 @Data
 public class GetFeedbackResponse {
-    private String fullName;
+    private String renterName;
+    private String renterAvatar;
     private Double rate;
     private String feedback;
     private LocalDateTime feedbackTime;

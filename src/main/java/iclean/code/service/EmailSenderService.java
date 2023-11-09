@@ -7,5 +7,5 @@ import org.springframework.http.ResponseEntity;
 public interface EmailSenderService {
     ResponseEntity<ResponseObject> sendEmail(SendMailRequest mail);
 
-    ResponseEntity<ResponseObject> sendEmailWithHtmlTemplate(SendMailRequest mail);
+    void sendEmailWithHtmlTemplate(SendMailRequest mail);
 }

@@ -1,6 +1,7 @@
 package iclean.code.utils.validator;
 
 import iclean.code.utils.Utils;
+import iclean.code.utils.anotation.SortValueFields;
 
 import javax.validation.ConstraintValidator;
 import javax.validation.ConstraintValidatorContext;
@@ -41,10 +42,10 @@ public class SortFieldsValidator implements ConstraintValidator<ValidSortFields,
         boolean isValid = directionList.stream().allMatch(s -> s.isEmpty() || "asc".equalsIgnoreCase(s) || "desc".equalsIgnoreCase(s));
         if (!isValid)
             return false;
-
         List<String> allowedSortField = Arrays.stream(objectClass.getDeclaredFields())
                 .map(Field::getName)
                 .collect(Collectors.toList());
+//        List<String> allowedSortField = sortValueFields.getSortValueFields(objectClass);
 
         for (String sortField : fieldList) {
             if (!allowedSortField.contains(sortField)) {

@@ -4,7 +4,6 @@ import iclean.code.data.domain.Address;
 import iclean.code.data.domain.User;
 import iclean.code.data.dto.common.ResponseObject;
 import iclean.code.data.dto.request.profile.UpdateProfileDto;
-import iclean.code.data.dto.response.authen.UserInformationDto;
 import iclean.code.data.dto.response.profile.ProfileUserDto;
 import iclean.code.data.repository.AddressRepository;
 import iclean.code.data.repository.UserRepository;
@@ -71,7 +70,7 @@ public class ProfileServiceImpl implements ProfileService {
             }
             updateProfileDto.setFullName(Utils.convertToTitleCase(updateProfileDto.getFullName()));
             modelMapper.map(updateProfileDto, user);
-            user.setDateOfBirth(Utils.convertStringToLocalDateTime(updateProfileDto.getDateOfBirth()));
+            user.setDateOfBirth(Utils.convertStringToLocalDate(updateProfileDto.getDateOfBirth()));
             if (Objects.nonNull(updateProfileDto.getFileImage())) {
                 String avatar = storageService.uploadFile(updateProfileDto.getFileImage());
                 user.setAvatar(avatar);

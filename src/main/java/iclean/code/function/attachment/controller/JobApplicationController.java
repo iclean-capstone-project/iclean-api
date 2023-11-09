@@ -66,27 +66,6 @@ public class JobApplicationController {
         return jobApplicationService.getJobApplication(JwtUtils.decodeToAccountId(authentication));
     }
 
-    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @PreAuthorize("hasAnyAuthority('employee')")
-    @Operation(summary = "Create new job application of a employee", description = "Return message fail or successful")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Create new job application Successful"),
-            @ApiResponse(responseCode = "401", description = "Unauthorized - Login please"),
-            @ApiResponse(responseCode = "403", description = "Forbidden - You don't have permission to access on this api"),
-            @ApiResponse(responseCode = "400", description = "Bad request - Missing some field required")
-    })
-    public ResponseEntity<ResponseObject> createJobApplication(@RequestPart("fullName") String fullName,
-                                                               @RequestPart("frontIdCard") MultipartFile frontIdCard,
-                                                               @RequestPart("backIdCard") MultipartFile backIdCard,
-                                                               @RequestPart("avatar") MultipartFile avatar,
-                                                               @RequestPart(value = "others", required = false) List<MultipartFile> others) {
-        return jobApplicationService.createJobApplication(new CreateAttachmentRequestDTO(fullName),
-                frontIdCard,
-                backIdCard,
-                avatar,
-                others);
-    }
-
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyAuthority('admin', 'manager')")
     @Operation(summary = "Update a job application of a user", description = "Return message fail or successful")

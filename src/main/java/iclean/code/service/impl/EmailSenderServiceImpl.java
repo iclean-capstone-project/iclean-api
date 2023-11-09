@@ -3,6 +3,7 @@ package iclean.code.service.impl;
 import iclean.code.data.dto.common.ResponseObject;
 import iclean.code.data.dto.request.others.SendMailRequest;
 import iclean.code.service.EmailSenderService;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
@@ -19,6 +20,7 @@ import javax.mail.internet.MimeMessage;
 import java.util.Objects;
 
 @Service
+@Log4j2
 public class EmailSenderServiceImpl implements EmailSenderService {
 
     @Autowired
@@ -45,14 +47,13 @@ public class EmailSenderServiceImpl implements EmailSenderService {
     }
 
     @Override
-    public ResponseEntity<ResponseObject> sendEmailWithHtmlTemplate(SendMailRequest mail) {
+    public void sendEmailWithHtmlTemplate(SendMailRequest mail) {
         MimeMessage mimeMessage = mailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, "UTF-8");
 
         try {
             helper.setTo(mail.getTo());
             helper.setSubject(mail.getSubject());
-
             Context context = new Context();
             context.setVariable("name", mail.getTo());
             context.setVariable("body", mail.getBody());
@@ -62,9 +63,43 @@ public class EmailSenderServiceImpl implements EmailSenderService {
 
 
             mailSender.send(mimeMessage);
-            return ResponseEntity.status(HttpStatus.OK).body(new ResponseObject(HttpStatus.OK.toString(), "Send Email Success!", new MimeMessage(mimeMessage)));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ResponseObject(HttpStatus.INTERNAL_SERVER_ERROR.toString(), "Send Mail Failed!", e));
+            log.error(e.getMessage());
+        }
+    }
+
+    public void sendEmailAcceptReport(SendMailRequest mail) {
+        MimeMessage mimeMessage = mailSender.createMimeMessage();
+        MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, "UTF-8");
+
+        try {
+            helper.setTo(mail.getTo());
+            helper.setSubject(mail.getSubject());
+            Context context = new Context();
+            context.setVariable("name", mail.getTo());
+            context.setVariable("body", mail.getBody());
+
+            String htmlContent = templateEngine.process(Objects.requireNonNull(resource.getFilename()), context);
+            helper.setText(htmlContent, true);
+
+
+            mailSender.send(mimeMessage);
+        } catch (Exception e) {
+            log.error(e.getMessage());
+        }
+    }
+
+    public void sendMailWithTemplate(Resource resource, Context context, SendMailRequest request) {
+        MimeMessage mimeMessage = mailSender.createMimeMessage();
+        MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, "UTF-8");
+        try {
+            helper.setTo(request.getTo());
+            helper.setSubject(request.getSubject());
+            String htmlContent = templateEngine.process(Objects.requireNonNull(resource.getFilename()), context);
+            helper.setText(htmlContent, true);
+            mailSender.send(mimeMessage);
+        } catch (Exception e) {
+            log.error(e.getMessage());
         }
     }
 }

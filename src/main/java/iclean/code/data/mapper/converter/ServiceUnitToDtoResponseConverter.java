@@ -14,7 +14,6 @@ public class ServiceUnitToDtoResponseConverter implements Converter<ServiceUnit,
         GetServiceUnitResponseForHelper response = new GetServiceUnitResponseForHelper();
         response.setServiceUnitId(source.getServiceUnitId());
         response.setServiceUnitImage(unit.getUnitImage());
-        response.setValueUnit(String.format("%s ~ %s giờ", unit.getUnitDetail(), unit.getUnitValue()));
         response.setHelperCommissionPrice(source.getHelperCommission() * source.getDefaultPrice() / 100);
         return response;
     }

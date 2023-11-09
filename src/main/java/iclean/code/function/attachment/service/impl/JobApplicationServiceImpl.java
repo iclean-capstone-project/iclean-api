@@ -9,7 +9,7 @@ import iclean.code.data.dto.request.attachment.UpdateAttachmentRequestDTO;
 import iclean.code.data.dto.response.others.CMTBackResponse;
 import iclean.code.data.dto.response.others.CMTFrontResponse;
 import iclean.code.data.repository.AttachmentRepository;
-import iclean.code.data.repository.RegisterEmployeeRepository;
+import iclean.code.data.repository.HelperInformationRepository;
 import iclean.code.exception.NotFoundException;
 import iclean.code.function.attachment.service.JobApplicationService;
 import iclean.code.service.ExternalApiService;
@@ -31,7 +31,7 @@ public class JobApplicationServiceImpl implements JobApplicationService {
     @Autowired
     private AttachmentRepository attachmentRepository;
     @Autowired
-    private RegisterEmployeeRepository registerEmployeeRepository;
+    private HelperInformationRepository helperInformationRepository;
     @Autowired
     private StorageService storageService;
     @Autowired
@@ -251,7 +251,7 @@ public class JobApplicationServiceImpl implements JobApplicationService {
     }
 
     private HelperInformation findRegisterEmployee(int id) {
-        return registerEmployeeRepository.findById(id)
+        return helperInformationRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException(String.format("Register Employee ID: %s is not exist", id)));
     }
 }

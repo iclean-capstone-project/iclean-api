@@ -30,8 +30,13 @@ public interface BookingRepository extends JpaRepository<Booking, Integer> {
             "WHERE u.userId = ?1")
     Page<Booking> findByHelperId(Integer userId, Pageable pageable);
 
-    @Query("SELECT b FROM Booking b  WHERE b.renter.userId = ?1")
-    Page<Booking> findBookingHistoryByUserId(Integer userId, Pageable pageable);
+    @Query("SELECT b FROM Booking b " +
+            "LEFT JOIN b.bookingStatusHistories bs " +
+            "WHERE b.renter.userId = ?1 " +
+            "AND bs.bookingStatus = ?2 " +
+            "AND bs.createAt = (SELECT MAX(bsh.createAt) FROM BookingStatusHistory bsh " +
+            "WHERE bsh.statusHistoryId = bs.statusHistoryId)")
+    Page<Booking> findBookingHistoryByUserId(Integer userId, BookingStatusEnum status, Pageable pageable);
 
     @Query("SELECT b FROM Booking b " +
             "LEFT JOIN b.bookingStatusHistories bds " +
@@ -39,6 +44,20 @@ public interface BookingRepository extends JpaRepository<Booking, Integer> {
             "AND bds.bookingStatus = ?2 " +
             "AND size(b.bookingStatusHistories) <= 1")
     Booking findCartByRenterId(Integer userId, BookingStatusEnum statusEnum);
+
+    @Query("SELECT booking FROM Booking booking " +
+            "LEFT JOIN booking.bookingDetails bd " +
+            "WHERE booking.manager.userId = ?1")
+    Page<Booking> findByManagerId(Integer userId, Pageable pageable);
+
+    @Query("SELECT b FROM Booking b " +
+            "LEFT JOIN b.bookingDetails bd " +
+            "LEFT JOIN b.bookingStatusHistories bs " +
+            "WHERE bd.bookingDetailId = ?1 " +
+            "AND bs.bookingStatus = ?2 " +
+            "AND bs.createAt = (SELECT MAX(bsh.createAt) FROM BookingStatusHistory bsh " +
+            "WHERE bsh.statusHistoryId = bs.statusHistoryId)")
+    Booking findBookingByBookingDetailAndStatus(Integer bookingDetailId, BookingStatusEnum bookingStatusEnum);
 
     @Query("SELECT booking FROM Booking booking " +
             "LEFT JOIN booking.bookingDetails bd " +

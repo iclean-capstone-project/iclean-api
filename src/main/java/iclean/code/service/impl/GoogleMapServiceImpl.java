@@ -6,6 +6,7 @@ import com.google.maps.model.DistanceMatrix;
 import com.google.maps.model.LatLng;
 import iclean.code.data.dto.common.Position;
 import iclean.code.data.dto.common.UserPosition;
+import iclean.code.data.dto.response.booking.GetBookingResponseForHelper;
 import iclean.code.service.GoogleMapService;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Value;
@@ -62,11 +63,11 @@ public class GoogleMapServiceImpl implements GoogleMapService {
         return earthRadius * c;
     }
     @Override
-    public List<UserPosition> checkDistance(List<UserPosition> positionList, Position position, double maxDistance) {
-        List<UserPosition> filteredPositions = new ArrayList<>();
+    public List<GetBookingResponseForHelper> checkDistance(List<GetBookingResponseForHelper> positionList, Position position, double maxDistance) {
+        List<GetBookingResponseForHelper> filteredPositions = new ArrayList<>();
 
-        for (UserPosition element : positionList) {
-            double distance = calculateDistance(element.getPosition(), position);
+        for (GetBookingResponseForHelper element : positionList) {
+            double distance = calculateDistance(new Position(element.getLongitude(), element.getLatitude()), position);
             if (distance <= maxDistance) {
                 filteredPositions.add(element);
             }

@@ -15,7 +15,6 @@ public class ServiceUnitMapper {
         modelMapper.addMappings(new PropertyMap<ServiceUnit, GetServiceUnitResponseForRenter>() {
             @Override
             protected void configure() {
-                map().setValueUnit(String.format("%s ~ %s giờ", source.getUnit().getUnitDetail(), source.getUnit().getUnitValue()));
                 map().setServiceUnitImage(source.getUnit().getUnitImage());
             }
         });
