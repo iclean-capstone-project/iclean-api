@@ -59,11 +59,6 @@ public interface BookingRepository extends JpaRepository<Booking, Integer> {
             "WHERE bsh.statusHistoryId = bs.statusHistoryId)")
     Booking findBookingByBookingDetailAndStatus(Integer bookingDetailId, BookingStatusEnum bookingStatusEnum);
 
-    @Query("SELECT booking FROM Booking booking " +
-            "LEFT JOIN booking.bookingDetails bd " +
-            "WHERE booking.manager.userId = ?1")
-    Page<Booking> findByManagerId(Integer userId, Pageable pageable);
-
     @Query("SELECT e FROM Booking e WHERE DATE(e.orderDate) = ?1")
     List<Booking> getBookingByOrderDate(String orderDate);
 

@@ -18,6 +18,7 @@ public interface BookingDetailHelperRepository extends JpaRepository<BookingDeta
             "WHERE bdh.bookingDetail.bookingDetailId = ?1 " +
             "AND bdh.bookingDetailHelperStatus = ?2")
     List<BookingDetailHelper> findByBookingDetailIdAndActive(Integer detailId, BookingDetailHelperStatusEnum statusEnum);
+
     @Query(value = "SELECT hi.helper_information_id, hi.full_name, COUNT(*) AS count " +
             "FROM booking_detail_helper dhh " +
             "LEFT JOIN service_registration sr ON sr.service_registration_id = dhh.service_registration_id " +
@@ -35,3 +36,4 @@ public interface BookingDetailHelperRepository extends JpaRepository<BookingDeta
             "GROUP BY hi.helper_information_id, hi.full_name " +
             "ORDER BY count DESC", nativeQuery = true)
     List<Object[]> findTopEmployeesOnDay();
+}
