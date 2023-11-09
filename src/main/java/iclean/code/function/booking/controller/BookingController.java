@@ -101,7 +101,7 @@ public class BookingController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyAuthority('renter')")
+    @PreAuthorize("hasAnyAuthority('renter', 'employee')")
     @Operation(summary = "Create new booking of a user", description = "Return message fail or successful")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Create new booking Successful"),
@@ -116,7 +116,7 @@ public class BookingController {
     }
 
     @PostMapping("/checkout")
-    @PreAuthorize("hasAnyAuthority('renter')")
+    @PreAuthorize("hasAnyAuthority('renter', 'employee')")
     @Operation(summary = "Create new booking of a user", description = "Return message fail or successful")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Create new booking Successful"),
@@ -148,7 +148,7 @@ public class BookingController {
     }
 
     @PutMapping(value = "status/renter/{bookingId}")
-    @PreAuthorize("hasAnyAuthority('renter')")
+    @PreAuthorize("hasAnyAuthority('renter', 'employee')")
     @Operation(summary = "Renter Update status booking", description = "Return message fail or successful")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Update status booking Successful"),
@@ -171,7 +171,7 @@ public class BookingController {
             @ApiResponse(responseCode = "403", description = "Forbidden - You don't have permission to access on this api"),
             @ApiResponse(responseCode = "400", description = "Bad request - Missing some field required")
     })
-    @PreAuthorize("hasAuthority('renter')")
+    @PreAuthorize("hasAnyAuthority('renter', 'employee')")
     public ResponseEntity<ResponseObject> deleteAllOnCart(Authentication authentication) {
         return bookingService.deleteAllOnCart(JwtUtils.decodeToAccountId(authentication));
     }
@@ -184,7 +184,7 @@ public class BookingController {
             @ApiResponse(responseCode = "403", description = "Forbidden - You don't have permission to access on this api"),
             @ApiResponse(responseCode = "400", description = "Bad request - Missing some field required")
     })
-    @PreAuthorize("hasAuthority('renter')")
+    @PreAuthorize("hasAnyAuthority('renter', 'employee')")
     public ResponseEntity<ResponseObject> deleteServiceOnCart(Authentication authentication, @PathVariable Integer id) {
         return bookingService.deleteServiceOnCart(JwtUtils.decodeToAccountId(authentication), id);
     }

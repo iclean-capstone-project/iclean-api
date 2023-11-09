@@ -4,8 +4,9 @@ import iclean.code.data.dto.common.ResponseObject;
 import iclean.code.data.dto.request.others.SendMailRequest;
 import org.springframework.http.ResponseEntity;
 
-public interface EmailSenderService {
-    ResponseEntity<ResponseObject> sendEmail(SendMailRequest mail);
+import javax.mail.MessagingException;
 
-    ResponseEntity<ResponseObject> sendEmailWithHtmlTemplate(SendMailRequest mail);
+public interface EmailSenderService {
+
+    ResponseEntity<ResponseObject> sendEmailTemplate( String options, SendMailRequest mail);
 }

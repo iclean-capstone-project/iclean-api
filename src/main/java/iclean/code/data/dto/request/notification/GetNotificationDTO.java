@@ -18,5 +18,5 @@ public class GetNotificationDTO {
 
     private Boolean isRead;
 
-    private Boolean isEmployee;
+    private Boolean isHelper;
 }

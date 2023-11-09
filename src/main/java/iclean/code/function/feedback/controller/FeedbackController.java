@@ -44,7 +44,7 @@ public class FeedbackController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('renter')")
+    @PreAuthorize("hasAnyAuthority('renter', 'employee')")
     @Operation(summary = "Create or Update a feedback", description = "Return message fail or successful")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Update a feedback Successful"),
@@ -59,7 +59,7 @@ public class FeedbackController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('renter', 'manager')")
+    @PreAuthorize("hasAnyAuthority('renter', 'employee', 'manager')")
     @Operation(summary = "Delete a feedback by booking detail id", description = "Return message fail or successful")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Delete a feedback Successful"),

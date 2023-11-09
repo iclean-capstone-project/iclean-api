@@ -14,7 +14,7 @@ public interface NotificationRepository extends JpaRepository<Notification, Inte
 
     @Query("SELECT notification " +
             "FROM Notification notification " +
-            "WHERE notification.user.userId = ?1  AND notification.isEmployee = ?2")
+            "WHERE notification.user.userId = ?1  AND notification.isHelper = ?2")
     Page<Notification> findByUserIdPageable (Integer userId, Boolean checkEmp , Pageable pageable);
 
     @Query("SELECT notification " +
@@ -28,7 +28,7 @@ public interface NotificationRepository extends JpaRepository<Notification, Inte
 
     @Query("SELECT notification FROM Notification notification WHERE notification.user.userId = ?1 " +
             "AND notification.isRead = ?2 " +
-            "AND notification.isEmployee = ?3 " +
+            "AND notification.isHelper = ?3 " +
             "ORDER BY notification.createAt ASC ")
     List<Notification> findAllByUserIdAndRead(Integer userId, Boolean isRead, Boolean checkEmp);
 

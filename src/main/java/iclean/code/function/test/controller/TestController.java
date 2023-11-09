@@ -1,6 +1,5 @@
 package iclean.code.function.test.controller;
 
-import iclean.code.data.dto.common.ResponseObject;
 import iclean.code.data.dto.request.others.SendMailRequest;
 import iclean.code.service.EmailSenderService;
 import iclean.code.service.StorageService;
@@ -10,6 +9,8 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
+import javax.annotation.Nullable;
 
 @RestController
 @RequestMapping("/test")
@@ -34,15 +35,11 @@ public class TestController {
     public ResponseEntity<Boolean> delete(@RequestParam String url) {
         return new ResponseEntity<>(storageService.deleteFile(url), HttpStatus.CREATED);
     }
-    @PostMapping("/send-email")
-    public ResponseEntity<ResponseObject> sendEmail(@RequestBody SendMailRequest emailRequest) {
-        return emailSenderService.sendEmail(emailRequest);
-
-    }
 
     @PostMapping("/send-html-email")
-    public String sendHtmlEmail(@RequestBody SendMailRequest emailRequest) {
-        emailSenderService.sendEmailWithHtmlTemplate(emailRequest);
+    public String sendHtmlEmail(@RequestParam(defaultValue = "IN_PROCESS") @Nullable String option,
+                                @RequestBody SendMailRequest emailRequest) {
+        emailSenderService.sendEmailTemplate(option, emailRequest);
         return "HTML email sent successfully!";
     }
 }

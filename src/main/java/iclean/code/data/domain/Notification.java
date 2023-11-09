@@ -25,8 +25,8 @@ public class Notification {
     @Column(name = "notification_img_link")
     private String notificationImgLink;
 
-    @Column(name = "is_employee")
-    private Boolean isEmployee = false;
+    @Column(name = "is_helper")
+    private Boolean isHelper = false;
 
     @Column(name = "create_at")
     private LocalDateTime createAt;

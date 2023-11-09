@@ -4,6 +4,9 @@ import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 
+import javax.annotation.Nullable;
+import java.util.List;
+
 @Data
 @Getter
 @Setter
@@ -11,8 +14,18 @@ public class SendMailRequest {
 
     private String to;
 
-    private String subject;
+    @Nullable
+    private String renterFullName;
 
-    private String body;
+    @Nullable
+    private String helperFullName;
 
+    @Nullable
+    private String bookingId;
+
+    @Nullable
+    private String status;
+
+    @Nullable
+    private List<String> serviceName;
 }
