@@ -16,7 +16,8 @@ public class FeedbackMapper {
         modelMapper.addMappings(new PropertyMap<BookingDetail, GetFeedbackResponse>() {
             @Override
             protected void configure() {
-                map().setFullName(source.getBooking().getRenter().getFullName());
+                map().setRenterName(source.getBooking().getRenter().getFullName());
+                map().setRenterAvatar(source.getBooking().getRenter().getAvatar());
             }
         });
     }

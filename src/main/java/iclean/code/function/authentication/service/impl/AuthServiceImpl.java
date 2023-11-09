@@ -380,7 +380,7 @@ public class AuthServiceImpl implements AuthService {
                 modelMapper.map(form, user);
                 user.setRoleId(roleRepository.findByTitle(RoleEnum.EMPLOYEE.name().toLowerCase()).getRoleId());
             }
-            user.setDateOfBirth(Utils.convertStringToLocalDateTime(form.getDateOfBirth()));
+            user.setDateOfBirth(Utils.convertStringToLocalDate(form.getDateOfBirth()));
             if (Objects.nonNull(form.getFileImage())) {
                 String avatar = storageService.uploadFile(form.getFileImage());
                 user.setAvatar(avatar);

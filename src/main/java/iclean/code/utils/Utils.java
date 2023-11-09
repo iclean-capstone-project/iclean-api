@@ -1,6 +1,7 @@
 package iclean.code.utils;
 
 import iclean.code.data.dto.common.SortResponse;
+import iclean.code.data.dto.request.workschedule.TimeRange;
 import iclean.code.data.dto.response.PageResponseObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Sort;
@@ -12,9 +13,7 @@ import java.text.DecimalFormat;
 import java.text.Normalizer;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 public class Utils {
     public static boolean isNullOrEmpty(String input) {
@@ -81,7 +80,7 @@ public class Utils {
         return localDate.format(formatter);
     }
 
-    public static LocalDate convertStringToLocalDateTime(String dataString) {
+    public static LocalDate convertStringToLocalDate(String dataString) {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
         return LocalDate.parse(dataString, formatter);
     }
@@ -124,5 +123,18 @@ public class Utils {
         else
             pageResponseObject.setContent(page.getContent());
         return pageResponseObject;
+    }
+
+    public static boolean hasOverlapTime(List<TimeRange> timeRanges) {
+        timeRanges.sort(Comparator.comparing(TimeRange::getStartTime));
+        for (int i = 0; i < timeRanges.size() - 1; i++) {
+            TimeRange range1 = timeRanges.get(i);
+            TimeRange range2 = timeRanges.get(i + 1);
+
+            if (range1.getEndTime().isAfter(range2.getStartTime())) {
+                return true;
+            }
+        }
+        return false;
     }
 }

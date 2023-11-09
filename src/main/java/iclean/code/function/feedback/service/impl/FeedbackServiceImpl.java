@@ -1,14 +1,18 @@
 package iclean.code.function.feedback.service.impl;
 
 import iclean.code.data.domain.BookingDetail;
+import iclean.code.data.domain.Service;
 import iclean.code.data.domain.User;
 import iclean.code.data.dto.common.ResponseObject;
 import iclean.code.data.dto.request.feedback.CreateFeedbackDto;
 import iclean.code.data.dto.request.feedback.FeedbackRequest;
 import iclean.code.data.dto.response.PageResponseObject;
+import iclean.code.data.dto.response.feedback.GetDetailHelperResponse;
 import iclean.code.data.dto.response.feedback.GetFeedbackResponse;
+import iclean.code.data.dto.response.feedback.PointFeedbackOfHelper;
 import iclean.code.data.enumjava.RoleEnum;
 import iclean.code.data.repository.BookingDetailRepository;
+import iclean.code.data.repository.ServiceRepository;
 import iclean.code.data.repository.UserRepository;
 import iclean.code.exception.NotFoundException;
 import iclean.code.exception.UserNotHavePermissionException;
@@ -18,18 +22,15 @@ import lombok.extern.log4j.Log4j2;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-@Service
+@org.springframework.stereotype.Service
 @Log4j2
 public class FeedbackServiceImpl implements FeedbackService {
     @Autowired
@@ -37,13 +38,13 @@ public class FeedbackServiceImpl implements FeedbackService {
     @Autowired
     UserRepository userRepository;
     @Autowired
+    ServiceRepository serviceRepository;
+    @Autowired
     ModelMapper modelMapper;
     @Override
-    public ResponseEntity<ResponseObject> getFeedbacks(Integer serviceRegistrationId, Pageable pageable) {
+    public ResponseEntity<ResponseObject> getFeedbacks(Integer helperId, Integer serviceId, Pageable pageable) {
         try {
-            Sort order = Sort.by(Sort.Order.desc("feedbackTime"));
-            pageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), order);
-            Page<BookingDetail> bookingDetails = bookingDetailRepository.findByServiceRegistrationId(serviceRegistrationId, pageable);
+            Page<BookingDetail> bookingDetails = bookingDetailRepository.findByServiceIdAndHelperId(helperId, serviceId, pageable);
             List<GetFeedbackResponse> dtoList = bookingDetails
                     .stream()
                     .map(feedback -> modelMapper.map(feedback, GetFeedbackResponse.class))
@@ -109,6 +110,50 @@ public class FeedbackServiceImpl implements FeedbackService {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new ResponseObject(HttpStatus.INTERNAL_SERVER_ERROR.toString()
                             , "Something wrong occur!", null));
+        }
+    }
+
+    @Override
+    public ResponseEntity<ResponseObject> getDetailOfHelper(Integer helperId, Integer serviceId) {
+        try {
+            User user = findUser(helperId);
+            Service service = findServiceById(serviceId);
+            PointFeedbackOfHelper pointFeedbackOfHelper = getDetailOfHelperFunction(helperId, serviceId);
+            GetDetailHelperResponse response = modelMapper.map(user, GetDetailHelperResponse.class);
+            modelMapper.map(service, response);
+            response.setAvgRate(pointFeedbackOfHelper.getRate());
+            response.setNumberOfFeedback(pointFeedbackOfHelper.getNumberOfFeedback());
+            return ResponseEntity.status(HttpStatus.OK)
+                    .body(new ResponseObject(HttpStatus.OK.toString(),
+                            "Detail Helper", response));
+        } catch (Exception e) {
+            if (e instanceof NotFoundException) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new ResponseObject(HttpStatus.NOT_FOUND.toString(),
+                                e.getMessage(), null));
+            }
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ResponseObject(HttpStatus.INTERNAL_SERVER_ERROR.toString(),
+                            "Something wrong occur!", null));
+        }
+
+    }
+
+    private Service findServiceById(Integer serviceId) {
+        return serviceRepository.findById(serviceId).orElseThrow(() ->
+                new NotFoundException("Service is not exist!"));
+    }
+
+    @Override
+    public PointFeedbackOfHelper getDetailOfHelperFunction(Integer userId, Integer serviceId) {
+        try {
+            PointFeedbackOfHelper response = bookingDetailRepository.findPointByHelperId(userId, serviceId);
+            if (Objects.isNull(response) || response.getNumberOfFeedback() == 0L) {
+                return new PointFeedbackOfHelper(5.0D, 0L);
+            }
+            return response;
+        } catch (Exception e) {
+            return new PointFeedbackOfHelper(5D, 0L);
         }
     }
 

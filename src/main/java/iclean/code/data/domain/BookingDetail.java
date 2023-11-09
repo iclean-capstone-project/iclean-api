@@ -26,6 +26,9 @@ public class BookingDetail {
     @Column(name = "price_detail")
     private Double priceDetail;
 
+    @Column(name = "price_helper")
+    private Double priceHelper;
+
     @Column(name = "booking_detail_status")
     private BookingDetailStatusEnum bookingDetailStatusEnum;
 
@@ -45,6 +48,9 @@ public class BookingDetail {
     private Double workHourActual;
 
     private Double rate;
+
+    @Column(name = "qr_code")
+    private String qrCode;
 
     private String feedback;
 

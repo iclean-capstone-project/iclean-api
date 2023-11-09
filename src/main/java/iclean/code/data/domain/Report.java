@@ -2,6 +2,9 @@ package iclean.code.data.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import iclean.code.data.enumjava.OptionProcessReportEnum;
+import iclean.code.data.enumjava.ReportStatusEnum;
+import iclean.code.utils.Utils;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -22,16 +25,16 @@ public class Report {
 
     private String solution;
 
-    @Column(name = "refund_percent")
-    private Double refundPercent;
-
     @Column(name = "report_status")
-    private String reportStatus;
+    private ReportStatusEnum reportStatus;
+
+    @Column(name = "option_process")
+    private OptionProcessReportEnum option;
 
     private Double refund;
 
     @Column(name = "create_at")
-    private LocalDateTime createAt;
+    private LocalDateTime createAt = Utils.getDateTimeNow();
 
     @Column(name = "process_at")
     private LocalDateTime processAt;

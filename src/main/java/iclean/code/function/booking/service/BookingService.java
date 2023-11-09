@@ -1,15 +1,13 @@
 package iclean.code.function.booking.service;
 
 import iclean.code.data.dto.common.ResponseObject;
-import iclean.code.data.dto.request.booking.AddBookingRequest;
-import iclean.code.data.dto.request.booking.CheckOutCartRequest;
-import iclean.code.data.dto.request.booking.UpdateStatusBookingAsRenterRequest;
-import iclean.code.data.dto.request.booking.UpdateStatusBookingRequest;
+import iclean.code.data.dto.request.booking.*;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 
 public interface BookingService {
     ResponseEntity<ResponseObject> getBookings(Integer userId, Pageable pageable, boolean isAll);
+    ResponseEntity<ResponseObject> getBookingsAround(Integer userId);
 
     ResponseEntity<ResponseObject> getBookingDetailById(Integer bookingId, Integer userId);
 
@@ -27,5 +25,11 @@ public interface BookingService {
 
     ResponseEntity<ResponseObject> updateStatusBookingAsRenter(Integer bookingId, Integer userId, UpdateStatusBookingAsRenterRequest bookingRequest);
 
-    ResponseEntity<ResponseObject> getBookingHistory(int userId, Pageable pageable);
+    ResponseEntity<ResponseObject> getBookingHistory(int userId, String status, Pageable pageable);
+
+    ResponseEntity<ResponseObject> acceptBookingForHelper(CreateBookingHelperRequest request, Integer userId);
+
+    ResponseEntity<ResponseObject> validateBookingToStart(Integer userId, Integer detailId, QRCodeValidate request);
+
+    ResponseEntity<ResponseObject> generateQrCode(Integer renterId, Integer detailId);
 }

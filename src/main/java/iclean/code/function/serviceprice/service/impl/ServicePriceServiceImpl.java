@@ -93,6 +93,52 @@ public class ServicePriceServiceImpl implements ServicePriceService {
         }
     }
 
+    @Override
+    public Double getServiceHelperPrice(GetServicePriceRequest request) {
+        try {
+            GetServicePriceRequestDto requestDto = modelMapper.map(request, GetServicePriceRequestDto.class);
+            ServiceUnit serviceUnit = findServiceUnitById(requestDto.getServiceUnitId());
+            LocalTime startTime = requestDto.getStartTime();
+            Double hour = serviceUnit.getUnit().getUnitValue();
+            LocalTime endTime = Utils.plusLocalTime(startTime, hour);
+            double totalPriceHelper = 0;
+            List<ServicePrice> servicePrices = servicePriceRepository.findByServiceUnitId(serviceUnit.getServiceUnitId());
+            if (!servicePrices.isEmpty()) {
+                int i = 0;
+                do {
+                    ServicePrice servicePrice = servicePrices.get(i);
+                    if (Utils.isBeforeOrEqual(servicePrice.getEndTime(), startTime)) {
+                        i++;
+                        continue;
+                    } else if (Utils.isBeforeOrEqual(servicePrice.getStartTime(), startTime)
+                            && Utils.isBeforeOrEqual(servicePrice.getEndTime(), endTime)) {
+                        Double numberHour = Utils.minusLocalTime(startTime, servicePrice.getEndTime());
+                        totalPriceHelper += servicePrice.getPrice() * numberHour * servicePrice.getEmployeeCommission() / 100;
+                        startTime = Utils.plusLocalTime(startTime, numberHour);
+                        i++;
+                        continue;
+                    } else if (Utils.isBeforeOrEqual(servicePrice.getStartTime(), startTime)
+                            && Utils.isAfterOrEqual(servicePrice.getEndTime(), endTime)) {
+                        Double numberHour = Utils.minusLocalTime(startTime, endTime);
+                        totalPriceHelper += servicePrice.getPrice() * numberHour * servicePrice.getEmployeeCommission() / 100;
+                        startTime = Utils.plusLocalTime(startTime, numberHour);
+                        continue;
+                    }
+                    Double numberHour = Utils.minusLocalTime(startTime, servicePrice.getStartTime());
+                    totalPriceHelper += serviceUnit.getDefaultPrice() * numberHour * serviceUnit.getHelperCommission() / 100;
+                    startTime = Utils.plusLocalTime(startTime, numberHour);
+
+                } while (startTime.isBefore(endTime));
+            } else {
+                totalPriceHelper = serviceUnit.getDefaultPrice() * serviceUnit.getUnit().getUnitValue() * serviceUnit.getHelperCommission() / 100;;
+            }
+            return totalPriceHelper;
+        } catch (Exception e) {
+            log.error(e.getMessage());
+            throw e;
+        }
+    }
+
     private ServiceUnit findServiceUnitById(int id) {
         return serviceUnitRepository.findById(id).orElseThrow(()-> new NotFoundException(String.format("Service Unit ID %s is not found", id)));
     }

@@ -36,11 +36,26 @@ public class FeedbackController {
             @ApiResponse(responseCode = "400", description = "Bad request - Missing some field required")
     })
     @PreAuthorize("hasAnyAuthority('renter', 'employee', 'admin', 'manager')")
-    public ResponseEntity<ResponseObject> getFeedbacks(@RequestParam Integer serviceRegistrationId,
+    public ResponseEntity<ResponseObject> getFeedbacks(@RequestParam Integer helperId,
+                                                       @RequestParam Integer serviceId,
                                                        @RequestParam(name = "page", defaultValue = "1") int page,
                                                        @RequestParam(name = "size", defaultValue = "10") int size) {
         Pageable pageable = PageRequestBuilder.buildPageRequest(page, size);
-        return feedbackService.getFeedbacks(serviceRegistrationId, pageable);
+        return feedbackService.getFeedbacks(helperId, serviceId, pageable);
+    }
+
+    @GetMapping("/detail")
+    @Operation(summary = "Get all detail of a helper", description = "Return detail of a helper")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Feedbacks Information"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - Login please"),
+            @ApiResponse(responseCode = "403", description = "Forbidden - You don't have permission to access on this api"),
+            @ApiResponse(responseCode = "400", description = "Bad request - Missing some field required")
+    })
+    @PreAuthorize("hasAnyAuthority('renter', 'admin', 'manager')")
+    public ResponseEntity<ResponseObject> getDetailHelpers(@RequestParam Integer helperId,
+                                                           @RequestParam Integer serviceId) {
+        return feedbackService.getDetailOfHelper(helperId, serviceId);
     }
 
     @PutMapping("/{id}")

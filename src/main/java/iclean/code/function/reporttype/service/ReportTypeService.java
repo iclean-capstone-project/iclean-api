@@ -1,18 +1,13 @@
 package iclean.code.function.reporttype.service;
 
 import iclean.code.data.dto.common.ResponseObject;
-import iclean.code.data.dto.request.reporttype.AddReportTypeRequest;
-import iclean.code.data.dto.request.reporttype.UpdateReportTypeRequest;
+import iclean.code.data.dto.request.reporttype.CreateReportType;
 import org.springframework.http.ResponseEntity;
 
 public interface ReportTypeService {
-    ResponseEntity<ResponseObject> getAllReportType();
+    ResponseEntity<ResponseObject> getReportTypes();
 
-    ResponseEntity<ResponseObject> getReportTypeById(int reportTypeId);
-
-    ResponseEntity<ResponseObject> addReportType(AddReportTypeRequest reportTypeRequest);
-
-    ResponseEntity<ResponseObject> updateReportType(int reportTypeId, UpdateReportTypeRequest reportTypeRequest);
+    ResponseEntity<ResponseObject> createReportType(CreateReportType reportTypeRequest);
 
     ResponseEntity<ResponseObject> deleteReportType(int reportTypeId);
 }
