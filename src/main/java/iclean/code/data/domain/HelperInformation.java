@@ -72,7 +72,7 @@ public class HelperInformation {
     private HelperStatusEnum helperStatus = HelperStatusEnum.WAITING_FOR_APPROVE;
 
     @Column(name = "create_at")
-    private LocalDateTime createAt = Utils.getDateTimeNow();
+    private LocalDateTime createAt = Utils.getLocalDateTimeNow();
 
     @Column(name = "manager_id")
     private Integer managerId;

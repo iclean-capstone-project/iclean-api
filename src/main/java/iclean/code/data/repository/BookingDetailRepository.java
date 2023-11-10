@@ -55,5 +55,14 @@ public interface BookingDetailRepository extends JpaRepository<BookingDetail, In
             "AND bd.serviceUnit.service.serviceId = ?2")
     PointFeedbackOfHelper findPointByHelperId(Integer userId, Integer serviceId);
 
-
+    @Query("SELECT bd FROM BookingDetail bd " +
+            "LEFT JOIN bd.booking b " +
+            "LEFT JOIN bd.bookingDetailHelpers bdh " +
+            "LEFT JOIN b.bookingStatusHistories bs " +
+            "WHERE bs.bookingStatus = ?1 " +
+            "AND bdh.serviceRegistration.helperInformation.user.userId != ?2 " +
+            "AND bd.booking.renter.userId != 2 " +
+            "AND bs.createAt = (SELECT MAX(bsh.createAt) FROM BookingStatusHistory bsh " +
+            "WHERE bsh.statusHistoryId = bs.statusHistoryId)")
+    List<BookingDetail> findBookingDetailByStatusAndNoUserIdNoEmployee(BookingStatusEnum bookingStatusEnum, Integer userId);
 }

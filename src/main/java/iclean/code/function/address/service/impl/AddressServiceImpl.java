@@ -5,8 +5,8 @@ import iclean.code.data.domain.User;
 import iclean.code.data.dto.common.ResponseObject;
 import iclean.code.data.dto.request.address.CreateAddressRequestDTO;
 import iclean.code.data.dto.request.address.UpdateAddressRequestDTO;
-import iclean.code.data.dto.response.address.GetAddressResponseDetailDto;
-import iclean.code.data.dto.response.address.GetAddressResponseDto;
+import iclean.code.data.dto.response.address.GetAddressResponseDetail;
+import iclean.code.data.dto.response.address.GetAddressResponse;
 import iclean.code.data.repository.AddressRepository;
 import iclean.code.data.repository.UserRepository;
 import iclean.code.exception.NotFoundException;
@@ -39,9 +39,9 @@ public class AddressServiceImpl implements AddressService {
         try {
             List<Address> addresses = addressRepository.findByUserId(userId);
 
-            List<GetAddressResponseDto> dtoList = addresses
+            List<GetAddressResponse> dtoList = addresses
                     .stream()
-                    .map(address -> modelMapper.map(address, GetAddressResponseDto.class))
+                    .map(address -> modelMapper.map(address, GetAddressResponse.class))
                     .collect(Collectors.toList());
 
             return ResponseEntity.status(HttpStatus.OK)
@@ -64,7 +64,7 @@ public class AddressServiceImpl implements AddressService {
             if (!Objects.equals(userId, address.getUser().getUserId())) {
                 throw new UserNotHavePermissionException();
             }
-            GetAddressResponseDetailDto response = modelMapper.map(address, GetAddressResponseDetailDto.class);
+            GetAddressResponseDetail response = modelMapper.map(address, GetAddressResponseDetail.class);
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseObject(HttpStatus.OK.toString(),
                             "Address Detail",
@@ -108,7 +108,7 @@ public class AddressServiceImpl implements AddressService {
             }
             User user = findUser(userId);
             address.setUser(user);
-            address.setCreateAt(Utils.getDateTimeNow());
+            address.setCreateAt(Utils.getLocalDateTimeNow());
             addressRepository.save(address);
 
             return ResponseEntity.status(HttpStatus.OK)
@@ -137,7 +137,7 @@ public class AddressServiceImpl implements AddressService {
                 throw new UserNotHavePermissionException();
 
             modelMapper.map(request, address);
-            address.setUpdateAt(Utils.getDateTimeNow());
+            address.setUpdateAt(Utils.getLocalDateTimeNow());
             addressRepository.save(address);
 
             return ResponseEntity.status(HttpStatus.OK)
@@ -209,7 +209,7 @@ public class AddressServiceImpl implements AddressService {
             }
 
             address.setIsDefault(true);
-            address.setUpdateAt(Utils.getDateTimeNow());
+            address.setUpdateAt(Utils.getLocalDateTimeNow());
             addressRepository.save(address);
 
             return ResponseEntity.status(HttpStatus.OK)

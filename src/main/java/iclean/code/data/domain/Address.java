@@ -33,7 +33,7 @@ public class Address {
     private Boolean isDefault = false;
 
     @Column(name = "create_at")
-    private LocalDateTime createAt = Utils.getDateTimeNow();
+    private LocalDateTime createAt = Utils.getLocalDateTimeNow();
 
     @Column(name = "update_at")
     private LocalDateTime updateAt;

@@ -255,12 +255,12 @@ public class AuthServiceImpl implements AuthService {
                 Wallet walletMoney = new Wallet();
                 walletMoney.setUser(newUser);
                 walletMoney.setWalletTypeEnum(WalletTypeEnum.MONEY);
-                walletMoney.setUpdateAt(Utils.getDateTimeNow());
+                walletMoney.setUpdateAt(Utils.getLocalDateTimeNow());
 
                 Wallet walletPoint = new Wallet();
                 walletPoint.setUser(newUser);
                 walletPoint.setWalletTypeEnum(WalletTypeEnum.POINT);
-                walletMoney.setUpdateAt(Utils.getDateTimeNow());
+                walletMoney.setUpdateAt(Utils.getLocalDateTimeNow());
 
                 walletRepository.save(walletMoney);
                 walletRepository.save(walletPoint);

@@ -22,5 +22,5 @@ public class RejectionReason {
     private String rejectionContent;
 
     @Column(name = "create_at")
-    private LocalDateTime createAt = Utils.getDateTimeNow();
+    private LocalDateTime createAt = Utils.getLocalDateTimeNow();
 }

@@ -6,6 +6,7 @@ import iclean.code.data.dto.common.ResponseObject;
 import iclean.code.data.dto.request.booking.*;
 import iclean.code.data.dto.response.booking.GetBookingHistoryResponse;
 import iclean.code.data.dto.response.booking.GetBookingResponse;
+import iclean.code.data.dto.response.bookingdetail.UpdateBookingDetailRequest;
 import iclean.code.function.booking.service.BookingService;
 import iclean.code.utils.validator.ValidSortFields;
 import io.swagger.v3.oas.annotations.Operation;
@@ -48,7 +49,7 @@ public class BookingController {
         Pageable pageable = PageRequestBuilder.buildPageRequest(page, size);
 
         if (sortFields != null && !sortFields.isEmpty()) {
-            pageable = PageRequestBuilder.buildPageRequest(page, size, sortFields);
+            pageable = PageRequestBuilder.buildPageRequest(page, size, sortFields, GetBookingResponse.class);
         }
         return bookingService.getBookings(JwtUtils.decodeToAccountId(authentication), pageable, isAll);
     }
@@ -124,6 +125,22 @@ public class BookingController {
         return bookingService.getBookingDetailById(bookingId, JwtUtils.decodeToAccountId(authentication));
     }
 
+    @PutMapping(value = "manager/{bookingId}")
+    @PreAuthorize("hasAnyAuthority('manager')")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Accept/Reject successful"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - Login please"),
+            @ApiResponse(responseCode = "403", description = "Forbidden - You don't have permission to access on this api"),
+            @ApiResponse(responseCode = "400", description = "Bad request - Missing some field required")
+    })
+    @Operation(summary = "Accept or reject a booking by manager", description = "Return message fail or successful")
+    public ResponseEntity<ResponseObject> acceptOrRejectBooking(
+            @PathVariable @Valid Integer bookingId,
+            @RequestBody @Valid AcceptRejectBookingRequest request,
+            Authentication authentication) {
+        return bookingService.acceptOrRejectBooking(bookingId, request, JwtUtils.decodeToAccountId(authentication));
+    }
+
     @PostMapping
     @PreAuthorize("hasAnyAuthority('renter', 'employee')")
     @Operation(summary = "Create new booking of a user", description = "Return message fail or successful")
@@ -154,39 +171,6 @@ public class BookingController {
         return bookingService.checkoutCart(JwtUtils.decodeToAccountId(authentication), request);
     }
 
-    //PENDING
-    @PutMapping(value = "status/{bookingId}")
-    @PreAuthorize("hasAnyAuthority('employee', 'manager')")
-    @Operation(summary = "Update status booking of a user", description = "Return message fail or successful")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Update status booking Successful"),
-            @ApiResponse(responseCode = "401", description = "Unauthorized - Login please"),
-            @ApiResponse(responseCode = "403", description = "Forbidden - You don't have permission to access on this api"),
-            @ApiResponse(responseCode = "400", description = "Bad request - Missing some field required")
-    })
-    public ResponseEntity<ResponseObject> updateStatusBooking(
-            @PathVariable("bookingId") int bookingId,
-            @RequestBody @Valid UpdateStatusBookingRequest request,
-            Authentication authentication) {
-        return bookingService.updateStatusBooking(bookingId, JwtUtils.decodeToAccountId(authentication), request);
-    }
-
-    @PutMapping(value = "status/renter/{bookingId}")
-    @PreAuthorize("hasAnyAuthority('renter', 'employee')")
-    @Operation(summary = "Renter Update status booking", description = "Return message fail or successful")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Update status booking Successful"),
-            @ApiResponse(responseCode = "401", description = "Unauthorized - Login please"),
-            @ApiResponse(responseCode = "403", description = "Forbidden - You don't have permission to access on this api"),
-            @ApiResponse(responseCode = "400", description = "Bad request - Missing some field required")
-    })
-    public ResponseEntity<ResponseObject> updateStatusBookingAsRenter(
-            @PathVariable("bookingId") int bookingId,
-            @RequestBody @Valid UpdateStatusBookingAsRenterRequest request,
-            Authentication authentication) {
-        return bookingService.updateStatusBookingAsRenter(bookingId, JwtUtils.decodeToAccountId(authentication), request);
-    }
-
     @DeleteMapping("/cart")
     @Operation(summary = "Delete cart of a user", description = "Return message fail or successful")
     @ApiResponses(value = {
@@ -211,34 +195,5 @@ public class BookingController {
     @PreAuthorize("hasAnyAuthority('renter', 'employee')")
     public ResponseEntity<ResponseObject> deleteServiceOnCart(Authentication authentication, @PathVariable Integer id) {
         return bookingService.deleteServiceOnCart(JwtUtils.decodeToAccountId(authentication), id);
-    }
-
-    @GetMapping("/validate/{detailId}")
-    @Operation(summary = "Validate QR a booking detail to start", description = "Return message fail or successful")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Return successful"),
-            @ApiResponse(responseCode = "401", description = "Unauthorized - Login please"),
-            @ApiResponse(responseCode = "403", description = "Forbidden - You don't have permission to access on this api"),
-            @ApiResponse(responseCode = "400", description = "Bad request - Missing some field required")
-    })
-    @PreAuthorize("hasAuthority('renter')")
-    public ResponseEntity<ResponseObject> generateQrCode(Authentication authentication,
-                                                                 @PathVariable Integer detailId) {
-        return bookingService.generateQrCode(JwtUtils.decodeToAccountId(authentication), detailId);
-    }
-
-    @PostMapping("/validate/{detailId}")
-    @Operation(summary = "Validate QR a booking detail to start", description = "Return message fail or successful")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Return successful"),
-            @ApiResponse(responseCode = "401", description = "Unauthorized - Login please"),
-            @ApiResponse(responseCode = "403", description = "Forbidden - You don't have permission to access on this api"),
-            @ApiResponse(responseCode = "400", description = "Bad request - Missing some field required")
-    })
-    @PreAuthorize("hasAuthority('employee')")
-    public ResponseEntity<ResponseObject> validateBookingToStart(Authentication authentication,
-                                                                 @PathVariable Integer detailId,
-                                                                 @RequestBody @Valid QRCodeValidate request) {
-        return bookingService.validateBookingToStart(JwtUtils.decodeToAccountId(authentication), detailId, request);
     }
 }

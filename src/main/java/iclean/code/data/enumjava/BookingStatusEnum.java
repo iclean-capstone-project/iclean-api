@@ -4,17 +4,17 @@ import lombok.Getter;
 
 @Getter
 public enum BookingStatusEnum {
-    REJECTED(0, "Từ chối"),///
+    REJECTED(0, "Từ chối"),
     NOT_YET(1, "Đang đợi"),
-    APPROVED (2, "Đã được chấp nhận"),//
+    APPROVED (2, "Đã được chấp nhận"),
     EMPLOYEE_ACCEPTED(3, "Đã nhận"),//
-    RENTER_ASSIGNED(4, "Đã chọn nhân viên"),//
-    RENTER_CANCELED(5, "Cancel"),//
-    EMPLOYEE_CANCELED(6, "Bị hủy bởi nhân viên"),//
+    RENTER_CANCELED(5, "Cancel"),
+    EMPLOYEE_CANCELED(6, "Bị hủy bởi nhân viên"),
     WAITING(7, "Đang đợi"),
-    IN_PROCESSING(8, "Đang làm"),//
+    IN_PROCESSING(8, "Đang làm"),
     FINISHED(9, "Đã hoàn thành"),
-    ON_CART(10, "On cart");
+    ON_CART(10, "On cart"),
+    NO_MONEY(11, "Chờ thanh toán");
 
     private final int label;
     private final String value;

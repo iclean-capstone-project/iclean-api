@@ -2,7 +2,7 @@ package iclean.code.function.notification;
 
 import iclean.code.data.domain.*;
 import iclean.code.data.dto.common.ResponseObject;
-import iclean.code.data.dto.request.notification.GetNotificationDTO;
+import iclean.code.data.dto.response.notification.GetNotificationResponse;
 import iclean.code.data.dto.response.PageResponseObject;
 import iclean.code.data.enumjava.NotificationEnum;
 import iclean.code.data.enumjava.NotificationStatusEnum;
@@ -42,10 +42,10 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     public ResponseEntity<ResponseObject> getNotificationById(Integer notificationId, Integer userId) {
         try {
-            GetNotificationDTO notificationResponse = null;
+            GetNotificationResponse notificationResponse = null;
             Notification notification = findNotification(notificationId);
             if (isPermission(userId, notification)) {
-                notificationResponse = modelMapper.map(notification, GetNotificationDTO.class);
+                notificationResponse = modelMapper.map(notification, GetNotificationResponse.class);
             }
 
             return ResponseEntity.status(HttpStatus.OK)
@@ -86,9 +86,9 @@ public class NotificationServiceImpl implements NotificationService {
                     notifications = notificationRepository.findByUserIdPageable(userIdAuth, pageable);
             }
 
-            List<GetNotificationDTO> dtoList = notifications
+            List<GetNotificationResponse> dtoList = notifications
                     .stream()
-                    .map(notificationMapper -> modelMapper.map(notificationMapper, GetNotificationDTO.class))
+                    .map(notificationMapper -> modelMapper.map(notificationMapper, GetNotificationResponse.class))
                     .collect(Collectors.toList());
 
             PageResponseObject pageResponseObject = Utils.convertToPageResponse(notifications, dtoList);

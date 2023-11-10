@@ -102,7 +102,7 @@ public class ServiceUnitServiceImpl implements ServiceUnitService {
             if (!Utils.isNullOrEmpty(request.getServiceUnitStatus())) {
                 serviceUnit.setIsDeleted(DeleteStatusEnum.valueOf(request.getServiceUnitStatus().toUpperCase()).getValue());
             }
-            serviceUnit.setUpdateAt(Utils.getDateTimeNow());
+            serviceUnit.setUpdateAt(Utils.getLocalDateTimeNow());
 
             serviceUnitRepository.save(serviceUnit);
             return ResponseEntity.status(HttpStatus.OK)

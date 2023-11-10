@@ -33,7 +33,7 @@ public class Unit {
     private Boolean isDeleted = false;
 
     @Column(name = "create_at")
-    private LocalDateTime createAt = Utils.getDateTimeNow();
+    private LocalDateTime createAt = Utils.getLocalDateTimeNow();
 
     @OneToMany(mappedBy = "unit")
     @JsonIgnoreProperties("unit")

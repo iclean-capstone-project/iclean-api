@@ -3,8 +3,8 @@ package iclean.code.function.helperregistration.controller;
 import iclean.code.config.JwtUtils;
 import iclean.code.data.dto.common.PageRequestBuilder;
 import iclean.code.data.dto.common.ResponseObject;
-import iclean.code.data.dto.request.attachment.HelperRegistrationRequest;
-import iclean.code.data.dto.request.employeeinformation.CancelHelperRequest;
+import iclean.code.data.dto.request.helperinformation.HelperRegistrationRequest;
+import iclean.code.data.dto.request.helperinformation.CancelHelperRequest;
 import iclean.code.data.dto.response.helperinformation.GetHelperInformationRequestResponse;
 import iclean.code.function.helperregistration.service.HelperRegistrationService;
 import iclean.code.utils.validator.ValidSortFields;
@@ -46,7 +46,7 @@ public class HelperRegistrationController {
         Pageable pageable = PageRequestBuilder.buildPageRequest(page, size);
 
         if (sortFields != null && !sortFields.isEmpty()) {
-            pageable = PageRequestBuilder.buildPageRequest(page, size, sortFields);
+            pageable = PageRequestBuilder.buildPageRequest(page, size, sortFields, GetHelperInformationRequestResponse.class);
         }
         return helperRegistrationService.getAllRequestToBecomeHelper(JwtUtils.decodeToAccountId(authentication), isAllRequest, pageable);
     }

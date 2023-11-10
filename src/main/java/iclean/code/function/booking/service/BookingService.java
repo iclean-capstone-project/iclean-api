@@ -21,15 +21,9 @@ public interface BookingService {
 
     ResponseEntity<ResponseObject> checkoutCart(Integer userId, CheckOutCartRequest request);
 
-    ResponseEntity<ResponseObject> updateStatusBooking(Integer bookingId, Integer userId, UpdateStatusBookingRequest bookingRequest);
-
-    ResponseEntity<ResponseObject> updateStatusBookingAsRenter(Integer bookingId, Integer userId, UpdateStatusBookingAsRenterRequest bookingRequest);
-
     ResponseEntity<ResponseObject> getBookingHistory(int userId, String status, Pageable pageable);
 
     ResponseEntity<ResponseObject> acceptBookingForHelper(CreateBookingHelperRequest request, Integer userId);
 
-    ResponseEntity<ResponseObject> validateBookingToStart(Integer userId, Integer detailId, QRCodeValidate request);
-
-    ResponseEntity<ResponseObject> generateQrCode(Integer renterId, Integer detailId);
+    ResponseEntity<ResponseObject> acceptOrRejectBooking(Integer bookingId, AcceptRejectBookingRequest request, Integer managerId);
 }

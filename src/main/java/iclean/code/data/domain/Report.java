@@ -34,7 +34,7 @@ public class Report {
     private Double refund;
 
     @Column(name = "create_at")
-    private LocalDateTime createAt = Utils.getDateTimeNow();
+    private LocalDateTime createAt = Utils.getLocalDateTimeNow();
 
     @Column(name = "process_at")
     private LocalDateTime processAt;

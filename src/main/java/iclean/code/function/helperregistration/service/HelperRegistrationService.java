@@ -1,9 +1,8 @@
 package iclean.code.function.helperregistration.service;
 
 import iclean.code.data.dto.common.ResponseObject;
-import iclean.code.data.dto.request.attachment.HelperRegistrationRequest;
-import iclean.code.data.dto.request.employeeinformation.CancelHelperRequest;
-import iclean.code.data.dto.request.employeeinformation.GetEmployeeInformationRequestDTO;
+import iclean.code.data.dto.request.helperinformation.HelperRegistrationRequest;
+import iclean.code.data.dto.request.helperinformation.CancelHelperRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.multipart.MultipartFile;

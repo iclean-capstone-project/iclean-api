@@ -90,7 +90,7 @@ public class WalletServiceImpl implements WalletService {
             optionalWallet.setWalletTypeEnum(WalletTypeEnum.valueOf(updateBalance.getWalletType().toUpperCase()));
         }
         optionalWallet.setBalance(Double.valueOf(updateBalance.getBalance()));
-        optionalWallet.setUpdateAt(Utils.getDateTimeNow());
+        optionalWallet.setUpdateAt(Utils.getLocalDateTimeNow());
         return optionalWallet;
     }
 

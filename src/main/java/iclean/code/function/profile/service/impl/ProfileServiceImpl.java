@@ -4,7 +4,7 @@ import iclean.code.data.domain.Address;
 import iclean.code.data.domain.User;
 import iclean.code.data.dto.common.ResponseObject;
 import iclean.code.data.dto.request.profile.UpdateProfileDto;
-import iclean.code.data.dto.response.profile.ProfileUserDto;
+import iclean.code.data.dto.response.profile.ProfileUserResponse;
 import iclean.code.data.repository.AddressRepository;
 import iclean.code.data.repository.UserRepository;
 import iclean.code.exception.NotFoundException;
@@ -40,14 +40,14 @@ public class ProfileServiceImpl implements ProfileService {
     public ResponseEntity<ResponseObject> getProfile(Integer userId) {
         try {
             User user = findUser(userId);
-            ProfileUserDto profileUserDto = modelMapper.map(user, ProfileUserDto.class);
+            ProfileUserResponse profileUserResponse = modelMapper.map(user, ProfileUserResponse.class);
             List<Address> addressList = addressRepository.findByUserIdAnAndIsDefault(user.getUserId());
             if (!addressList.isEmpty()) {
-                profileUserDto.setDefaultAddress(addressList.get(0).getDescription());
+                profileUserResponse.setDefaultAddress(addressList.get(0).getDescription());
             }
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseObject(HttpStatus.OK.toString(), "Login success!",
-                            profileUserDto));
+                            profileUserResponse));
 
         } catch (Exception e) {
             if (e instanceof NotFoundException) {

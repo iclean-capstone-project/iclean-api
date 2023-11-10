@@ -204,7 +204,7 @@ public class ReportServiceImpl implements ReportService {
         Report report = modelMapper.map(request, Report.class);
         report.setDetail(request.getDetail());
         report.setReportStatus(ReportStatusEnum.PROCESSING);
-        report.setCreateAt(Utils.getDateTimeNow());
+        report.setCreateAt(Utils.getLocalDateTimeNow());
         report.setBooking(optionalBooking);
         report.setReportType(optionalReportType);
 
@@ -217,7 +217,7 @@ public class ReportServiceImpl implements ReportService {
         optionalReport.setOption(OptionProcessReportEnum.valueOf(request.getOption().toUpperCase()));
         optionalReport.setReportStatus(ReportStatusEnum.PROCESSED);
         optionalReport.setRefund(request.getRefund());
-        optionalReport.setProcessAt(Utils.getDateTimeNow());
+        optionalReport.setProcessAt(Utils.getLocalDateTimeNow());
         return modelMapper.map(optionalReport, Report.class);
     }
 

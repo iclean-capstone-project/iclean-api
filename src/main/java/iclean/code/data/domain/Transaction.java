@@ -20,6 +20,8 @@ public class Transaction {
     @Column(name = "transaction_id")
     private Integer transactionId;
 
+    private String transactionCode;
+
     private Double amount;
 
     private String note;

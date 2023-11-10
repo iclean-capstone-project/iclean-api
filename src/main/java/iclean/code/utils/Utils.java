@@ -20,9 +20,13 @@ public class Utils {
         return input == null || input.isEmpty();
     }
 
-    public static LocalDateTime getDateTimeNow() {
+    public static LocalDateTime getLocalDateTimeNow() {
         ZoneId gmtPlus7Zone = ZoneId.of("GMT+7");
         return LocalDateTime.now(gmtPlus7Zone);
+    }
+
+    public static ZoneId getZoneId() {
+        return ZoneId.of("GMT+7");
     }
 
     public static boolean isBeforeOrEqual(LocalTime value, LocalTime other) {
@@ -38,6 +42,38 @@ public class Utils {
         DecimalFormat df = new DecimalFormat("#.###");
         df.setRoundingMode(RoundingMode.UP);
         return Double.parseDouble(df.format(duration.toSeconds() / 3600.0));
+    }
+
+    public static long minusLocalDateTime(LocalDateTime value, LocalDateTime other) {
+        long valueLong = value.atZone(getZoneId()).toInstant().toEpochMilli();
+        long otherLong = other.atZone(getZoneId()).toInstant().toEpochMilli();
+        return otherLong - valueLong;
+    }
+
+    public static boolean isWithinMinutes(long different, long minutes) {
+        long difference = Math.abs(different);
+        long minutesInMillis = minutes * 60 * 1000;
+        return difference <= minutesInMillis;
+    }
+
+    public static String generateRandomCode() {
+        LocalDateTime now = getLocalDateTimeNow();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMddHHmmss");
+        String formattedDateTime = now.format(formatter);
+        Random random = new Random();
+        int randomValue = random.nextInt(10000);
+        return formattedDateTime + String.format("%04d", randomValue);
+    }
+
+    public static boolean isLateMinutes(long different, long minutes) {
+        long minutesInMillis = minutes * 60 * 1000;
+        return different > minutesInMillis;
+    }
+
+    public static boolean isSoonMinutes(long different, long minutes) {
+        long difference = Math.abs(different);
+        long minutesInMillis = minutes * 60 * 1000;
+        return difference > minutesInMillis;
     }
 
     public static LocalTime plusLocalTime(LocalTime value, double hoursToAdd) {
@@ -70,6 +106,11 @@ public class Utils {
         ZoneId gmtPlus7Zone = ZoneId.of("GMT+7");
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
         return LocalDateTime.now(gmtPlus7Zone).format(formatter);
+    }
+    public static Double roundingNumber(Double number, String pattern, RoundingMode roundingMode) {
+        DecimalFormat df = new DecimalFormat(pattern);
+        df.setRoundingMode(roundingMode);
+        return Double.parseDouble(df.format(number));
     }
 
     public static String getLocalDateAsString(LocalDate localDate) {

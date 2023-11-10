@@ -3,7 +3,7 @@ package iclean.code.function.transaction.controller;
 import iclean.code.config.JwtUtils;
 import iclean.code.data.dto.common.PageRequestBuilder;
 import iclean.code.data.dto.common.ResponseObject;
-import iclean.code.data.dto.request.transaction.TransactionRequestDto;
+import iclean.code.data.dto.request.transaction.TransactionRequest;
 import iclean.code.function.transaction.service.TransactionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -71,7 +71,7 @@ public class TransactionController {
             @ApiResponse(responseCode = "401", description = "Unauthorized - Login please"),
             @ApiResponse(responseCode = "400", description = "Bad request - Missing some field required")
     })
-    public ResponseEntity<ResponseObject> createTransaction(@RequestBody @Valid TransactionRequestDto request) {
+    public ResponseEntity<ResponseObject> createTransaction(@RequestBody @Valid TransactionRequest request) {
         return transactionService.createTransaction(request);
     }
 }

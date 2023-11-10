@@ -1,7 +1,7 @@
 package iclean.code.data.mapper;
 
 import iclean.code.data.domain.Booking;
-import iclean.code.data.dto.request.booking.GetDetailBookingResponse;
+import iclean.code.data.dto.response.booking.GetDetailBookingResponse;
 import iclean.code.data.dto.response.booking.GetBookingHistoryResponse;
 import iclean.code.data.dto.response.booking.GetBookingResponse;
 import iclean.code.data.dto.response.booking.GetCartResponseDetail;

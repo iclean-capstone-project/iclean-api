@@ -24,7 +24,7 @@ public class BookingDetailHelper {
     private BookingDetailHelperStatusEnum bookingDetailHelperStatus;
 
     @Column(name = "create_at")
-    private LocalDateTime createAt = Utils.getDateTimeNow();
+    private LocalDateTime createAt = Utils.getLocalDateTimeNow();
 
     @ManyToOne
     @JsonIgnore

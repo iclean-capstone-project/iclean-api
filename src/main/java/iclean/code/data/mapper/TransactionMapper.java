@@ -1,8 +1,8 @@
 package iclean.code.data.mapper;
 
 import iclean.code.data.domain.Transaction;
-import iclean.code.data.dto.response.transaction.GetTransactionDetailResponseDto;
-import iclean.code.data.dto.response.transaction.GetTransactionResponseDto;
+import iclean.code.data.dto.response.transaction.GetTransactionDetailResponse;
+import iclean.code.data.dto.response.transaction.GetTransactionResponse;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.PropertyMap;
 import org.springframework.stereotype.Component;
@@ -13,7 +13,7 @@ public class TransactionMapper {
     public TransactionMapper(ModelMapper modelMapper) {
         this.modelMapper = modelMapper;
 
-        modelMapper.addMappings(new PropertyMap<Transaction, GetTransactionResponseDto>() {
+        modelMapper.addMappings(new PropertyMap<Transaction, GetTransactionResponse>() {
             @Override
             protected void configure() {
                 map().setTransactionType(String.valueOf(source.getTransactionTypeEnum()));
@@ -22,7 +22,7 @@ public class TransactionMapper {
             }
         });
 
-        modelMapper.addMappings(new PropertyMap<Transaction, GetTransactionDetailResponseDto>() {
+        modelMapper.addMappings(new PropertyMap<Transaction, GetTransactionDetailResponse>() {
             @Override
             protected void configure() {
                 map().setTransactionStatus(String.valueOf(source.getTransactionStatusEnum()));

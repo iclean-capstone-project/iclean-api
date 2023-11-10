@@ -5,7 +5,6 @@ import com.google.maps.GeoApiContext;
 import com.google.maps.model.DistanceMatrix;
 import com.google.maps.model.LatLng;
 import iclean.code.data.dto.common.Position;
-import iclean.code.data.dto.common.UserPosition;
 import iclean.code.data.dto.response.booking.GetBookingResponseForHelper;
 import iclean.code.service.GoogleMapService;
 import lombok.extern.log4j.Log4j2;
