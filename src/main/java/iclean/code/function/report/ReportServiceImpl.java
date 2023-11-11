@@ -7,6 +7,8 @@ import iclean.code.data.dto.request.report.UpdateReportRequest;
 import iclean.code.data.dto.response.PageResponseObject;
 import iclean.code.data.dto.response.report.GetReportResponseAsManager;
 import iclean.code.data.dto.response.report.GetReportResponseDetail;
+import iclean.code.data.enumjava.BookingDetailStatusEnum;
+import iclean.code.data.enumjava.BookingStatusEnum;
 import iclean.code.data.enumjava.OptionProcessReportEnum;
 import iclean.code.data.enumjava.ReportStatusEnum;
 import iclean.code.data.repository.*;
@@ -40,6 +42,12 @@ public class ReportServiceImpl implements ReportService {
 
     @Autowired
     private BookingRepository bookingRepository;
+
+    @Autowired
+    private BookingStatusHistoryRepository bookingStatusHistoryRepository;
+
+    @Autowired
+    private BookingDetailRepository bookingDetailRepository;
 
     @Autowired
     private ReportTypeRepository reportTypeRepository;
@@ -108,8 +116,13 @@ public class ReportServiceImpl implements ReportService {
                         .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString()
                                 , "Booking already have report!", null));
             }
+
+            //Add new record REPORTED for Booking History
             Booking booking = findBooking(reportRequest.getBookingId());
-            if (!Objects.equals(booking.getRenter().getUserId(), renterId)) throw new UserNotHavePermissionException("User cannot do this action");
+            setStatusOfBookingStatusHistory(booking, BookingStatusEnum.REPORTED);
+
+            if (!Objects.equals(booking.getRenter().getUserId(), renterId))
+                throw new UserNotHavePermissionException("User cannot do this action");
             List<String> images = new ArrayList<>(Collections.emptyList());
             for (MultipartFile file :
                     reportRequest.getFiles()) {
@@ -182,6 +195,22 @@ public class ReportServiceImpl implements ReportService {
             //Implement notification and send mail, other logic
 
             reportRepository.save(report);
+
+            //Add new record FINISHED for Booking History
+            Booking booking = findBooking(report.getBooking().getBookingId());
+            setStatusOfBookingStatusHistory(booking, BookingStatusEnum.FINISHED);
+
+            //Add new record FINISHED for Booking Detail
+            List<BookingDetail> bookingDetails = bookingDetailRepository.findBookingDetailByBookingBookingId(booking.getBookingId());
+            if (bookingDetails.isEmpty()) {
+                throw new NotFoundException("Booking have not booking details");
+            }
+            for (BookingDetail bookingDetail :
+                    bookingDetails) {
+                bookingDetail.setBookingDetailStatusEnum(BookingDetailStatusEnum.FINISHED);
+                bookingDetailRepository.save(bookingDetail);
+            }
+
             return ResponseEntity.status(HttpStatus.CREATED)
                     .body(new ResponseObject(HttpStatus.ACCEPTED.toString()
                             , "Delete Report Successfully!", null));
@@ -196,6 +225,14 @@ public class ReportServiceImpl implements ReportService {
                     .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString()
                             , "Something wrong occur!", null));
         }
+    }
+
+    private void setStatusOfBookingStatusHistory(Booking booking, BookingStatusEnum statusEnum) {
+        BookingStatusHistory bookingStatusHistory = new BookingStatusHistory();
+        bookingStatusHistory.setBookingStatus(statusEnum);
+        bookingStatusHistory.setBooking(booking);
+        bookingStatusHistory.setCreateAt(Utils.getDateTimeNow());
+        bookingStatusHistoryRepository.save(bookingStatusHistory);
     }
 
     private Report mappingReportForCreate(CreateReportRequest request) {

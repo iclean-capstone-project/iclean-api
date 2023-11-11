@@ -2,6 +2,7 @@ package iclean.code.data.repository;
 
 import iclean.code.data.domain.BookingDetailHelper;
 import iclean.code.data.enumjava.BookingDetailHelperStatusEnum;
+import iclean.code.data.enumjava.BookingDetailStatusEnum;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
@@ -36,4 +37,11 @@ public interface BookingDetailHelperRepository extends JpaRepository<BookingDeta
             "GROUP BY hi.helper_information_id, hi.full_name " +
             "ORDER BY count DESC", nativeQuery = true)
     List<Object[]> findTopEmployeesOnDay();
+
+    @Query("SELECT bdh FROM BookingDetailHelper bdh " +
+            "LEFT JOIN bdh.bookingDetail bd " +
+            "LEFT JOIN bd.booking b " +
+            "LEFT JOIN b.bookingStatusHistories bsh " +
+            "WHERE bsh.statusHistoryId = ?1 AND bd.bookingDetailStatusEnum = ?2")
+    List<BookingDetailHelper> findBookingDetailHelperHaveFinishedStatus(Integer statusBookingHistoryId, BookingDetailStatusEnum bookingDetailStatusEnum);
 }
