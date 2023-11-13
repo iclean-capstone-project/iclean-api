@@ -8,5 +8,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class GetRejectionReasonResponse {
-    private Integer userId;
+    private Integer rejectionReasonId;
+    private String rejectionReasonContent;
 }

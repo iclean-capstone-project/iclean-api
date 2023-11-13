@@ -145,7 +145,7 @@ public class Utils {
     public static PageResponseObject convertToPageResponse(Page page, @Nullable List<?> content) {
         PageResponseObject pageResponseObject = new PageResponseObject();
         pageResponseObject.setOffset(page.getPageable().getOffset());
-        pageResponseObject.setPageNumber(page.getPageable().getPageNumber());
+        pageResponseObject.setPageNumber(page.getPageable().getPageNumber() + 1);
         pageResponseObject.setPageSize(page.getPageable().getPageSize());
         pageResponseObject.setTotalPages(page.getTotalPages());
         pageResponseObject.setTotalElements(page.getTotalElements());

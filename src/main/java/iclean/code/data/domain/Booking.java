@@ -55,7 +55,7 @@ public class Booking {
     @Column(name = "using_point")
     private Boolean usingPoint = false;
 
-    @Column(name = "option")
+    @Column(name = "option_json")
     private String option;
 
     @Column(name = "update_at")

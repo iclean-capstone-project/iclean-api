@@ -6,10 +6,10 @@ import iclean.code.data.dto.common.ResponseObject;
 import iclean.code.data.dto.request.booking.*;
 import iclean.code.data.dto.response.booking.GetBookingHistoryResponse;
 import iclean.code.data.dto.response.booking.GetBookingResponse;
-import iclean.code.data.dto.response.bookingdetail.UpdateBookingDetailRequest;
 import iclean.code.function.booking.service.BookingService;
 import iclean.code.utils.validator.ValidSortFields;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -18,21 +18,26 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
+import javax.validation.constraints.Pattern;
 import java.util.List;
 
 @RestController
 @RequestMapping("api/v1/booking")
 @Tag(name = "Booking")
+@Validated
 public class BookingController {
 
     @Autowired
     private BookingService bookingService;
 
+    //Hiển thị danh sách lịch sử toàn bộ bookings của helper, renter, của manager sẽ hiển thị toàn bộ các
+    //booking của tất cả các status
     @GetMapping
-    @Operation(summary = "Get all booking of a user", description = "Return all booking information")
+    @Operation(summary = "Get all booking of a user or app if manager", description = "Return all booking information")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Booking Information"),
             @ApiResponse(responseCode = "401", description = "Unauthorized - Login please"),
@@ -43,7 +48,12 @@ public class BookingController {
     public ResponseEntity<ResponseObject> getBookings(
             @RequestParam(name = "page", defaultValue = "1") int page,
             @RequestParam(name = "size", defaultValue = "10") int size,
-            @RequestParam(name = "isAll", defaultValue = "10") boolean isAll,
+            @RequestParam(name = "status", required = false) @Schema(example = "rejected|not_yet|approved|employee_accepted|renter_canceled" +
+                    "|employee_canceled|waiting|in_processing|finish|no_money|on_cart")
+            @Pattern(regexp = "(?i)(rejected|not_yet|approved|waiting|employee_accepted|renter_canceled" +
+                    "|employee_canceled|in_processing|finish|no_money)", message = "Booking Status is not valid")
+            String status,
+            @RequestParam(name = "isHelper", defaultValue = "false") Boolean isHelper,
             @RequestParam(name = "sort", required = false) @ValidSortFields(value = GetBookingResponse.class) List<String> sortFields,
             Authentication authentication) {
         Pageable pageable = PageRequestBuilder.buildPageRequest(page, size);
@@ -51,9 +61,12 @@ public class BookingController {
         if (sortFields != null && !sortFields.isEmpty()) {
             pageable = PageRequestBuilder.buildPageRequest(page, size, sortFields, GetBookingResponse.class);
         }
-        return bookingService.getBookings(JwtUtils.decodeToAccountId(authentication), pageable, isAll);
+        return bookingService.getBookings(JwtUtils.decodeToAccountId(authentication), pageable, status, isHelper);
     }
 
+    //Lấy danh sách các booking detail đã đc apporve nhưng chưa có người nhận để có thể cho helper nhận
+    //booking đó
+    //done
     @GetMapping("/helper")
     @Operation(summary = "Get all booking of a user", description = "Return all booking information")
     @ApiResponses(value = {
@@ -80,6 +93,20 @@ public class BookingController {
         return bookingService.acceptBookingForHelper(request, JwtUtils.decodeToAccountId(authentication));
     }
 
+    @PutMapping("/make-payment/{bookingId}")
+    @Operation(summary = "Payment booking by renter", description = "Return all booking information")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Booking Information"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - Login please"),
+            @ApiResponse(responseCode = "403", description = "Forbidden - You don't have permission to access on this api"),
+            @ApiResponse(responseCode = "400", description = "Bad request - Missing some field required")
+    })
+    @PreAuthorize("hasAnyAuthority('employee', 'renter')")
+    public ResponseEntity<ResponseObject> paymentABooking(Authentication authentication, @PathVariable Integer bookingId,
+                                                          @RequestBody @Valid PaymentBookingRequest request) {
+        return bookingService.paymentBooking(bookingId, JwtUtils.decodeToAccountId(authentication), request);
+    }
+
     @GetMapping("/cart")
     @Operation(summary = "Get cart of a user", description = "Return Cart information")
     @ApiResponses(value = {
@@ -89,31 +116,8 @@ public class BookingController {
             @ApiResponse(responseCode = "400", description = "Bad request - Missing some field required")
     })
     @PreAuthorize("hasAnyAuthority('renter', 'employee', 'manager')")
-    public ResponseEntity<ResponseObject> getCart(Authentication authentication) {
-        return bookingService.getCart(JwtUtils.decodeToAccountId(authentication));
-    }
-
-    @GetMapping(value = "/history")
-    @PreAuthorize("hasAnyAuthority('renter', 'employee')")
-    @Operation(summary = "Get all booking of a user", description = "Return all booking information")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Booking Information"),
-            @ApiResponse(responseCode = "401", description = "Unauthorized - Login please"),
-            @ApiResponse(responseCode = "403", description = "Forbidden - You don't have permission to access on this api"),
-            @ApiResponse(responseCode = "400", description = "Bad request - Missing some field required")
-    })
-    public ResponseEntity<ResponseObject> getBookingHistory(
-            @RequestParam(name = "status") String status,
-            @RequestParam(name = "page", defaultValue = "1") int page,
-            @RequestParam(name = "size", defaultValue = "10") int size,
-            @RequestParam(name = "sort", required = false) @ValidSortFields(value = GetBookingHistoryResponse.class) List<String> sortFields,
-            Authentication authentication) {
-        Pageable pageable = PageRequestBuilder.buildPageRequest(page, size);
-
-        if (sortFields != null && !sortFields.isEmpty()) {
-            pageable = PageRequestBuilder.buildPageRequest(page, size, sortFields);
-        }
-        return bookingService.getBookingHistory(JwtUtils.decodeToAccountId(authentication), status, pageable);
+    public ResponseEntity<ResponseObject> getCart(Authentication authentication, @RequestParam(required = false, defaultValue = "false") Boolean usingPoint) {
+        return bookingService.getCart(JwtUtils.decodeToAccountId(authentication), usingPoint);
     }
 
     @GetMapping(value = "{bookingId}")
@@ -141,7 +145,7 @@ public class BookingController {
         return bookingService.acceptOrRejectBooking(bookingId, request, JwtUtils.decodeToAccountId(authentication));
     }
 
-    @PostMapping
+    @PostMapping("/cart")
     @PreAuthorize("hasAnyAuthority('renter', 'employee')")
     @Operation(summary = "Create new booking of a user", description = "Return message fail or successful")
     @ApiResponses(value = {

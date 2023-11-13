@@ -10,7 +10,7 @@ public enum BookingStatusEnum {
     EMPLOYEE_ACCEPTED(3, "Đã nhận"),//
     RENTER_CANCELED(5, "Cancel"),
     EMPLOYEE_CANCELED(6, "Bị hủy bởi nhân viên"),
-    WAITING(7, "Đang đợi"),
+    WAITING(7, "Đang đợi đến ngày làm"),
     IN_PROCESSING(8, "Đang làm"),
     FINISHED(9, "Đã hoàn thành"),
     ON_CART(10, "On cart"),

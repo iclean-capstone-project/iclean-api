@@ -1,20 +1,29 @@
 package iclean.code.data.dto.response.booking;
 
+import iclean.code.utils.anotation.SortValue;
 import lombok.Data;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Data
 public class GetBookingResponse {
 
     private Integer bookingId;
 
+    private String bookingCode;
+
+    @SortValue(value = "renter.fullname")
     private String renterName;
 
-    private String serviceName;
+    @SortValue(value = "renter.avatar")
+    private String renterAvatar;
 
-    private List<String> serviceImages;
+    @SortValue(value = "renter.phoneNumber")
+    private String renterPhoneNumber;
+
+    private String serviceNames;
+
+    private String serviceAvatar;
 
     private LocalDateTime orderDate;
 

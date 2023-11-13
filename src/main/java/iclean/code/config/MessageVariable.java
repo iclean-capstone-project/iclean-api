@@ -14,4 +14,7 @@ public class MessageVariable {
     public static final String PAYMENT_SUCCESS = "Thanh toán cho dịch vụ #%s thành công";
     public static final String PAYMENT_NO_MONEY = "Thanh toán cho dịch vụ #%s thất bại do số dư không đủ";
     public static final String USING_POINT_FOR_BOOKING = "Sử dụng điểm cho dịch vụ";
+
+    public static final String USING_MONEY_FOR_BOOKING = "Thanh toán cho dịch vụ #%s thành công";
+    public static final String NEED_ADD_LOCATION = "Bạn cần có địa chỉ hiện tại để hệ thống quét các thông tin quanh bạn";
 }

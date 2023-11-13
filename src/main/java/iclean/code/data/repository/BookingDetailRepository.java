@@ -24,11 +24,9 @@ public interface BookingDetailRepository extends JpaRepository<BookingDetail, In
 
     @Query(value = "SELECT bookingDetail FROM BookingDetail bookingDetail " +
             "LEFT JOIN bookingDetail.booking booking " +
-            "LEFT JOIN booking.bookingStatusHistories bsh " +
-            "WHERE bookingDetail.serviceUnit.serviceUnitId = ?1 " +
-            "AND bsh.bookingStatus = ?2 " +
-            "AND size(booking.bookingStatusHistories) = 1")
-    Optional<BookingDetail> findByServiceUnitIdAndBookingStatus(Integer id, BookingStatusEnum bookingStatusEnum);
+            "WHERE bookingDetail.serviceUnit.service.serviceId = ?1 " +
+            "AND booking.bookingStatus = ?2 ")
+    Optional<BookingDetail> findByServiceIdAndBookingStatus(Integer id, BookingStatusEnum bookingStatusEnum);
 
     @Query(value = "SELECT bookingDetail FROM BookingDetail bookingDetail " +
             "LEFT JOIN bookingDetail.booking booking " +
@@ -59,7 +57,7 @@ public interface BookingDetailRepository extends JpaRepository<BookingDetail, In
             "LEFT JOIN bd.booking b " +
             "LEFT JOIN bd.bookingDetailHelpers bdh " +
             "LEFT JOIN b.bookingStatusHistories bs " +
-            "WHERE bs.bookingStatus = ?1 " +
+            "WHERE b.bookingStatus = ?1 " +
             "AND bdh.serviceRegistration.helperInformation.user.userId != ?2 " +
             "AND bd.booking.renter.userId != 2 " +
             "AND bs.createAt = (SELECT MAX(bsh.createAt) FROM BookingStatusHistory bsh " +

@@ -38,4 +38,14 @@ public class TransactionRequest {
     @Schema(example = "Money|Point")
     private String walletType;
     private Integer bookingId;
+
+    public TransactionRequest(Double balance, String note, Integer userId, String transactionType, String walletType) {
+        this.balance = balance;
+        this.note = note;
+        this.userId = userId;
+        this.transactionType = transactionType;
+        this.walletType = walletType;
+
+
+    }
 }

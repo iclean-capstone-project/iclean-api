@@ -25,16 +25,33 @@ public class BookingMapper {
 
         modelMapper.typeMap(Booking.class, GetDetailBookingResponse.class)
                 .addMappings(mapper -> {
+                    mapper.map(Booking::getBookingStatus, GetDetailBookingResponse::setCurrentStatus);
                     mapper.map(Booking::getBookingDetails, GetDetailBookingResponse::setDetails);
+                    mapper.map(Booking::getBookingStatusHistories, GetDetailBookingResponse::setStatuses);
                 });
         modelMapper.typeMap(Booking.class, GetBookingResponse.class)
                 .addMappings(mapper -> {
-                    mapper.map(Booking::getBookingDetails, GetBookingResponse::setServiceName);
+                    mapper.map(Booking::getBookingDetails, GetBookingResponse::setServiceNames);
                 });
         modelMapper.addMappings(new PropertyMap<Booking, GetBookingHistoryResponse>() {
             @Override
             protected void configure() {
                 map().setRenterFullName(source.getRenter().getFullName());
+            }
+        });
+        modelMapper.addMappings(new PropertyMap<Booking, GetBookingResponse>() {
+            @Override
+            protected void configure() {
+                map().setBookingId(source.getBookingId());
+                map().setBookingCode(source.getBookingCode());
+                map().setRenterName(source.getRenter().getFullName());
+                map().setRenterAvatar(source.getRenter().getAvatar());
+                map().setRenterPhoneNumber(source.getRenter().getPhoneNumber());
+                map().setOrderDate(source.getOrderDate());
+                map().setRequestCount(source.getRequestCount());
+                map().setTotalPrice(source.getTotalPrice());
+                map().setTotalPriceActual(source.getTotalPriceActual());
+                map().setUpdateAt(source.getUpdateAt());
             }
         });
         modelMapper.addMappings(new PropertyMap<Booking, GetCartResponseDetail>() {
