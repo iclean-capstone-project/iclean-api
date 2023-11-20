@@ -55,5 +55,5 @@ public interface BookingDetailRepository extends JpaRepository<BookingDetail, In
             "AND bd.serviceUnit.service.serviceId = ?2")
     PointFeedbackOfHelper findPointByHelperId(Integer userId, Integer serviceId);
 
-
+    List<BookingDetail> findBookingDetailByBookingBookingId (Integer bookingId);
 }

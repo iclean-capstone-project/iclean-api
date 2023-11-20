@@ -14,7 +14,8 @@ public enum BookingStatusEnum {
     WAITING(7, "Đang đợi"),
     IN_PROCESSING(8, "Đang làm"),//
     FINISHED(9, "Đã hoàn thành"),
-    ON_CART(10, "On cart");
+    ON_CART(10, "On cart"),
+    REPORTED(11, "Bị báo cáo");
 
     private final int label;
     private final String value;
