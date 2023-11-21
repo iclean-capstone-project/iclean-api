@@ -10,7 +10,7 @@ import java.util.List;
 public interface BookingService {
     ResponseEntity<ResponseObject> getBookings(Integer userId, Pageable pageable, List<String> statuses, Boolean isHelper);
 
-    ResponseEntity<ResponseObject> getBookingDetailById(Integer bookingId, Integer userId);
+    ResponseEntity<ResponseObject> getBookingDetailByBookingId(Integer bookingId, Integer userId);
 
     ResponseEntity<ResponseObject> createServiceToCart(AddBookingRequest bookingRequest, Integer userId);
 
@@ -18,7 +18,7 @@ public interface BookingService {
 
     ResponseEntity<ResponseObject> deleteAllOnCart(Integer userId);
 
-    ResponseEntity<ResponseObject> deleteServiceOnCart(Integer userId, Integer detailId);
+    ResponseEntity<ResponseObject> deleteServiceOnCart(Integer userId, Integer cartItemId);
 
     ResponseEntity<ResponseObject> checkoutCart(Integer userId, CheckOutCartRequest request);
 

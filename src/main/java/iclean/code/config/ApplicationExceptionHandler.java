@@ -4,7 +4,9 @@ import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import iclean.code.data.dto.common.ResponseObject;
 import iclean.code.exception.InvalidJsonFormatException;
+import iclean.code.exception.UnauthorizedAccessException;
 import iclean.code.exception.UserNotFoundException;
+import iclean.code.exception.UserNotHavePermissionException;
 import iclean.code.utils.Utils;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -35,6 +37,14 @@ public class ApplicationExceptionHandler {
     }
 
     @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ExceptionHandler(UserNotHavePermissionException.class)
+    public ResponseEntity<ResponseObject> handleInvalidArgument(UserNotHavePermissionException ex) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(new ResponseObject(HttpStatus.UNAUTHORIZED.toString(),
+                        ex.getMessage(), null));
+    }
+
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(ConstraintViolationException.class)
     ResponseEntity<ResponseObject> handleConstraintViolationException(ConstraintViolationException ex) {
         Map<String, String> errorMap = new HashMap<>();
@@ -44,6 +54,14 @@ public class ApplicationExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString(),
                         "Some fields are invalid", errorMap));
+    }
+
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    @ExceptionHandler(UnauthorizedAccessException.class)
+    ResponseEntity<ResponseObject> handleConstraintViolationException(UnauthorizedAccessException ex) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(new ResponseObject(HttpStatus.UNAUTHORIZED.toString(),
+                        ex.getMessage(), null));
     }
 
     @ResponseStatus(HttpStatus.NOT_FOUND)

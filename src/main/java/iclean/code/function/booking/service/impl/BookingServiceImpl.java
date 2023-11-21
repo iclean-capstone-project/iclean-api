@@ -137,7 +137,7 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    public ResponseEntity<ResponseObject> getBookingDetailById(Integer bookingId, Integer userId) {
+    public ResponseEntity<ResponseObject> getBookingDetailByBookingId(Integer bookingId, Integer userId) {
         try {
             Booking booking = findBookingById(bookingId);
             String roleUser = userRepository.findByUserId(userId).getRole().getTitle().toUpperCase();
@@ -517,10 +517,10 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    public ResponseEntity<ResponseObject> deleteServiceOnCart(Integer userId, Integer detailId) {
+    public ResponseEntity<ResponseObject> deleteServiceOnCart(Integer userId, Integer cartItemId) {
         try {
             Optional<BookingDetail> bookingDetail = bookingDetailRepository
-                    .findByBookingDetailIdAndBookingStatus(detailId, BookingDetailStatusEnum.ON_CART);
+                    .findByBookingDetailIdAndBookingStatus(cartItemId, BookingDetailStatusEnum.ON_CART);
             if (bookingDetail.isPresent()) {
                 Booking booking = bookingDetail.get().getBooking();
                 Double totalPrice = booking.getTotalPrice() - bookingDetail.get().getPriceDetail();
@@ -534,7 +534,7 @@ public class BookingServiceImpl implements BookingService {
                         .body(new ResponseObject(HttpStatus.OK.toString(),
                                 "Delete a service on cart successful", null));
             }
-            throw new NotFoundException(String.format("The service with detail ID: %s is not on this cart!", detailId));
+            throw new NotFoundException(String.format("The service with detail ID: %s is not on this cart!", cartItemId));
 
         } catch (Exception e) {
             log.error(e.getMessage());

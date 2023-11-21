@@ -93,7 +93,7 @@ public class BookingController {
     public ResponseEntity<ResponseObject> getBookingByBookingId(
             @PathVariable @Valid Integer bookingId,
             Authentication authentication) {
-        return bookingService.getBookingDetailById(bookingId, JwtUtils.decodeToAccountId(authentication));
+        return bookingService.getBookingDetailByBookingId(bookingId, JwtUtils.decodeToAccountId(authentication));
     }
 
     @PutMapping(value = "manager/{bookingId}")
@@ -121,7 +121,7 @@ public class BookingController {
             @ApiResponse(responseCode = "403", description = "Forbidden - You don't have permission to access on this api"),
             @ApiResponse(responseCode = "400", description = "Bad request - Missing some field required")
     })
-    public ResponseEntity<ResponseObject> addBookings(
+    public ResponseEntity<ResponseObject> addServiceToCart(
             @RequestBody @Valid AddBookingRequest request,
             Authentication authentication) {
         return bookingService.createServiceToCart(request, JwtUtils.decodeToAccountId(authentication));
@@ -150,7 +150,7 @@ public class BookingController {
             @ApiResponse(responseCode = "403", description = "Forbidden - You don't have permission to access on this api"),
             @ApiResponse(responseCode = "400", description = "Bad request - Missing some field required")
     })
-    public ResponseEntity<ResponseObject> addBookings(
+    public ResponseEntity<ResponseObject> addServiceToCart(
             @RequestBody @Valid CreateBookingRequestNow request,
             Authentication authentication) {
         return bookingService.createBookingNow(request, JwtUtils.decodeToAccountId(authentication));

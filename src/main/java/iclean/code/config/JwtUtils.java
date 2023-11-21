@@ -1,6 +1,7 @@
 package iclean.code.config;
 
 import iclean.code.data.dto.response.authen.UserPrinciple;
+import iclean.code.exception.UnauthorizedAccessException;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.SignatureException;
 import lombok.extern.log4j.Log4j2;
@@ -33,6 +34,9 @@ public class JwtUtils {
 
     public static Integer decodeToAccountId(Authentication authentication) {
         Integer userId = null;
+        if (authentication == null) {
+            throw new UnauthorizedAccessException("Authentication is null");
+        }
         if (authentication instanceof UsernamePasswordAuthenticationToken) {
             UserPrinciple userPrinciple = (UserPrinciple) authentication.getPrincipal();
             userId = userPrinciple.getId();
