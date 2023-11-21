@@ -9,6 +9,7 @@ import lombok.Setter;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Getter
@@ -24,12 +25,17 @@ public class ServiceRegistration {
     private ServiceHelperStatusEnum serviceHelperStatus;
 
     @Column(name = "create_at")
-    private LocalDateTime createAt = Utils.getDateTimeNow();
+    private LocalDateTime createAt = Utils.getLocalDateTimeNow();
 
     @ManyToOne
     @JsonIgnore
     @JoinColumn(name = "helper_information_id")
     private HelperInformation helperInformation;
+
+    @OneToMany(mappedBy = "helperInformation")
+    @JsonIgnoreProperties("helperInformation")
+    @JsonIgnore
+    private List<BookingDetailHelper> bookingDetailHelpers;
 
     @ManyToOne
     @JsonIgnore

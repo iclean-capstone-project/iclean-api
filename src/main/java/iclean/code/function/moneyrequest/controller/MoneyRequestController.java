@@ -2,9 +2,9 @@ package iclean.code.function.moneyrequest.controller;
 
 import iclean.code.data.dto.common.PageRequestBuilder;
 import iclean.code.data.dto.common.ResponseObject;
-import iclean.code.data.dto.request.moneyrequest.CreateMoneyRequestRequestDTO;
-import iclean.code.data.dto.request.moneyrequest.ValidateMoneyRequestDTO;
-import iclean.code.data.dto.request.notification.GetNotificationDTO;
+import iclean.code.data.dto.request.moneyrequest.CreateMoneyRequestRequest;
+import iclean.code.data.dto.request.moneyrequest.ValidateMoneyRequest;
+import iclean.code.data.dto.response.notification.GetNotificationResponse;
 import iclean.code.function.moneyrequest.service.MoneyRequestService;
 import iclean.code.utils.validator.ValidSortFields;
 import io.swagger.v3.oas.annotations.Operation;
@@ -37,7 +37,7 @@ public class MoneyRequestController {
     })
     public ResponseEntity<ResponseObject> getMoneyRequests(@RequestParam(name = "page", defaultValue = "1") int page,
                                                            @RequestParam(name = "size", defaultValue = "10") int size,
-                                                           @RequestParam(name = "sort", required = false) @ValidSortFields(value = GetNotificationDTO.class)
+                                                           @RequestParam(name = "sort", required = false) @ValidSortFields(value = GetNotificationResponse.class)
                                                                List<String> sortFields,
                                                            @RequestParam @Valid String phoneNumber) {
         Pageable pageable = PageRequestBuilder.buildPageRequest(page, size);
@@ -79,7 +79,7 @@ public class MoneyRequestController {
             @ApiResponse(responseCode = "401", description = "Unauthorized - Login please"),
             @ApiResponse(responseCode = "400", description = "Bad request - Missing some field required")
     })
-    public ResponseEntity<ResponseObject> createMoneyRequest(@RequestBody @Valid CreateMoneyRequestRequestDTO request) {
+    public ResponseEntity<ResponseObject> createMoneyRequest(@RequestBody @Valid CreateMoneyRequestRequest request) {
         return moneyRequestService.createMoneyRequest(request);
     }
 
@@ -91,7 +91,7 @@ public class MoneyRequestController {
             @ApiResponse(responseCode = "401", description = "Unauthorized - Login please"),
             @ApiResponse(responseCode = "400", description = "Bad request - Missing some field required")
     })
-    public ResponseEntity<ResponseObject> validateRequest(@RequestBody @Valid ValidateMoneyRequestDTO request) {
+    public ResponseEntity<ResponseObject> validateRequest(@RequestBody @Valid ValidateMoneyRequest request) {
         return moneyRequestService.validateMoneyRequest(request);
     }
 

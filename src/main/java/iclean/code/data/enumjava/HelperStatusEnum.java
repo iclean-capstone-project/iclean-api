@@ -5,5 +5,6 @@ public enum HelperStatusEnum {
     ONLINE,
     DISABLED,
     WAITING_FOR_APPROVE,
+    WAITING_FOR_CONFIRM,
     REQUEST_MORE_SERVICE
 }

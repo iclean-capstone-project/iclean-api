@@ -1,15 +1,17 @@
 package iclean.code.service.impl;
 
-import iclean.code.data.dto.common.ResponseObject;
+import iclean.code.data.dto.request.helperinformation.AcceptHelperRequest;
+import iclean.code.data.dto.request.helperinformation.CancelHelperRequestSendMail;
+import iclean.code.data.dto.request.helperinformation.ConfirmHelperRequestSendMail;
 import iclean.code.data.dto.request.others.SendMailRequest;
 import iclean.code.data.enumjava.EmailEnum;
+import iclean.code.data.enumjava.SendMailOptionEnum;
 import iclean.code.service.EmailSenderService;
+import iclean.code.utils.Utils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
@@ -29,7 +31,7 @@ public class EmailSenderServiceImpl implements EmailSenderService {
     @Autowired
     private TemplateEngine templateEngine;
 
-    @Value("classpath:template-inprocess")
+    @Value("classpath:template-in-process")
     private Resource resourceInProcess;
 
     @Value("classpath:template-report-result")
@@ -41,33 +43,53 @@ public class EmailSenderServiceImpl implements EmailSenderService {
     @Value("classpath:template-reject-helper")
     private Resource resourceRejectHelper;
 
+    @Value("classpath:template-confirm-helper")
+    private Resource resourceConfirmHelper;
 
-    public ResponseEntity<ResponseObject> sendEmailTemplate( String options, SendMailRequest mail) {
+    @Override
+    public void sendEmailTemplate(SendMailOptionEnum option, Object mailRequest) {
         try {
             MimeMessage mimeMessage = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, MimeMessageHelper.MULTIPART_MODE_MIXED_RELATED, "UTF-8");
 
             ClassPathResource logo = new ClassPathResource("static/img/iClean_logo.png");
-
-            helper.setTo(mail.getTo());
             helper.setFrom("iclean.service2001@gmail.com", "IcleanService");
 
             Context context = new Context();
             context.setVariable("company_name", EmailEnum.COMPANY_NAME.getValue());
             String htmlContent = "";
-            switch (options) {
-                case "ACCEPT_HELPER":
-                    context.setVariable("name", mail.getHelperFullName());
-                    context.setVariable("serviceName", mail.getServiceName());
-                    helper.setSubject(EmailEnum.ACCEPT_HELPER_TITLE.getValue());
+            switch (option) {
+                case CONFIRM_HELPER:
+                    ConfirmHelperRequestSendMail confirmHelperRequestSendMail = (ConfirmHelperRequestSendMail) mailRequest;
+                    helper.setTo(confirmHelperRequestSendMail.getTo());
+                    context.setVariable("name", confirmHelperRequestSendMail.getHelperName());
+                    context.setVariable("company_name", EmailEnum.COMPANY_NAME.getValue());
+                    context.setVariable("list_of_jobs", confirmHelperRequestSendMail.getListOfJobs());
+                    helper.setSubject(EmailEnum.ACCEPT_HELPER_TITLE.getValue() + EmailEnum.COMPANY_NAME.getValue());
+                    htmlContent = templateEngine.process(Objects.requireNonNull(resourceConfirmHelper.getFilename()), context);
+                    break;
+                case ACCEPT_HELPER:
+                    AcceptHelperRequest request = (AcceptHelperRequest) mailRequest;
+                    helper.setTo(request.getTo());
+                    context.setVariable("name", request.getHelperName());
+                    context.setVariable("company_name", EmailEnum.COMPANY_NAME.getValue());
+                    context.setVariable("date_meeting", Utils.getLocalDateAsString(request.getDateMeeting().toLocalDate()) + " vào lúc: " +
+                            Utils.getLocalTimeAsString(request.getDateMeeting().toLocalTime()));
+                    helper.setSubject(EmailEnum.ACCEPT_HELPER_TITLE.getValue() + EmailEnum.COMPANY_NAME.getValue());
                     htmlContent = templateEngine.process(Objects.requireNonNull(resourceAcceptHelper.getFilename()), context);
                     break;
-                case "REJECT_HELPER" :
-                    context.setVariable("name", mail.getHelperFullName());
-                    helper.setSubject(EmailEnum.ACCEPT_HELPER_TITLE.getValue());
+                case REJECT_HELPER :
+                    CancelHelperRequestSendMail cancelHelperRequestSendMail = (CancelHelperRequestSendMail) mailRequest;
+                    helper.setTo(cancelHelperRequestSendMail.getTo());
+                    context.setVariable("helper_name", cancelHelperRequestSendMail.getHelperName());
+                    context.setVariable("manager_name", cancelHelperRequestSendMail.getManagerName());
+                    context.setVariable("reject_reason", cancelHelperRequestSendMail.getManagerName());
+                    context.setVariable("company_name", EmailEnum.COMPANY_NAME.getValue());
+                    helper.setSubject(EmailEnum.REJECT_HELPER_TITLE.getValue() + EmailEnum.COMPANY_NAME.getValue());
                     htmlContent = templateEngine.process(Objects.requireNonNull(resourceRejectHelper.getFilename()), context);
                     break;
-                case "REPORT_RESULT":
+                case REPORT_RESULT:
+                    SendMailRequest mail = (SendMailRequest) mailRequest;
                     context.setVariable("name", mail.getRenterFullName());
                     context.setVariable("bookingId", mail.getBookingId());
                     context.setVariable("status", mail.getStatus());
@@ -75,7 +97,8 @@ public class EmailSenderServiceImpl implements EmailSenderService {
                     htmlContent = templateEngine.process(Objects.requireNonNull(resourceReportResult.getFilename()), context);
                     break;
                 default:
-                    context.setVariable("name", mail.getTo());
+                    SendMailRequest mailRe = (SendMailRequest) mailRequest;
+                    context.setVariable("name", mailRe.getTo());
                     context.setVariable("body", EmailEnum.IN_PROCESS_BODY.getValue());
                     helper.setSubject(EmailEnum.IN_PROCESS_TITLE.getValue());
                     htmlContent = templateEngine.process(Objects.requireNonNull(resourceInProcess.getFilename()), context);
@@ -89,11 +112,9 @@ public class EmailSenderServiceImpl implements EmailSenderService {
             helper.addInline("logo", logo);
 
             mailSender.send(mimeMessage);
-            return ResponseEntity.status(HttpStatus.OK).body(new ResponseObject(HttpStatus.OK.toString(), "Send Email Success!", new MimeMessage(mimeMessage)));
         } catch (MessagingException e) {
             throw new RuntimeException(e);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ResponseObject(HttpStatus.INTERNAL_SERVER_ERROR.toString(), "Send Mail Failed!", e));
+        } catch (Exception ignored) {
         }
     }
 

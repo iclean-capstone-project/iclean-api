@@ -8,7 +8,7 @@ public interface NotificationService {
 
     ResponseEntity<ResponseObject> getNotificationById(Integer notificationId, Integer userId);
 
-    ResponseEntity<ResponseObject> getNotifications(Integer userIdAuth, Pageable pageable);
+    ResponseEntity<ResponseObject> getNotifications(Integer userIdAuth, Boolean isHelper, Pageable pageable);
 
     ResponseEntity<ResponseObject> updateStatusNotification(int notificationId, int userId);
 

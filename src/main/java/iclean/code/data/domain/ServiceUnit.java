@@ -29,7 +29,7 @@ public class ServiceUnit {
     private Boolean isDeleted = false;
 
     @Column(name = "create_at")
-    private LocalDateTime createAt = Utils.getDateTimeNow();
+    private LocalDateTime createAt = Utils.getLocalDateTimeNow();
 
     @Column(name = "update_at")
     private LocalDateTime updateAt;

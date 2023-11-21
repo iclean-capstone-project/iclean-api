@@ -44,11 +44,11 @@
         }
 
         p, h3 {
-            margin-bottom: 20px;
+            margin-bottom: 0px;
         }
         footer {
             margin-top: 20px;
-            text-align: center;
+            text-align: left;
             color: #888888;
         }
     </style>
@@ -59,15 +59,15 @@
         <h1 th:text="${company_name}"></h1>
     </header>
 </div>
-<h3 th:text="${'Xin chào ' + name}"> ,</h3>
-
-
-<p>Chúng tôi xin thông báo rằng sau quá trình đánh giá kỹ lưỡng, chúng tôi đã chọn một ứng viên khác cho vị trí mà bạn đã ứng tuyển tại <b th:text="${company_name}"></b> .</p>
-<p>Chúng tôi rất đánh giá sự quan tâm của bạn và thời gian bạn dành cho buổi phỏng vấn.</p>
-<p>Xin chân thành cảm ơn và chúc bạn mọi điều tốt lành trong sự nghiệp của mình.</p>
-
+<h3 th:text="${'Xin chào ' + helper_name + ','}"> ,</h3>
+<p>Chúng tôi xin gửi lời cảm ơn chân thành đến bạn về việc thể hiện sự quan tâm và tham gia tích cực trong quá trình tuyển dụng để có thể trở thành đối tác nhân viên tại <b th:text="${company_name}"></b>.</p>
+<p>Sau một chuỗi quá trình phỏng vấn kỹ lưỡng, chúng tôi đã đưa ra quyết định khó khăn để chọn một ứng viên khác mà chúng tôi tin rằng có thể đáp ứng tốt hơn yêu cầu của vị trí đó với lý do: <b th:text="${reject_reason}"></b>.</p>
+<p>Chúng tôi muốn nhấn mạnh rằng quyết định này không phản ánh vào năng lực, kinh nghiệm hoặc giá trị cá nhân của bạn. Đó chỉ là sự cân nhắc cẩn thận và lựa chọn theo tiêu chí chung của công ty.</p>
+<p>Việc lựa chọn không bao giờ dễ dàng, và quyết định này không hoàn toàn phản ánh vào nỗ lực và sự cam kết mà bạn đã thể hiện trong quá trình phỏng vấn. Chúng tôi rất đánh giá tất cả những cố gắng mà bạn đã bỏ ra.</p>
+<p>Chúng tôi xin chân thành gửi lời chúc tốt đẹp nhất tới bạn.</p>
+<p>Một lần nữa, chúng tôi chân thành cảm ơn bạn vì thời gian và nỗ lực bạn đã dành cho quá trình tuyển dụng của chúng tôi.</p>
 <footer>
-    <p>Trân trọng,<br th:text="${company_name}"></p>
+    <p>Trân trọng,<br th:text="${'Quản lý - ' + manager_name}"></p>
 </footer>
 </body>
 </html>

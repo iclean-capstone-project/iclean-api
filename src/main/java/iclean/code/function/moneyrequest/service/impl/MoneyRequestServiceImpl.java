@@ -3,13 +3,13 @@ package iclean.code.function.moneyrequest.service.impl;
 import iclean.code.data.domain.MoneyRequest;
 import iclean.code.data.domain.User;
 import iclean.code.data.dto.common.ResponseObject;
-import iclean.code.data.dto.request.moneyrequest.CreateMoneyRequestRequestDTO;
-import iclean.code.data.dto.request.moneyrequest.ValidateMoneyRequestDTO;
+import iclean.code.data.dto.request.moneyrequest.CreateMoneyRequestRequest;
+import iclean.code.data.dto.request.moneyrequest.ValidateMoneyRequest;
 import iclean.code.data.dto.request.security.ValidateOTPRequest;
-import iclean.code.data.dto.request.transaction.TransactionRequestDto;
+import iclean.code.data.dto.request.transaction.TransactionRequest;
 import iclean.code.data.dto.response.PageResponseObject;
-import iclean.code.data.dto.response.moneyrequest.GetMoneyRequestResponseDTO;
-import iclean.code.data.dto.response.moneyrequest.GetMoneyRequestUserDto;
+import iclean.code.data.dto.response.moneyrequest.GetMoneyRequestResponse;
+import iclean.code.data.dto.response.moneyrequest.GetMoneyRequestUserResponse;
 import iclean.code.data.enumjava.MoneyRequestEnum;
 import iclean.code.data.enumjava.MoneyRequestStatusEnum;
 import iclean.code.data.enumjava.WalletTypeEnum;
@@ -65,11 +65,11 @@ public class MoneyRequestServiceImpl implements MoneyRequestService {
             pageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), order);
             User user = findUserByPhoneNumber(phoneNumber);
             Page<MoneyRequest> moneyRequests = moneyRequestRepository.findAllByPhoneNumber(phoneNumber, pageable);
-            List<GetMoneyRequestResponseDTO> data = moneyRequests
+            List<GetMoneyRequestResponse> data = moneyRequests
                     .stream()
-                    .map(moneyRequest -> modelMapper.map(moneyRequest, GetMoneyRequestResponseDTO.class))
+                    .map(moneyRequest -> modelMapper.map(moneyRequest, GetMoneyRequestResponse.class))
                     .collect(Collectors.toList());
-            GetMoneyRequestUserDto response = modelMapper.map(user, GetMoneyRequestUserDto.class);
+            GetMoneyRequestUserResponse response = modelMapper.map(user, GetMoneyRequestUserResponse.class);
             PageResponseObject pageResponseObject = Utils.convertToPageResponse(moneyRequests, data);
             response.setData(pageResponseObject);
 
@@ -90,7 +90,7 @@ public class MoneyRequestServiceImpl implements MoneyRequestService {
     public ResponseEntity<ResponseObject> getMoneyRequest(Integer id) {
         try {
             MoneyRequest moneyRequest = findMoneyRequestById(id);
-            GetMoneyRequestResponseDTO responses = modelMapper.map(moneyRequest, GetMoneyRequestResponseDTO.class);
+            GetMoneyRequestResponse responses = modelMapper.map(moneyRequest, GetMoneyRequestResponse.class);
 
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseObject(HttpStatus.OK.toString(),
@@ -112,7 +112,7 @@ public class MoneyRequestServiceImpl implements MoneyRequestService {
     }
 
     @Override
-    public ResponseEntity<ResponseObject> createMoneyRequest(CreateMoneyRequestRequestDTO request) {
+    public ResponseEntity<ResponseObject> createMoneyRequest(CreateMoneyRequestRequest request) {
         try {
             User user = findUserByPhoneNumber(request.getUserPhoneNumber());
             MoneyRequest moneyRequest = modelMapper.map(request, MoneyRequest.class);
@@ -121,7 +121,7 @@ public class MoneyRequestServiceImpl implements MoneyRequestService {
             moneyRequest.setUser(user);
             String token = twilioOTPService.sendAndGetOTPToken(user.getPhoneNumber());
             moneyRequest.setOtpToken(token);
-            moneyRequest.setExpiredTime(Utils.getDateTimeNow().plusMinutes(expiredTime));
+            moneyRequest.setExpiredTime(Utils.getLocalDateTimeNow().plusMinutes(expiredTime));
             moneyRequest.setRequestStatus(MoneyRequestStatusEnum.PENDING);
             MoneyRequest moneyRequestUpdate = moneyRequestRepository.save(moneyRequest);
 
@@ -144,7 +144,7 @@ public class MoneyRequestServiceImpl implements MoneyRequestService {
     }
 
     @Override
-    public ResponseEntity<ResponseObject> validateMoneyRequest(ValidateMoneyRequestDTO request) {
+    public ResponseEntity<ResponseObject> validateMoneyRequest(ValidateMoneyRequest request) {
         try {
             MoneyRequest moneyRequest = findMoneyRequestById(request.getRequestId());
             if (!moneyRequest.getRequestStatus().equals(MoneyRequestStatusEnum.PENDING)) {
@@ -152,9 +152,9 @@ public class MoneyRequestServiceImpl implements MoneyRequestService {
             }
             ValidateOTPRequest validateOTPRequest = new ValidateOTPRequest(request.getOtpToken(), moneyRequest.getOtpToken());
             if (twilioOTPService.validateOTP(validateOTPRequest)) {
-                if (moneyRequest.getExpiredTime().isBefore(Utils.getDateTimeNow()))
+                if (moneyRequest.getExpiredTime().isBefore(Utils.getLocalDateTimeNow()))
                     throw new BadRequestException("The OTP had expired");
-                moneyRequest.setProcessDate(Utils.getDateTimeNow());
+                moneyRequest.setProcessDate(Utils.getLocalDateTimeNow());
                 moneyRequest.setRequestStatus(MoneyRequestStatusEnum.SUCCESS);
             } else {
                 throw new BadRequestException("Wrong OTP");
@@ -163,7 +163,7 @@ public class MoneyRequestServiceImpl implements MoneyRequestService {
                     String.format(depositMessage, " + " + moneyRequest.getBalance().longValue())
                     : String.format(withdrawMessage, " - " + moneyRequest.getBalance().longValue());
 
-            transactionService.createTransactionService(new TransactionRequestDto(moneyRequest.getBalance(), note,
+            transactionService.createTransactionService(new TransactionRequest(moneyRequest.getBalance(), note,
                     moneyRequest.getUser().getUserId(), moneyRequest.getRequestType().name(), WalletTypeEnum.MONEY.name()));
             moneyRequestRepository.save(moneyRequest);
 
@@ -200,7 +200,7 @@ public class MoneyRequestServiceImpl implements MoneyRequestService {
             }
             String token = twilioOTPService.sendAndGetOTPToken(moneyRequest.getUser().getPhoneNumber());
             moneyRequest.setOtpToken(token);
-            moneyRequest.setExpiredTime(Utils.getDateTimeNow().plusMinutes(expiredTime));
+            moneyRequest.setExpiredTime(Utils.getLocalDateTimeNow().plusMinutes(expiredTime));
             moneyRequestRepository.save(moneyRequest);
             moneyRequestRepository.save(moneyRequest);
             return ResponseEntity.status(HttpStatus.OK)

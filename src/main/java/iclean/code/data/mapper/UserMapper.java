@@ -2,7 +2,7 @@ package iclean.code.data.mapper;
 
 import iclean.code.data.domain.User;
 import iclean.code.data.dto.response.feedback.GetDetailHelperResponse;
-import iclean.code.data.dto.response.moneyrequest.GetMoneyRequestUserDto;
+import iclean.code.data.dto.response.moneyrequest.GetMoneyRequestUserResponse;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.PropertyMap;
 import org.springframework.stereotype.Component;
@@ -13,7 +13,7 @@ public class UserMapper {
     public UserMapper(ModelMapper modelMapper) {
         this.modelMapper = modelMapper;
 
-        modelMapper.addMappings(new PropertyMap<User, GetMoneyRequestUserDto>() {
+        modelMapper.addMappings(new PropertyMap<User, GetMoneyRequestUserResponse>() {
             @Override
             protected void configure() {
                 map().setRoleName(source.getRole().getTitle());

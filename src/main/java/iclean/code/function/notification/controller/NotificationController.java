@@ -3,7 +3,7 @@ package iclean.code.function.notification.controller;
 import iclean.code.config.JwtUtils;
 import iclean.code.data.dto.common.PageRequestBuilder;
 import iclean.code.data.dto.common.ResponseObject;
-import iclean.code.data.dto.request.notification.GetNotificationDTO;
+import iclean.code.data.dto.response.notification.GetNotificationResponse;
 import iclean.code.function.notification.service.NotificationService;
 import iclean.code.utils.validator.ValidSortFields;
 import io.swagger.v3.oas.annotations.Operation;
@@ -53,15 +53,16 @@ public class NotificationController {
     })
     @PreAuthorize("hasAnyAuthority('renter', 'employee', 'admin', 'manager')")
     public ResponseEntity<ResponseObject> getNotifications(
+            @RequestParam(name = "isHelper", defaultValue = "false", required = false) Boolean isHelper,
             @RequestParam(name = "page", defaultValue = "1") int page,
             @RequestParam(name = "size", defaultValue = "10") int size,
-            @RequestParam(name = "sort", required = false) @ValidSortFields(value = GetNotificationDTO.class) List<String> sortFields,
+            @RequestParam(name = "sort", required = false) @ValidSortFields(value = GetNotificationResponse.class) List<String> sortFields,
             Authentication authentication) {
         Pageable pageable = PageRequestBuilder.buildPageRequest(page, size);
         if (sortFields != null && !sortFields.isEmpty()) {
             pageable = PageRequestBuilder.buildPageRequest(page, size, sortFields);
         }
-        return notificationService.getNotifications(JwtUtils.decodeToAccountId(authentication), pageable);
+        return notificationService.getNotifications(JwtUtils.decodeToAccountId(authentication), isHelper, pageable);
     }
 
     @PutMapping(value = "{notificationId}")

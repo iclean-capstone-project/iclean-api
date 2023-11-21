@@ -2,9 +2,9 @@ package iclean.code.function.rejectionreason.service.impl;
 
 import iclean.code.data.domain.RejectionReason;
 import iclean.code.data.dto.common.ResponseObject;
-import iclean.code.data.dto.request.rejectionreason.CreateRejectionReasonRequestDTO;
-import iclean.code.data.dto.request.rejectionreason.UpdateRejectionReasonRequestDTO;
-import iclean.code.data.dto.response.rejectionreason.GetRejectionReasonResponseDTO;
+import iclean.code.data.dto.request.rejectionreason.CreateRejectionReasonRequest;
+import iclean.code.data.dto.request.rejectionreason.UpdateRejectionReasonRequest;
+import iclean.code.data.dto.response.rejectionreason.GetRejectionReasonResponse;
 import iclean.code.data.repository.RejectionReasonRepository;
 import iclean.code.exception.NotFoundException;
 import iclean.code.function.rejectionreason.service.RejectReasonService;
@@ -30,9 +30,9 @@ public class RejectReasonServiceImpl implements RejectReasonService {
     public ResponseEntity<ResponseObject> getRejectionReasons() {
         try {
             List<RejectionReason> rejectionReasons = rejectionReasonRepository.findAll();
-            List<GetRejectionReasonResponseDTO> responses = rejectionReasons
+            List<GetRejectionReasonResponse> responses = rejectionReasons
                     .stream()
-                    .map(rejectionReason -> modelMapper.map(rejectionReason, GetRejectionReasonResponseDTO.class))
+                    .map(rejectionReason -> modelMapper.map(rejectionReason, GetRejectionReasonResponse.class))
                     .collect(Collectors.toList());
 
             return ResponseEntity.status(HttpStatus.OK)
@@ -49,10 +49,10 @@ public class RejectReasonServiceImpl implements RejectReasonService {
     }
 
     @Override
-    public ResponseEntity<ResponseObject> createRejectReason(CreateRejectionReasonRequestDTO request) {
+    public ResponseEntity<ResponseObject> createRejectReason(CreateRejectionReasonRequest request) {
         try {
             RejectionReason rejectionReason = modelMapper.map(request, RejectionReason.class);
-            rejectionReason.setCreateAt(Utils.getDateTimeNow());
+            rejectionReason.setCreateAt(Utils.getLocalDateTimeNow());
             rejectionReasonRepository.save(rejectionReason);
 
             return ResponseEntity.status(HttpStatus.OK)
@@ -74,7 +74,7 @@ public class RejectReasonServiceImpl implements RejectReasonService {
     }
 
     @Override
-    public ResponseEntity<ResponseObject> updateRejectReason(Integer id, UpdateRejectionReasonRequestDTO request) {
+    public ResponseEntity<ResponseObject> updateRejectReason(Integer id, UpdateRejectionReasonRequest request) {
         try {
             RejectionReason rejectionReason = findRejectReasonById(id);
             modelMapper.map(request, rejectionReason);

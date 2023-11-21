@@ -1,6 +1,7 @@
 package iclean.code.data.mapper;
 
 import iclean.code.data.mapper.converter.LocalDateToStringConverter;
+import iclean.code.data.mapper.converter.LocalTimeToStringConverter;
 import iclean.code.data.mapper.converter.StringToLocalTimeConverter;
 import iclean.code.data.mapper.converter.StringToStringConverter;
 import org.modelmapper.ModelMapper;
@@ -15,6 +16,7 @@ public class CommonMapper {
         modelMapper.addConverter(new LocalDateToStringConverter());
         modelMapper.addConverter(new StringToStringConverter());
         modelMapper.addConverter(new StringToLocalTimeConverter());
+        modelMapper.addConverter(new LocalTimeToStringConverter());
     }
 
     public <S, D> D map(S source, Class<D> destinationType) {

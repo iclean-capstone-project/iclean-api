@@ -61,7 +61,7 @@ public class ServiceServiceImpl implements ServiceService {
             Service service = modelMapper.map(request, Service.class);
             String jobImgLink = storageService.uploadFile(request.getImgService());
             service.setServiceImage(jobImgLink);
-            service.setCreateAt(Utils.getDateTimeNow());
+            service.setCreateAt(Utils.getLocalDateTimeNow());
 
             serviceRepository.save(service);
             return ResponseEntity.status(HttpStatus.OK)
@@ -93,7 +93,7 @@ public class ServiceServiceImpl implements ServiceService {
                 String jobImgLink = storageService.uploadFile(request.getImgService());
                 serviceToUpdate.setServiceImage(jobImgLink);
             }
-            serviceToUpdate.setUpdateAt(Utils.getDateTimeNow());
+            serviceToUpdate.setUpdateAt(Utils.getLocalDateTimeNow());
 
             serviceRepository.save(serviceToUpdate);
             return ResponseEntity.status(HttpStatus.OK)

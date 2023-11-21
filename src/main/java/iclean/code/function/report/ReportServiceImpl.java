@@ -41,7 +41,7 @@ public class ReportServiceImpl implements ReportService {
     private ReportRepository reportRepository;
 
     @Autowired
-    private BookingRepository bookingRepository;
+    private BookingDetailRepository bookingDetailRepository;
 
     @Autowired
     private BookingStatusHistoryRepository bookingStatusHistoryRepository;
@@ -111,7 +111,7 @@ public class ReportServiceImpl implements ReportService {
     @Override
     public ResponseEntity<ResponseObject> createReport(CreateReportRequest reportRequest, Integer renterId) {
         try {
-            if (reportRepository.findReportByBookingBookingId(reportRequest.getBookingId()) != null) {
+            if (reportRepository.findReportByBookingDetailBookingDetailId(reportRequest.getBookingDetailId()) != null) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString()
                                 , "Booking already have report!", null));
@@ -123,6 +123,11 @@ public class ReportServiceImpl implements ReportService {
 
             if (!Objects.equals(booking.getRenter().getUserId(), renterId))
                 throw new UserNotHavePermissionException("User cannot do this action");
+            BookingDetail bookingDetail = findBookingDetail(reportRequest.getBookingDetailId());
+            if (!Objects.equals(bookingDetail.getBooking().getRenter().getUserId(), renterId)) throw new UserNotHavePermissionException("User cannot do this action");
+            Report report = mappingReportForCreate(reportRequest);
+            reportRepository.save(report);
+
             List<String> images = new ArrayList<>(Collections.emptyList());
             for (MultipartFile file :
                     reportRequest.getFiles()) {
@@ -133,14 +138,12 @@ public class ReportServiceImpl implements ReportService {
                     images) {
                 BookingAttachment bookingAttachment = new BookingAttachment();
                 bookingAttachment.setBookingAttachmentLink(imageLink);
-                bookingAttachment.setBooking(booking);
+                bookingAttachment.setReport(report);
                 bookingAttachments.add(bookingAttachment);
             }
             if (!bookingAttachments.isEmpty()) {
                 bookingAttachmentRepository.saveAll(bookingAttachments);
             }
-            Report report = mappingReportForCreate(reportRequest);
-            reportRepository.save(report);
 
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseObject(HttpStatus.OK.toString(),
@@ -236,13 +239,13 @@ public class ReportServiceImpl implements ReportService {
     }
 
     private Report mappingReportForCreate(CreateReportRequest request) {
-        Booking optionalBooking = findBooking(request.getBookingId());
+        BookingDetail optionalBooking = findBookingDetail(request.getBookingDetailId());
         ReportType optionalReportType = findReportType(request.getReportTypeId());
         Report report = modelMapper.map(request, Report.class);
         report.setDetail(request.getDetail());
         report.setReportStatus(ReportStatusEnum.PROCESSING);
-        report.setCreateAt(Utils.getDateTimeNow());
-        report.setBooking(optionalBooking);
+        report.setCreateAt(Utils.getLocalDateTimeNow());
+        report.setBookingDetail(optionalBooking);
         report.setReportType(optionalReportType);
 
         return report;
@@ -254,7 +257,7 @@ public class ReportServiceImpl implements ReportService {
         optionalReport.setOption(OptionProcessReportEnum.valueOf(request.getOption().toUpperCase()));
         optionalReport.setReportStatus(ReportStatusEnum.PROCESSED);
         optionalReport.setRefund(request.getRefund());
-        optionalReport.setProcessAt(Utils.getDateTimeNow());
+        optionalReport.setProcessAt(Utils.getLocalDateTimeNow());
         return modelMapper.map(optionalReport, Report.class);
     }
 
@@ -268,8 +271,8 @@ public class ReportServiceImpl implements ReportService {
                 .orElseThrow(() -> new NotFoundException("Report type is not exist"));
     }
 
-    private Booking findBooking(int bookingId) {
-        return bookingRepository.findById(bookingId)
+    private BookingDetail findBookingDetail(int bookingDetailId) {
+        return bookingDetailRepository.findById(bookingDetailId)
                 .orElseThrow(() -> new NotFoundException("Booking is not exist"));
     }
 }

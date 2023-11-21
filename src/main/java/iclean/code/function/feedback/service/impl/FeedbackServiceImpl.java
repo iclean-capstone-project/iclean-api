@@ -162,7 +162,7 @@ public class FeedbackServiceImpl implements FeedbackService {
         try {
             BookingDetail bookingDetail = findBookingDetail(id);
             modelMapper.map(request, bookingDetail);
-            bookingDetail.setFeedbackTime(Utils.getDateTimeNow());
+            bookingDetail.setFeedbackTime(Utils.getLocalDateTimeNow());
             if (isPermission(userId, bookingDetail)) {
                 bookingDetailRepository.save(bookingDetail);
             }

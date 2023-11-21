@@ -1,15 +1,16 @@
 package iclean.code.data.enumjava;
 
 public enum EmailEnum {
-    COMPANY_NAME("Helping Hand Hub"),
+    COMPANY_NAME("Helping Hands Hub Platform"),
 
     IN_PROCESS_TITLE ("Đang phê duyệt"),
 
     IN_PROCESS_BODY ("Yêu cầu của bạn đang được phê duyệt, vui lòng đợi cho đến khi có thông báo chính thức. "),
 
     REPORT_RESULT_TITLE ("Kết quả báo cáo dịch vụ #"),
-
-    ACCEPT_HELPER_TITLE("Kết quả đăng kí");
+    ACCEPT_HELPER_TITLE("Hẹn gặp trao đổi thông tin - "),
+    CONFIRM_HELPER_TITLE("Kết quả đăng ký trở thành nhân viên - "),
+    REJECT_HELPER_TITLE("Trạng thái đăng ký - ");
 
 
     private final String value;

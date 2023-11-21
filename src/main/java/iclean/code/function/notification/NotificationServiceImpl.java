@@ -2,7 +2,7 @@ package iclean.code.function.notification;
 
 import iclean.code.data.domain.*;
 import iclean.code.data.dto.common.ResponseObject;
-import iclean.code.data.dto.request.notification.GetNotificationDTO;
+import iclean.code.data.dto.response.notification.GetNotificationResponse;
 import iclean.code.data.dto.response.PageResponseObject;
 import iclean.code.data.enumjava.NotificationEnum;
 import iclean.code.data.enumjava.NotificationStatusEnum;
@@ -42,10 +42,10 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     public ResponseEntity<ResponseObject> getNotificationById(Integer notificationId, Integer userId) {
         try {
-            GetNotificationDTO notificationResponse = null;
+            GetNotificationResponse notificationResponse = null;
             Notification notification = findNotification(notificationId);
             if (isPermission(userId, notification)) {
-                notificationResponse = modelMapper.map(notification, GetNotificationDTO.class);
+                notificationResponse = modelMapper.map(notification, GetNotificationResponse.class);
             }
 
             return ResponseEntity.status(HttpStatus.OK)
@@ -65,7 +65,7 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
-    public ResponseEntity<ResponseObject> getNotifications(Integer userIdAuth, Pageable pageable) {
+    public ResponseEntity<ResponseObject> getNotifications(Integer userIdAuth,Boolean isHelper, Pageable pageable) {
         try {
             Page<Notification> notifications;
             Sort order = Sort.by(Sort.Order.desc("createAt"));
@@ -77,18 +77,19 @@ public class NotificationServiceImpl implements NotificationService {
             RoleEnum roleEnum = RoleEnum.valueOf(roleUser);
             switch (roleEnum) {
                 case EMPLOYEE:
-                    notifications = notificationRepository.findByUserIdPageable(userIdAuth, Boolean.parseBoolean(NotificationEnum.IS_EMPLOYEE.toString()), pageable);
-                    break;
-                case RENTER:
-                    notifications = notificationRepository.findByUserIdPageable(userIdAuth, Boolean.parseBoolean(NotificationEnum.NOT_EMPLOYEE.toString()), pageable);
+                    if (isHelper) {
+                        notifications = notificationRepository.findByUserIdPageable(userIdAuth, Boolean.parseBoolean(NotificationEnum.IS_EMPLOYEE.toString()), pageable);
+                    } else {
+                        notifications = notificationRepository.findByUserIdPageable(userIdAuth, Boolean.parseBoolean(NotificationEnum.NOT_EMPLOYEE.toString()), pageable);
+                    }
                     break;
                 default:
                     notifications = notificationRepository.findByUserIdPageable(userIdAuth, pageable);
             }
 
-            List<GetNotificationDTO> dtoList = notifications
+            List<GetNotificationResponse> dtoList = notifications
                     .stream()
-                    .map(notificationMapper -> modelMapper.map(notificationMapper, GetNotificationDTO.class))
+                    .map(notificationMapper -> modelMapper.map(notificationMapper, GetNotificationResponse.class))
                     .collect(Collectors.toList());
 
             PageResponseObject pageResponseObject = Utils.convertToPageResponse(notifications, dtoList);

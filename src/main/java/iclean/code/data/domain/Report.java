@@ -34,15 +34,15 @@ public class Report {
     private Double refund;
 
     @Column(name = "create_at")
-    private LocalDateTime createAt = Utils.getDateTimeNow();
+    private LocalDateTime createAt = Utils.getLocalDateTimeNow();
 
     @Column(name = "process_at")
     private LocalDateTime processAt;
 
     @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JsonIgnoreProperties("report")
-    @JoinColumn(name = "booking_id")
-    private Booking booking;
+    @JoinColumn(name = "booking_detail_id")
+    private BookingDetail bookingDetail;
 
     @ManyToOne
     @JsonIgnore

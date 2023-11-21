@@ -4,10 +4,10 @@ import iclean.code.data.domain.User;
 import iclean.code.data.domain.Transaction;
 import iclean.code.data.domain.Wallet;
 import iclean.code.data.dto.common.ResponseObject;
-import iclean.code.data.dto.request.transaction.TransactionRequestDto;
+import iclean.code.data.dto.request.transaction.TransactionRequest;
 import iclean.code.data.dto.response.PageResponseObject;
-import iclean.code.data.dto.response.transaction.GetTransactionDetailResponseDto;
-import iclean.code.data.dto.response.transaction.GetTransactionResponseDto;
+import iclean.code.data.dto.response.transaction.GetTransactionDetailResponse;
+import iclean.code.data.dto.response.transaction.GetTransactionResponse;
 import iclean.code.data.enumjava.RoleEnum;
 import iclean.code.data.enumjava.TransactionStatusEnum;
 import iclean.code.data.enumjava.TransactionTypeEnum;
@@ -52,9 +52,9 @@ public class TransactionServiceImpl implements TransactionService {
             pageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), order);
             Page<Transaction> transactions = transactionRepository
                     .findByUserUserId(userId, WalletTypeEnum.valueOf(walletType.toUpperCase()), pageable);
-            List<GetTransactionResponseDto> responses = transactions
+            List<GetTransactionResponse> responses = transactions
                     .stream()
-                    .map(transaction -> modelMapper.map(transaction, GetTransactionResponseDto.class))
+                    .map(transaction -> modelMapper.map(transaction, GetTransactionResponse.class))
                     .collect(Collectors.toList());
 
             PageResponseObject pageResponseObject = Utils.convertToPageResponse(transactions, responses);
@@ -77,7 +77,7 @@ public class TransactionServiceImpl implements TransactionService {
         try {
             Transaction transaction = findWalletHistoryById(id);
 
-            GetTransactionDetailResponseDto responses = modelMapper.map(transaction, GetTransactionDetailResponseDto.class);
+            GetTransactionDetailResponse responses = modelMapper.map(transaction, GetTransactionDetailResponse.class);
 
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseObject(HttpStatus.OK.toString(),
@@ -98,17 +98,18 @@ public class TransactionServiceImpl implements TransactionService {
         }
     }
 
-    private Transaction mappingForCreate(TransactionRequestDto request) {
+    private Transaction mappingForCreate(TransactionRequest request) {
         Transaction transaction = modelMapper.map(request, Transaction.class);
         transaction.setAmount(request.getBalance());
-        transaction.setCreateAt(Utils.getDateTimeNow());
+        transaction.setTransactionCode(Utils.generateRandomCode());
+        transaction.setCreateAt(Utils.getLocalDateTimeNow());
         transaction.setTransactionStatusEnum(TransactionStatusEnum.SUCCESS);
         transaction.setTransactionTypeEnum(TransactionTypeEnum.valueOf(request.getTransactionType().toUpperCase()));
         return transaction;
     }
 
     @Override
-    public ResponseEntity<ResponseObject> createTransaction(TransactionRequestDto request) {
+    public ResponseEntity<ResponseObject> createTransaction(TransactionRequest request) {
         try {
             boolean check = createTransactionService(request);
 
@@ -144,7 +145,7 @@ public class TransactionServiceImpl implements TransactionService {
     }
 
     @Override
-    public boolean createTransactionService(TransactionRequestDto request) throws BadRequestException {
+    public boolean createTransactionService(TransactionRequest request) throws BadRequestException {
             User user = findUserById(request.getUserId());
             if (!Objects.equals(user.getRole().getTitle().toUpperCase(), RoleEnum.EMPLOYEE.name()) &&
                     !user.getRole().getTitle().toUpperCase().equals(RoleEnum.RENTER.name())) {
@@ -159,7 +160,7 @@ public class TransactionServiceImpl implements TransactionService {
                 wallet.setWalletTypeEnum(WalletTypeEnum.valueOf(request.getWalletType().toUpperCase()));
             }
 
-            wallet.setUpdateAt(Utils.getDateTimeNow());
+            wallet.setUpdateAt(Utils.getLocalDateTimeNow());
             TransactionTypeEnum transactionTypeEnum = TransactionTypeEnum.valueOf(request.getTransactionType().toUpperCase());
             switch (transactionTypeEnum) {
                 case DEPOSIT:

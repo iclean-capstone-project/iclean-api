@@ -1,6 +1,6 @@
 package iclean.code.data.dto.response.booking;
 
-import iclean.code.data.dto.response.bookingdetail.GetBookingDetailResponse;
+import iclean.code.data.dto.response.bookingdetail.GetCartBookingDetailResponse;
 import lombok.Data;
 
 import java.util.List;
@@ -10,5 +10,5 @@ public class GetCartResponseDetail {
     private Integer cartId;
     private Double totalPrice;
     private Double totalPriceActual;
-    private List<GetBookingDetailResponse> details;
+    private List<GetCartBookingDetailResponse> details;
 }

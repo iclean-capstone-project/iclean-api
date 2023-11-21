@@ -1,7 +1,11 @@
 package iclean.code.data.mapper;
 
 import iclean.code.data.domain.BookingDetail;
+import iclean.code.data.domain.BookingDetailStatusHistory;
+import iclean.code.data.dto.response.bookingdetail.GetBookingDetailDetailResponse;
 import iclean.code.data.dto.response.bookingdetailhelper.GetBookingDetailHelperResponse;
+import iclean.code.data.dto.response.bookingstatushistory.GetBookingStatusHistoryResponse;
+import iclean.code.data.dto.response.feedback.GetFeedbackResponse;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.PropertyMap;
 import org.springframework.stereotype.Component;
@@ -11,6 +15,12 @@ public class BookingDetailMapper {
     private final ModelMapper modelMapper;
     public BookingDetailMapper(ModelMapper modelMapper) {
         this.modelMapper = modelMapper;
+
+        modelMapper.typeMap(BookingDetail.class, GetBookingDetailDetailResponse.class)
+                .addMappings(mapper -> {
+                    mapper.map(BookingDetail::getBookingDetailStatusHistories, GetBookingDetailDetailResponse::setStatuses);
+                });
+
         modelMapper.addMappings(new PropertyMap<BookingDetail, GetBookingDetailHelperResponse>() {
             @Override
             protected void configure() {

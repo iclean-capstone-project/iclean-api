@@ -22,11 +22,11 @@ public class BookingAttachment {
     private String bookingAttachmentLink;
 
     @Column(name = "create_at")
-    private LocalDateTime createAt = Utils.getDateTimeNow();
+    private LocalDateTime createAt = Utils.getLocalDateTimeNow();
 
     @ManyToOne
     @JsonIgnore
-    @JoinColumn(name = "booking_id")
-    private Booking booking;
+    @JoinColumn(name = "report_id")
+    private Report report;
 
 }

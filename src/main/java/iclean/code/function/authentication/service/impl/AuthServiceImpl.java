@@ -34,6 +34,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
 
@@ -248,6 +249,8 @@ public class AuthServiceImpl implements AuthService {
 
             if (user == null) {
                 user = new User();
+                LocalDateTime localDateTime = Utils.getLocalDateTimeNow();
+                user.setExpiredToken(localDateTime.plusMinutes(10L));
                 String otpHashToken = twilioOTPService.sendAndGetOTPToken(phoneNumber);
                 user.setPhoneNumber(phoneNumber);
                 user.setOtpToken(otpHashToken);
@@ -255,12 +258,12 @@ public class AuthServiceImpl implements AuthService {
                 Wallet walletMoney = new Wallet();
                 walletMoney.setUser(newUser);
                 walletMoney.setWalletTypeEnum(WalletTypeEnum.MONEY);
-                walletMoney.setUpdateAt(Utils.getDateTimeNow());
+                walletMoney.setUpdateAt(Utils.getLocalDateTimeNow());
 
                 Wallet walletPoint = new Wallet();
                 walletPoint.setUser(newUser);
                 walletPoint.setWalletTypeEnum(WalletTypeEnum.POINT);
-                walletMoney.setUpdateAt(Utils.getDateTimeNow());
+                walletMoney.setUpdateAt(Utils.getLocalDateTimeNow());
 
                 walletRepository.save(walletMoney);
                 walletRepository.save(walletPoint);
@@ -269,6 +272,8 @@ public class AuthServiceImpl implements AuthService {
                                 "New Account Created",
                                 null));
             }
+            LocalDateTime localDateTime = Utils.getLocalDateTimeNow();
+            user.setExpiredToken(localDateTime.plusMinutes(10L));
             String otpHashToken = twilioOTPService.sendAndGetOTPToken(phoneNumber);
             user.setOtpToken(otpHashToken);
             userRepository.save(user);

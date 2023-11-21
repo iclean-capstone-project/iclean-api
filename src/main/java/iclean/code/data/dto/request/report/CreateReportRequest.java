@@ -9,11 +9,8 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 public class CreateReportRequest {
-    private Integer bookingId;
-
+    private Integer bookingDetailId;
     private Integer reportTypeId;
-
     private String detail;
-
     private List<MultipartFile> files;
 }

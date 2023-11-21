@@ -8,5 +8,5 @@ import java.time.LocalDateTime;
 public class GetBookingStatusHistoryResponse {
     private Integer statusHistoryId;
     private LocalDateTime createAt;
-    private String bookingStatus;
+    private String bookingDetailStatus;
 }

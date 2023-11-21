@@ -1,0 +1,83 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns:th="http://www.thymeleaf.org" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <title>Spring boot eamil teplate with Thymeleaf</title>
+
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+  <link href='http://fonts.googleapis.com/css?family=Roboto' rel='stylesheet' type='text/css'/>
+
+  <!-- use the font -->
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      line-height: 1.6;
+      margin: 0;
+      padding: 0;
+      background-color: #f4f4f4;
+    }
+
+    p {
+      margin-bottom: 20px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: #ffffff;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+
+    header {
+      background-color: #a557ea;
+      color: #ffffff;
+      text-align: center;
+      padding: 10px 0;
+    }
+
+    h1 {
+      color: #ffffff;
+    }
+
+    p, h3 {
+      margin-bottom: 20px;
+    }
+
+    footer {
+      margin-top: 20px;
+      text-align: left;
+      color: #888888;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1 th:text="${company_name}"></h1>
+  </header>
+</div>
+<h3 th:text="${'Chào ' + name + ', '}"> ,</h3>
+<p>
+  Tôi hy vọng bạn đang có một ngày tốt lành.
+</p>
+<p>Chúc mừng bạn đã chính thức trở thành một phần của đội ngũ tại <b th:text="${company_name}"></b>.
+  Chúng tôi rất vui mừng thông báo rằng bạn đã được chấp nhận và bắt đầu công việc từ ngày mai.</p>
+<p>Dưới đây là một số công việc và thông tin cần thiết để bạn có thể bắt đầu một cách thuận lợi:</p>
+<p><b>Danh sách công việc ban đầu:</b></p>
+<div th:each="job : ${list_of_jobs}">
+  <p th:text="${job}"></p>
+</div>
+<p>
+  Chúng tôi tin rằng bạn sẽ đóng góp rất nhiều và sẽ tạo ra những giá trị tuyệt vời cho tổ chức của chúng tôi.
+  Chúng tôi rất mong đợi được hợp tác với bạn và chúc bạn một khởi đầu công việc suôn sẻ và thành công.
+</p>
+
+<footer>
+  <p>Trân trọng,<br th:text="${'Quản lý - ' + manager_name + ' '}"><b th:text="${company_name}"></b></p>
+</footer>
+</body>
+</html>

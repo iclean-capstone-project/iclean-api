@@ -29,13 +29,13 @@ public class OtpAuthenticationProvider implements AuthenticationProvider {
         validateOTPRequest.setUserOtpInput(otp);
         validateOTPRequest.setOtpToken(user.getOtpToken());
 
-        if (twilioOTPService.validateOTP(validateOTPRequest) && user.getExpiredToken().isAfter(Utils.getDateTimeNow())) {
+        if (twilioOTPService.validateOTP(validateOTPRequest) && user.getExpiredToken().isAfter(Utils.getLocalDateTimeNow())) {
             user.setOtpToken(null);
             userRepository.save(user);
             User principal = userRepository.findUserByPhoneNumber(phoneNumber);
             return new OtpAuthentication(UserPrinciple.build(principal), otp);
 
-        } else if (twilioOTPService.validateOTP(validateOTPRequest) && !user.getExpiredToken().isAfter(Utils.getDateTimeNow())) {
+        } else if (twilioOTPService.validateOTP(validateOTPRequest) && !user.getExpiredToken().isAfter(Utils.getLocalDateTimeNow())) {
             throw new BadCredentialsException("The OTP had expired!");
         }
         throw new BadCredentialsException("Wrong OTP!");

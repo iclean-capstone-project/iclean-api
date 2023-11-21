@@ -1,7 +1,6 @@
 package iclean.code.utils.validator;
 
 import iclean.code.utils.Utils;
-import iclean.code.utils.anotation.SortValueFields;
 
 import javax.validation.ConstraintValidator;
 import javax.validation.ConstraintValidatorContext;
@@ -9,6 +8,7 @@ import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 public class SortFieldsValidator implements ConstraintValidator<ValidSortFields, List<String>> {
@@ -22,14 +22,12 @@ public class SortFieldsValidator implements ConstraintValidator<ValidSortFields,
     @Override
     public boolean isValid(List<String> sortFields, ConstraintValidatorContext context) {
         if (sortFields == null) {
-            return true; // Null values are considered valid
+            return true;
         }
-
         List<String> fieldList = new ArrayList<>();
         List<String> directionList = new ArrayList<>();
-
         for (String item : sortFields) {
-            String[] parts = Utils.removeSpace(item).split("_");
+            String[] parts = Objects.requireNonNull(Utils.removeSpace(item)).split("_");
             if (parts.length == 2) {
                 fieldList.add(parts[0]);
                 directionList.add(parts[1]);
@@ -38,21 +36,18 @@ public class SortFieldsValidator implements ConstraintValidator<ValidSortFields,
                 directionList.add("");
             }
         }
-
         boolean isValid = directionList.stream().allMatch(s -> s.isEmpty() || "asc".equalsIgnoreCase(s) || "desc".equalsIgnoreCase(s));
         if (!isValid)
             return false;
         List<String> allowedSortField = Arrays.stream(objectClass.getDeclaredFields())
                 .map(Field::getName)
                 .collect(Collectors.toList());
-//        List<String> allowedSortField = sortValueFields.getSortValueFields(objectClass);
 
         for (String sortField : fieldList) {
             if (!allowedSortField.contains(sortField)) {
-                return false; // Invalid sort field found
+                return false;
             }
         }
-
         return true;
     }
 }

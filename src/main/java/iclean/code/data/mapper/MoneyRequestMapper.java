@@ -1,7 +1,7 @@
 package iclean.code.data.mapper;
 
 import iclean.code.data.domain.MoneyRequest;
-import iclean.code.data.dto.request.moneyrequest.CreateMoneyRequestRequestDTO;
+import iclean.code.data.dto.request.moneyrequest.CreateMoneyRequestRequest;
 import iclean.code.utils.Utils;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.PropertyMap;
@@ -13,11 +13,11 @@ public class MoneyRequestMapper {
     public MoneyRequestMapper(ModelMapper modelMapper) {
         this.modelMapper = modelMapper;
 
-        modelMapper.addMappings(new PropertyMap<CreateMoneyRequestRequestDTO, MoneyRequest>() {
+        modelMapper.addMappings(new PropertyMap<CreateMoneyRequestRequest, MoneyRequest>() {
             @Override
             protected void configure() {
                 map().setBalance(source.getBalance());
-                map().setRequestDate(Utils.getDateTimeNow());
+                map().setRequestDate(Utils.getLocalDateTimeNow());
             }
         });
     }

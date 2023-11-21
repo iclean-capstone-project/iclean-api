@@ -1,29 +1,31 @@
 package iclean.code.function.booking.service.impl;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import iclean.code.config.MessageVariable;
+import iclean.code.config.SystemParameterField;
 import iclean.code.data.domain.*;
-import iclean.code.data.dto.common.Position;
 import iclean.code.data.dto.common.ResponseObject;
 import iclean.code.data.dto.request.authen.NotificationRequestDto;
 import iclean.code.data.dto.request.booking.*;
-import iclean.code.data.dto.request.security.ValidateOTPRequest;
 import iclean.code.data.dto.request.serviceprice.GetServicePriceRequest;
+import iclean.code.data.dto.request.transaction.TransactionRequest;
 import iclean.code.data.dto.response.PageResponseObject;
 import iclean.code.data.dto.response.booking.GetBookingResponse;
-import iclean.code.data.dto.response.booking.GetBookingResponseForHelper;
 import iclean.code.data.dto.response.booking.GetCartResponseDetail;
-import iclean.code.data.dto.response.bookingdetail.QRCodeResponse;
+import iclean.code.data.dto.response.booking.GetDetailBookingResponse;
+import iclean.code.data.dto.response.bookingdetail.GetCheckOutResponseDetail;
 import iclean.code.data.enumjava.*;
 import iclean.code.data.repository.*;
+import iclean.code.exception.BadRequestException;
 import iclean.code.exception.NotFoundException;
 import iclean.code.exception.UserNotHavePermissionException;
 import iclean.code.function.booking.service.BookingService;
 import iclean.code.function.serviceprice.service.ServicePriceService;
 import iclean.code.service.FCMService;
 import iclean.code.service.GoogleMapService;
-import iclean.code.service.QRCodeService;
 import iclean.code.utils.Utils;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.lang3.ObjectUtils;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -32,13 +34,12 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
+import java.math.RoundingMode;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
-
-import static iclean.code.data.enumjava.RoleEnum.EMPLOYEE;
 
 @Service
 @Log4j2
@@ -46,82 +47,79 @@ public class BookingServiceImpl implements BookingService {
 
     @Autowired
     private FCMService fcmService;
-
-    @Value("${iclean.app.max.distance.length}")
-    private Double maxDistance;
-
-    @Autowired
-    private QRCodeService qrCodeService;
-
+    @Value("${iclean.app.point.to.money}")
+    private Double pointToMoney;
     @Autowired
     private BookingRepository bookingRepository;
-
     @Autowired
     private AddressRepository addressRepository;
-
     @Autowired
     private UserRepository userRepository;
-
+    @Value("${iclean.app.max.request.count}")
+    private Integer maxRequestCount;
     @Autowired
-    private UnitRepository unitRepository;
-
-    @Autowired
-    private ServiceRegistrationRepository serviceRegistrationRepository;
-
-    @Autowired
-    private BookingStatusHistoryRepository bookingStatusHistoryRepository;
-
-    @Autowired
-    private BookingEmployeeRepository bookingEmployeeRepository;
-
+    private BookingDetailStatusHistoryRepository bookingDetailStatusHistoryRepository;
     @Autowired
     private ServiceUnitRepository serviceUnitRepository;
-
-    @Autowired
-    private BookingDetailRepository bookingDetailRepository;
-
     @Autowired
     private RejectionReasonRepository rejectionReasonRepository;
-
     @Autowired
-    private DeviceTokenRepository deviceTokenRepository;
-
+    private NotificationRepository notificationRepository;
     @Autowired
-    private  BookingDetailHelperRepository bookingDetailHelperRepository;
-
+    private BookingDetailRepository bookingDetailRepository;
+    @Autowired
+    private TransactionRepository transactionRepository;
+    @Autowired
+    private SystemParameterRepository systemParameterRepository;
+    @Autowired
+    private WalletRepository walletRepository;
     @Autowired
     private ServicePriceService servicePriceService;
-
     @Autowired
     GoogleMapService googleMapService;
-
     @Autowired
     private ModelMapper modelMapper;
 
     @Override
-    public ResponseEntity<ResponseObject> getBookings(Integer userId, Pageable pageable, boolean isAll) {
+    public ResponseEntity<ResponseObject> getBookings(Integer userId, Pageable pageable, List<String> statuses, Boolean isHelper) {
         try {
-            Page<Booking> bookings = Page.empty();
+            Page<Booking> bookings;
+            List<BookingStatusEnum> bookingStatusEnums = null;
+            if (!(statuses == null || statuses.isEmpty())) {
+                bookingStatusEnums = statuses
+                        .stream()
+                        .map(element -> BookingStatusEnum.valueOf(element.toUpperCase()))
+                        .collect(Collectors.toList());
+            }
             String roleUser = userRepository.findByUserId(userId).getRole().getTitle().toUpperCase();
             if (Utils.isNullOrEmpty(roleUser))
                 throw new UserNotHavePermissionException("User do not have permission to do this action");
             RoleEnum roleEnum = RoleEnum.valueOf(roleUser);
             switch (roleEnum) {
                 case EMPLOYEE:
-                    bookingRepository.findByHelperId(userId, pageable);
+                    if (isHelper) {
+                        bookings = !(statuses == null || statuses.isEmpty())
+                                ? bookingRepository.findByHelperId(userId, bookingStatusEnums, BookingStatusEnum.ON_CART, pageable)
+                                : bookingRepository.findByHelperId(userId, BookingStatusEnum.ON_CART, pageable);
+                    } else {
+                        bookings = !(statuses == null || statuses.isEmpty())
+                                ? bookingRepository.findByRenterId(userId, bookingStatusEnums, BookingStatusEnum.ON_CART, pageable)
+                                : bookingRepository.findByRenterId(userId, BookingStatusEnum.ON_CART, pageable);
+                    }
+
                     break;
                 case RENTER:
-                    bookings = bookingRepository.findByRenterId(userId, pageable);
+                    bookings = !(statuses == null || statuses.isEmpty())
+                            ? bookingRepository.findByRenterId(userId, bookingStatusEnums, BookingStatusEnum.ON_CART, pageable)
+                            : bookingRepository.findByRenterId(userId, BookingStatusEnum.ON_CART, pageable);
+
                     break;
                 case MANAGER:
-                    if (isAll) {
-                        bookings = bookingRepository.findAllBooking(pageable);
-                    } else {
-                        bookings = bookingRepository.findByManagerId(userId, pageable);
-                    }
-                    break;
                 case ADMIN:
-                    bookings = bookingRepository.findAllBooking(pageable);
+                    bookings = !(statuses == null || statuses.isEmpty())
+                            ? bookingRepository.findAllByBookingStatus(bookingStatusEnums, BookingStatusEnum.ON_CART, pageable)
+                            : bookingRepository.findAllBooking(BookingStatusEnum.ON_CART, pageable);
+
                     break;
                 default:
                     throw new UserNotHavePermissionException("User do not have permission to do this action");
@@ -130,47 +128,6 @@ public class BookingServiceImpl implements BookingService {
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseObject(HttpStatus.OK.toString(),
                             "Booking History Response!", pageResponseObject));
-        } catch (Exception e) {
-            log.error(e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new ResponseObject(HttpStatus.INTERNAL_SERVER_ERROR.toString(),
-                            "Something wrong occur!", null));
-        }
-    }
-
-    @Override
-    public ResponseEntity<ResponseObject> getBookingsAround(Integer userId) {
-        try {
-            Address address = null;
-            List<Address> addresses = addressRepository.findByUserIdAnAndIsDefault(userId);
-            if (!addresses.isEmpty()) {
-                address = addresses.get(0);
-            }
-            List<BookingDetail> bookings = bookingDetailRepository.findBookingDetailByStatusAndNoUserId(BookingStatusEnum.APPROVED, userId);
-            List<GetBookingResponseForHelper> dtoList = bookings
-                    .stream()
-                    .map(booking -> {
-                                GetBookingResponseForHelper response = modelMapper.map(booking, GetBookingResponseForHelper.class);
-                                response.setLatitude(booking.getBooking().getLatitude());
-                                response.setLongitude(booking.getBooking().getLongitude());
-                                response.setRenterName(booking.getBooking().getRenter().getFullName());
-                                response.setServiceName(booking.getServiceUnit().getService().getServiceName());
-                                response.setServiceImages(booking.getServiceUnit().getService().getServiceImage());
-                                response.setAmount(booking.getPriceHelper());
-                                response.setLocationDescription(booking.getBooking().getLocationDescription());
-                                return response;
-                            }
-                    )
-                    .collect(Collectors.toList());
-            List<GetBookingResponseForHelper> response = null;
-            if (address != null) {
-                response = googleMapService.checkDistance(dtoList,
-                        new Position(address.getLongitude(), address.getLatitude()), maxDistance);
-            }
-
-            return ResponseEntity.status(HttpStatus.OK)
-                    .body(new ResponseObject(HttpStatus.OK.toString(),
-                            "Booking History Response!", response));
         } catch (Exception e) {
             log.error(e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -192,6 +149,7 @@ public class BookingServiceImpl implements BookingService {
                     isPermission(userId, booking);
                     break;
                 case EMPLOYEE:
+                    isPermissionHelper(userId, booking);
                 case MANAGER:
                 case ADMIN:
                     break;
@@ -201,7 +159,8 @@ public class BookingServiceImpl implements BookingService {
 
             GetDetailBookingResponse response = modelMapper.map(booking, GetDetailBookingResponse.class);
             return ResponseEntity.status(HttpStatus.OK)
-                    .body(new ResponseObject(HttpStatus.OK.toString(), "Booking", response));
+                    .body(new ResponseObject(HttpStatus.OK.toString(),
+                            "Booking detail", response));
         } catch (Exception e) {
             if (e instanceof UserNotHavePermissionException)
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
@@ -214,22 +173,191 @@ public class BookingServiceImpl implements BookingService {
         }
     }
 
-//    private void isPermissionForHelper(Integer userId, Booking booking) throws UserNotHavePermissionException {
-//            if (!Objects.equals(booking.getRenter().getUserId(), userId))
-//                throw new UserNotHavePermissionException("User do not have permission to do this action");
-//    }
-
     private ServiceUnit findServiceUnitById(Integer id) {
         return serviceUnitRepository.findById(id).orElseThrow(()
                 -> new NotFoundException(String.format("Service Unit %s ID is not exist!", id)));
     }
 
+
     @Override
+    public ResponseEntity<ResponseObject> createBookingNow(CreateBookingRequestNow request, Integer renterId) {
+        try {
+            Booking booking = new Booking();
+            Double priceDetail = servicePriceService
+                    .getServicePrice(new GetServicePriceRequest(request.getServiceUnitId(),
+                            request.getStartTime().toLocalTime().format(DateTimeFormatter.ofPattern("HH:mm:ss"))));
+            Double priceHelper = servicePriceService
+                    .getServiceHelperPrice(new GetServicePriceRequest(request.getServiceUnitId(),
+                            request.getStartTime().toLocalTime().format(DateTimeFormatter.ofPattern("HH:mm:ss"))));
+            BookingDetailStatusHistory bookingDetailStatusHistory = new BookingDetailStatusHistory();
+            booking.setRenter(findAccount(renterId));
+            booking.setTotalPrice(0.0);
+            booking.setBookingStatus(BookingStatusEnum.NOT_YET);
+            bookingDetailStatusHistory.setBookingDetailStatus(BookingDetailStatusEnum.NOT_YET);
+            List<Address> addresses = addressRepository.findByUserIdAnAndIsDefault(renterId);
+            Address addressDefault = null;
+            if (!addresses.isEmpty()) {
+                addressDefault = addresses.get(0);
+            }
+            if (addressDefault != null && ObjectUtils.anyNull(booking.getLongitude(),
+                    booking.getLatitude(),
+                    booking.getLocation(),
+                    booking.getLocationDescription())) {
+                booking.setLongitude(addressDefault.getLongitude());
+                booking.setLatitude(addressDefault.getLatitude());
+                booking.setLocation(addressDefault.getLocationName());
+                booking.setLocationDescription(addressDefault.getDescription());
+            }
+            double price = booking.getTotalPrice();
+            BookingDetail bookingDetail = new BookingDetail();
+            ServiceUnit requestServiceUnit = findServiceUnitById(request.getServiceUnitId());
+            bookingDetail.setServiceUnit(requestServiceUnit);
+            bookingDetail.setNote(request.getNote());
+            price = price + priceDetail;
+            booking.setTotalPrice(price);
+            booking.setTotalPriceActual(price);
+
+            bookingDetail.setBooking(booking);
+            bookingDetail.setPriceDetail(priceDetail);
+            bookingDetail.setPriceHelper(priceHelper);
+            bookingDetail.setWorkStart(request.getStartTime().toLocalTime());
+            bookingDetail.setWorkDate(request.getStartTime().toLocalDate());
+            bookingDetail.setBookingDetailStatus(BookingDetailStatusEnum.ON_CART);
+            bookingDetail.setNote(request.getNote());
+
+            return ResponseEntity.status(HttpStatus.OK)
+                    .body(new ResponseObject(HttpStatus.OK.toString(),
+                            "Create Booking Successfully!", booking));
+
+        } catch (Exception e) {
+            log.error(e.getMessage());
+            if (e instanceof NotFoundException) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new ResponseObject(HttpStatus.NOT_FOUND.toString()
+                                , e.getMessage(), null));
+            }
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString()
+                            , "Something wrong occur!", null));
+        }
+    }
+
+    @Override
+    public ResponseEntity<ResponseObject> resendBooking(CheckOutCartRequest request, Integer id, Integer renterId) {
+        try {
+            ObjectMapper objectMapper = new ObjectMapper();
+            Booking booking = findBookingById(id);
+            if (request != null && request.getAddressId() != null) {
+                Address address = findAddressById(request.getAddressId());
+                if (!Objects.equals(address.getUser().getUserId(), renterId)) {
+                    throw new UserNotHavePermissionException("Address is not available!");
+                }
+                booking.setLongitude(address.getLongitude());
+                booking.setLatitude(address.getLatitude());
+                booking.setLocation(address.getLocationName());
+                booking.setLocationDescription(address.getDescription());
+            } else if (ObjectUtils.anyNull(booking.getLocation(),
+                    booking.getLongitude(),
+                    booking.getLatitude(),
+                    booking.getLocationDescription())) {
+                List<Address> addresses = addressRepository.findByUserIdAnAndIsDefault(renterId);
+                Address addressDefault = null;
+                if (!addresses.isEmpty()) {
+                    addressDefault = addresses.get(0);
+                }
+                if (addressDefault != null) {
+                    booking.setLongitude(addressDefault.getLongitude());
+                    booking.setLatitude(addressDefault.getLatitude());
+                    booking.setLocation(addressDefault.getLocationName());
+                    booking.setLocationDescription(addressDefault.getDescription());
+                } else {
+                    throw new BadRequestException(MessageVariable.NEED_ADD_LOCATION_FOR_BOOKING);
+                }
+            }
+            User renter = findAccount(renterId);
+            if (!(booking.getRequestCount() >= getMaxRequestCount())) {
+                throw new BadRequestException(MessageVariable.CANNOT_RESEND_THIS_BOOKING);
+            }
+            booking.setRequestCount(booking.getRequestCount() + 1);
+            booking.setBookingStatus(BookingStatusEnum.NOT_YET);
+            booking.setUpdateAt(Utils.getLocalDateTimeNow());
+            booking.setBookingCode(Utils.generateRandomCode());
+            if (request != null) {
+                booking.setAutoAssign(request.getAutoAssign() != null ? request.getAutoAssign() : booking.getAutoAssign());
+                booking.setUsingPoint(request.getUsingPoint() != null ? request.getUsingPoint() : booking.getUsingPoint());
+                booking.setOption(objectMapper.writeValueAsString(request));
+                if (request.getUsingPoint()) {
+                    Wallet walletPoint = walletRepository.getWalletByUserIdAndType(renterId, WalletTypeEnum.POINT);
+                    Double minusMoney = Utils.roundingNumber(walletPoint.getBalance() * getPointToMoney(), 1000D, RoundingMode.UP);
+                    Double usingPoint;
+                    if (minusMoney > booking.getTotalPrice()) {
+                        booking.setTotalPriceActual(0D);
+                        usingPoint = (minusMoney - booking.getTotalPrice()) / getPointToMoney();
+                        usingPoint = Utils.roundingNumber(usingPoint, 1D, RoundingMode.DOWN);
+                    } else {
+                        booking.setTotalPriceActual(Utils.roundingNumber(booking.getTotalPrice() - minusMoney, 1000D, RoundingMode.DOWN));
+                        usingPoint = walletPoint.getBalance();
+                    }
+                    createTransaction(new TransactionRequest(usingPoint,
+                            MessageVariable.USING_POINT_FOR_BOOKING,
+                            renter.getUserId(),
+                            TransactionTypeEnum.WITHDRAW.name(),
+                            WalletTypeEnum.POINT.name(),
+                            booking.getBookingId())
+                    );
+                }
+            }
+            List<BookingDetailStatusHistory> bookingDetailStatusHistories = new ArrayList<>();
+            List<BookingDetail> bookingDetails = booking.getBookingDetails();
+            for (BookingDetail bookingDetail :
+                    bookingDetails) {
+                bookingDetail.setBookingDetailStatus(BookingDetailStatusEnum.NOT_YET);
+                BookingDetailStatusHistory bookingDetailStatusHistory = new BookingDetailStatusHistory();
+                bookingDetailStatusHistory.setBookingDetailStatus(BookingDetailStatusEnum.NOT_YET);
+                bookingDetailStatusHistory.setBookingDetail(bookingDetail);
+                bookingDetailStatusHistories.add(bookingDetailStatusHistory);
+            }
+            bookingDetailRepository.saveAll(bookingDetails);
+            bookingDetailStatusHistoryRepository.saveAll(bookingDetailStatusHistories);
+
+            NotificationRequestDto notificationRequestDto = new NotificationRequestDto();
+            notificationRequestDto.setTitle(MessageVariable.TITLE_APP);
+            notificationRequestDto.setBody(String.format(MessageVariable.ORDER_SUCCESSFUL, booking.getBookingId()));
+            Notification notification = new Notification();
+            notification.setContent(notificationRequestDto.getBody());
+            notification.setTitle(notification.getTitle());
+            notification.setUser(renter);
+            notificationRepository.save(notification);
+            sendMessage(notificationRequestDto, findAccount(renterId));
+
+            return ResponseEntity.status(HttpStatus.OK)
+                    .body(new ResponseObject(HttpStatus.OK.toString(),
+                            "Checkout Successfully!", null));
+
+        } catch (Exception e) {
+            if (e instanceof NotFoundException) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new ResponseObject(HttpStatus.NOT_FOUND.toString(),
+                                e.getMessage(), null));
+            }
+            if (e instanceof UserNotHavePermissionException) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(new ResponseObject(HttpStatus.FORBIDDEN.toString(),
+                                e.getMessage(), null));
+            }
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString(),
+                            "Something wrong occur!", null));
+        }
+    }
+
+    @Override
+    @Transactional
     public ResponseEntity<ResponseObject> createServiceToCart(AddBookingRequest request,
                                                               Integer userId) {
         try {
             Booking booking = bookingRepository.findCartByRenterId(userId, BookingStatusEnum.ON_CART);
-            BookingStatusHistory bookingStatusHistory = null;
+            BookingDetailStatusHistory bookingDetailStatusHistory = null;
             Double priceDetail = servicePriceService
                     .getServicePrice(new GetServicePriceRequest(request.getServiceUnitId(),
                             request.getStartTime().toLocalTime().format(DateTimeFormatter.ofPattern("HH:mm:ss"))));
@@ -237,41 +365,58 @@ public class BookingServiceImpl implements BookingService {
                     .getServiceHelperPrice(new GetServicePriceRequest(request.getServiceUnitId(),
                             request.getStartTime().toLocalTime().format(DateTimeFormatter.ofPattern("HH:mm:ss"))));
             if (booking == null) {
-                bookingStatusHistory = new BookingStatusHistory();
+                bookingDetailStatusHistory = new BookingDetailStatusHistory();
                 booking = new Booking();
                 booking.setRenter(findAccount(userId));
                 booking.setTotalPrice(0.0);
-                bookingStatusHistory.setBookingStatus(BookingStatusEnum.ON_CART);
+                booking.setBookingStatus(BookingStatusEnum.ON_CART);
+                bookingDetailStatusHistory.setBookingDetailStatus(BookingDetailStatusEnum.ON_CART);
             }
-            double price;
+            List<Address> addresses = addressRepository.findByUserIdAnAndIsDefault(userId);
+            Address addressDefault = null;
+            if (!addresses.isEmpty()) {
+                addressDefault = addresses.get(0);
+            }
+            if (addressDefault != null && ObjectUtils.anyNull(booking.getLongitude(),
+                    booking.getLatitude(),
+                    booking.getLocation(),
+                    booking.getLocationDescription())) {
+                booking.setLongitude(addressDefault.getLongitude());
+                booking.setLatitude(addressDefault.getLatitude());
+                booking.setLocation(addressDefault.getLocationName());
+                booking.setLocationDescription(addressDefault.getDescription());
+            }
+            double price = booking.getTotalPrice();
             BookingDetail bookingDetail = new BookingDetail();
+            ServiceUnit requestServiceUnit = findServiceUnitById(request.getServiceUnitId());
             Optional<BookingDetail> checkCurrentDetail = bookingDetailRepository
-                    .findByServiceUnitIdAndBookingStatus(request.getServiceUnitId(), BookingStatusEnum.ON_CART);
+                    .findByServiceIdAndBookingStatus(requestServiceUnit.getService().getServiceId(), BookingStatusEnum.ON_CART);
             if (checkCurrentDetail.isPresent()) {
                 bookingDetail = checkCurrentDetail.get();
-                price = booking.getTotalPrice() - bookingDetail.getPriceDetail() + priceDetail;
+                bookingDetail.setServiceUnit(requestServiceUnit);
+                price = price - bookingDetail.getPriceDetail() + priceDetail;
             } else {
-                ServiceUnit serviceUnit = findServiceUnitById(request.getServiceUnitId());
-                bookingDetail.setServiceUnit(serviceUnit);
-                price = booking.getTotalPrice() + priceDetail;
+                bookingDetail.setServiceUnit(requestServiceUnit);
+                bookingDetail.setNote(request.getNote());
+                price = price + priceDetail;
             }
             booking.setTotalPrice(price);
             booking.setTotalPriceActual(price);
             bookingRepository.save(booking);
-            if (bookingStatusHistory != null) {
-                bookingStatusHistory.setBooking(booking);
-                bookingStatusHistoryRepository.save(bookingStatusHistory);
-            }
 
             bookingDetail.setBooking(booking);
             bookingDetail.setPriceDetail(priceDetail);
             bookingDetail.setPriceHelper(priceHelper);
             bookingDetail.setWorkStart(request.getStartTime().toLocalTime());
             bookingDetail.setWorkDate(request.getStartTime().toLocalDate());
-            bookingDetail.setBookingDetailStatusEnum(BookingDetailStatusEnum.ON_CART);
+            bookingDetail.setBookingDetailStatus(BookingDetailStatusEnum.ON_CART);
             bookingDetail.setNote(request.getNote());
 
             bookingDetailRepository.save(bookingDetail);
+            if (bookingDetailStatusHistory != null) {
+                bookingDetailStatusHistory.setBookingDetail(bookingDetail);
+                bookingDetailStatusHistoryRepository.save(bookingDetailStatusHistory);
+            }
 
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseObject(HttpStatus.OK.toString(),
@@ -291,10 +436,19 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    public ResponseEntity<ResponseObject> getCart(Integer userId) {
+    public ResponseEntity<ResponseObject> getCart(Integer userId, Boolean usingPoint) {
         try {
             Booking booking = bookingRepository.findCartByRenterId(userId, BookingStatusEnum.ON_CART);
             if (booking != null && !booking.getBookingDetails().isEmpty()) {
+                if (usingPoint) {
+                    Wallet walletPoint = walletRepository.getWalletByUserIdAndType(userId, WalletTypeEnum.POINT);
+                    Double minusMoney = walletPoint.getBalance() * getPointToMoney();
+                    if (minusMoney > booking.getTotalPrice()) {
+                        booking.setTotalPriceActual(0D);
+                    } else {
+                        booking.setTotalPriceActual(Utils.roundingNumber(booking.getTotalPrice() - minusMoney, 1000D, RoundingMode.DOWN));
+                    }
+                }
                 GetCartResponseDetail responseDetail = modelMapper.map(booking, GetCartResponseDetail.class);
                 return ResponseEntity.status(HttpStatus.OK)
                         .body(new ResponseObject(HttpStatus.OK.toString(),
@@ -320,7 +474,9 @@ public class BookingServiceImpl implements BookingService {
     public ResponseEntity<ResponseObject> deleteAllOnCart(Integer userId) {
         try {
             Booking booking = bookingRepository.findCartByRenterId(userId, BookingStatusEnum.ON_CART);
-            bookingStatusHistoryRepository.deleteAll(booking.getBookingStatusHistories());
+            List<BookingDetailStatusHistory> bookingDetailStatusHistories =
+                    bookingDetailStatusHistoryRepository.findByBookingId(booking.getBookingId());
+            bookingDetailStatusHistoryRepository.deleteAll(bookingDetailStatusHistories);
             bookingDetailRepository.deleteAll(booking.getBookingDetails());
             bookingRepository.delete(booking);
             return ResponseEntity.status(HttpStatus.OK)
@@ -340,23 +496,31 @@ public class BookingServiceImpl implements BookingService {
         }
     }
 
-    private boolean isPermission(Integer userId, BookingDetail booking) throws UserNotHavePermissionException {
+    private void isPermission(Integer userId, BookingDetail booking) throws UserNotHavePermissionException {
         if (!Objects.equals(booking.getBooking().getRenter().getUserId(), userId))
             throw new UserNotHavePermissionException("User do not have permission to do this action");
-        return true;
     }
 
-    private boolean isPermission(Integer userId, Booking booking) throws UserNotHavePermissionException {
+    private void isPermission(Integer userId, Booking booking) throws UserNotHavePermissionException {
         if (!Objects.equals(booking.getRenter().getUserId(), userId))
             throw new UserNotHavePermissionException("User do not have permission to do this action");
-        return true;
+    }
+
+    private void isPermissionHelper(Integer userId, Booking booking) throws UserNotHavePermissionException {
+        switch (booking.getBookingStatus()) {
+            case APPROVED:
+            case FINISHED:
+                break;
+            default:
+                throw new UserNotHavePermissionException("User do not have permission to do this action");
+        }
     }
 
     @Override
     public ResponseEntity<ResponseObject> deleteServiceOnCart(Integer userId, Integer detailId) {
         try {
             Optional<BookingDetail> bookingDetail = bookingDetailRepository
-                    .findByBookingDetailIdAndBookingStatus(detailId, BookingStatusEnum.ON_CART);
+                    .findByBookingDetailIdAndBookingStatus(detailId, BookingDetailStatusEnum.ON_CART);
             if (bookingDetail.isPresent()) {
                 Booking booking = bookingDetail.get().getBooking();
                 Double totalPrice = booking.getTotalPrice() - bookingDetail.get().getPriceDetail();
@@ -364,6 +528,7 @@ public class BookingServiceImpl implements BookingService {
                 booking.setTotalPrice(totalPrice);
                 isPermission(userId, bookingDetail.get());
                 bookingRepository.save(booking);
+                bookingDetailStatusHistoryRepository.deleteAll(bookingDetail.get().getBookingDetailStatusHistories());
                 bookingDetailRepository.delete(bookingDetail.get());
                 return ResponseEntity.status(HttpStatus.OK)
                         .body(new ResponseObject(HttpStatus.OK.toString(),
@@ -396,36 +561,87 @@ public class BookingServiceImpl implements BookingService {
     @Override
     public ResponseEntity<ResponseObject> checkoutCart(Integer userId, CheckOutCartRequest request) {
         try {
+            ObjectMapper objectMapper = new ObjectMapper();
             Booking booking = bookingRepository.findCartByRenterId(userId, BookingStatusEnum.ON_CART);
-            Address address = findAddressById(request.getAddressId());
-            if (!Objects.equals(address.getUser().getUserId(), userId)) {
-                throw new UserNotHavePermissionException("Address is not available!");
+            if (request != null && request.getAddressId() != null) {
+                Address address = findAddressById(request.getAddressId());
+                if (!Objects.equals(address.getUser().getUserId(), userId)) {
+                    throw new UserNotHavePermissionException("Address is not available!");
+                }
+                booking.setLongitude(address.getLongitude());
+                booking.setLatitude(address.getLatitude());
+                booking.setLocation(address.getLocationName());
+                booking.setLocationDescription(address.getDescription());
+            } else if (ObjectUtils.anyNull(booking.getLocation(),
+                    booking.getLongitude(),
+                    booking.getLatitude(),
+                    booking.getLocationDescription())) {
+                List<Address> addresses = addressRepository.findByUserIdAnAndIsDefault(userId);
+                Address addressDefault = null;
+                if (!addresses.isEmpty()) {
+                    addressDefault = addresses.get(0);
+                }
+                if (addressDefault != null) {
+                    booking.setLongitude(addressDefault.getLongitude());
+                    booking.setLatitude(addressDefault.getLatitude());
+                    booking.setLocation(addressDefault.getLocationName());
+                    booking.setLocationDescription(addressDefault.getDescription());
+                } else {
+                    throw new BadRequestException(MessageVariable.NEED_ADD_LOCATION_FOR_BOOKING);
+                }
             }
-            booking.setLongitude(address.getLongitude());
-            booking.setLatitude(address.getLatitude());
-            booking.setLocation(address.getLocationName());
-            booking.setLocationDescription(address.getDescription());
+            User renter = findAccount(userId);
             booking.setRequestCount(1);
-            booking.setUpdateAt(Utils.getDateTimeNow());
-
-            // --- CheckoutCartRequest ---
-
-            // ---
-            BookingStatusHistory bookingStatusHistory = new BookingStatusHistory();
-            bookingStatusHistory.setBookingStatus(BookingStatusEnum.NOT_YET);
-            bookingStatusHistory.setBooking(booking);
-            bookingStatusHistoryRepository.save(bookingStatusHistory);
-
-            //SEND NOTIFICATION
-            List<DeviceToken> deviceTokens = deviceTokenRepository.findByUserId(userId);
-            if (!deviceTokens.isEmpty()) {
-                NotificationRequestDto notificationRequestDto = new NotificationRequestDto();
-                notificationRequestDto.setTarget(convertToListFcmToken(deviceTokens));
-                notificationRequestDto.setTitle(MessageVariable.TITLE_APP);
-                notificationRequestDto.setBody(String.format(MessageVariable.ORDER_SUCCESSFUL, booking.getBookingId()));
-
-                fcmService.sendPnsToTopic(notificationRequestDto);
+            booking.setBookingStatus(BookingStatusEnum.NOT_YET);
+            booking.setUpdateAt(Utils.getLocalDateTimeNow());
+            booking.setBookingCode(Utils.generateRandomCode());
+            if (request != null) {
+                booking.setAutoAssign(request.getAutoAssign() != null ? request.getAutoAssign() : booking.getAutoAssign());
+                booking.setUsingPoint(request.getUsingPoint() != null ? request.getUsingPoint() : booking.getUsingPoint());
+                booking.setOption(objectMapper.writeValueAsString(request));
+                if (request.getUsingPoint()) {
+                    Wallet walletPoint = walletRepository.getWalletByUserIdAndType(userId, WalletTypeEnum.POINT);
+                    Double minusMoney = Utils.roundingNumber(walletPoint.getBalance() * getPointToMoney(), 1000D, RoundingMode.UP);
+                    Double usingPoint;
+                    if (minusMoney > booking.getTotalPrice()) {
+                        booking.setTotalPriceActual(0D);
+                        usingPoint = (minusMoney - booking.getTotalPrice()) / getPointToMoney();
+                        usingPoint = Utils.roundingNumber(usingPoint, 1D, RoundingMode.DOWN);
+                    } else {
+                        booking.setTotalPriceActual(Utils.roundingNumber(booking.getTotalPrice() - minusMoney, 1000D, RoundingMode.DOWN));
+                        usingPoint = walletPoint.getBalance();
+                    }
+                    createTransaction(new TransactionRequest(usingPoint,
+                            MessageVariable.USING_POINT_FOR_BOOKING,
+                            renter.getUserId(),
+                            TransactionTypeEnum.WITHDRAW.name(),
+                            WalletTypeEnum.POINT.name(),
+                            booking.getBookingId())
+                    );
+                }
             }
+            List<BookingDetailStatusHistory> bookingDetailStatusHistories = new ArrayList<>();
+            List<BookingDetail> bookingDetails = booking.getBookingDetails();
+            for (BookingDetail bookingDetail :
+                    bookingDetails) {
+                bookingDetail.setBookingDetailStatus(BookingDetailStatusEnum.NOT_YET);
+                BookingDetailStatusHistory bookingDetailStatusHistory = new BookingDetailStatusHistory();
+                bookingDetailStatusHistory.setBookingDetailStatus(BookingDetailStatusEnum.NOT_YET);
+                bookingDetailStatusHistory.setBookingDetail(bookingDetail);
+                bookingDetailStatusHistories.add(bookingDetailStatusHistory);
+            }
+            bookingDetailRepository.saveAll(bookingDetails);
+            bookingDetailStatusHistoryRepository.saveAll(bookingDetailStatusHistories);
+
+            NotificationRequestDto notificationRequestDto = new NotificationRequestDto();
+            notificationRequestDto.setTitle(MessageVariable.TITLE_APP);
+            notificationRequestDto.setBody(String.format(MessageVariable.ORDER_SUCCESSFUL, booking.getBookingId()));
+            Notification notification = new Notification();
+            notification.setContent(notificationRequestDto.getBody());
+            notification.setTitle(notification.getTitle());
+            notification.setUser(renter);
+            notificationRepository.save(notification);
+            sendMessage(notificationRequestDto, findAccount(userId));
 
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseObject(HttpStatus.OK.toString(),
@@ -435,6 +651,11 @@ public class BookingServiceImpl implements BookingService {
             if (e instanceof NotFoundException) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body(new ResponseObject(HttpStatus.NOT_FOUND.toString(),
+                                e.getMessage(), null));
+            }
+            if (e instanceof UserNotHavePermissionException) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(new ResponseObject(HttpStatus.FORBIDDEN.toString(),
                                 e.getMessage(), null));
             }
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
@@ -450,197 +671,265 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    public ResponseEntity<ResponseObject> updateStatusBooking(Integer bookingId,
-                                                              Integer userId,
-                                                              UpdateStatusBookingRequest request) {
+    public ResponseEntity<ResponseObject> acceptOrRejectBooking(Integer bookingId, AcceptRejectBookingRequest request, Integer managerId) {
         try {
-
-            Booking bookingForUpdateStatus = new Booking();
             Booking booking = findBookingById(bookingId);
-
-            BookingStatusHistory bookingStatusHistory = bookingStatusHistoryRepository.findTheLatestBookingStatusByBookingId(bookingId);
-            if (bookingStatusHistory != null) {
-                if (Objects.equals(bookingStatusHistory.getBookingStatus(), BookingStatusEnum.FINISHED)) {
-                    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                            .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString()
-                                    , "You can't update FINISHED Booking", null));
-                }
+            User renter = booking.getRenter();
+            booking.setManager(userRepository.findByUserId(managerId));
+            BookingStatusEnum bookingStatusEnum = BookingStatusEnum.valueOf(request.getAction().toUpperCase());
+            BookingDetailStatusEnum bookingDetailStatusEnum = BookingDetailStatusEnum.valueOf(request.getAction().toUpperCase());
+            switch (bookingStatusEnum) {
+                case REJECTED:
+                    if (Utils.isNullOrEmpty(request.getRejectionReasonDetail())) {
+                        throw new BadRequestException("Rejection Reason are required");
+                    }
+                    booking.setRejectionReason(findById(request.getRejectionReasonId()));
+                    booking.setRjReasonDescription(request.getRejectionReasonDetail().trim());
+                    if (booking.getUsingPoint()) {
+                        Transaction transactionPoint = transactionRepository.findByBookingIdAndWalletTypeAndTransactionTypeAndUserId(bookingId,
+                                WalletTypeEnum.POINT, TransactionTypeEnum.WITHDRAW, renter.getUserId());
+                        if (transactionPoint != null) {
+                            createTransaction(new TransactionRequest(
+                                    transactionPoint.getAmount(),
+                                    String.format(MessageVariable.REFUND_POINT_CANCEL_BOOKING, bookingId),
+                                    renter.getUserId(),
+                                    TransactionTypeEnum.DEPOSIT.name(),
+                                    WalletTypeEnum.POINT.name()
+                            ));
+                        }
+                    }
+                    break;
+                case APPROVED:
+                    break;
+                default:
+                    throw new UserNotHavePermissionException("Cannot update to this status");
             }
-            BookingStatusEnum optionalBookingStatus = BookingStatusEnum.valueOf(request.getBookingStatus().toUpperCase());
-            User userUpdate = findAccount(userId);
-
-            if (Objects.equals(RoleEnum.MANAGER.name(), userUpdate.getRole().getTitle().toUpperCase())) {
-                bookingForUpdateStatus = mappingUpdateBookingForManager(booking, optionalBookingStatus, request);
-            } else if (Objects.equals(EMPLOYEE.name(), userUpdate.getRole().getTitle().toUpperCase())) {
-//                if (booking.getRenter() != null) {
-//                    if (!Objects.equals(booking.getEmployee().getUserId(), userId))
-//                        throw new UserNotHavePermissionException();
-//                }
-                bookingForUpdateStatus = mappingUpdateBookingForEmployee(booking, optionalBookingStatus, userId, request);
-            }
-            bookingRepository.save(bookingForUpdateStatus);
-
-            //SEND NOTIFICATION
-            List<DeviceToken> deviceTokens = deviceTokenRepository.findByUserId(userId);
-
-            NotificationRequestDto notificationRequestDto = new NotificationRequestDto();
-            notificationRequestDto.setTarget(convertToListFcmToken(deviceTokens));
-            notificationRequestDto.setTitle("iClean - Helping Hand Hub Platform");
-            notificationRequestDto.setBody("Đơn hàng " + booking.getBookingId() + " của bạn đã được cập nhật trạng thái mới.");
-
-            fcmService.sendPnsToTopic(notificationRequestDto);
-            //---------
-
-            return ResponseEntity.status(HttpStatus.OK)
-                    .body(new ResponseObject(HttpStatus.OK.toString()
-                            , "Update Status Booking Successfully!", null));
-
-        } catch (Exception e) {
-            if (e instanceof NotFoundException) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(new ResponseObject(HttpStatus.NOT_FOUND.toString()
-                                , "Something wrong occur!", e.getMessage()));
-            }
-            if (e instanceof UserNotHavePermissionException) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                        .body(new ResponseObject(HttpStatus.FORBIDDEN.toString()
-                                , e.getMessage(), null));
-            }
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString()
-                            , "Something wrong occur!", null));
-        }
-    }
-
-    @Override
-    public ResponseEntity<ResponseObject> updateStatusBookingAsRenter(Integer bookingId,
-                                                                      Integer userId,
-                                                                      UpdateStatusBookingAsRenterRequest bookingRequest) {
-        try {
-            Booking bookingForUpdateStatus = new Booking();
-            Booking booking = findBookingById(bookingId);
-
-            if (!Objects.equals(booking.getRenter().getUserId(), userId))
-                throw new UserNotHavePermissionException();
-
-            BookingStatusEnum optionalBookingStatus = BookingStatusEnum.valueOf(bookingRequest.getBookingStatus().toUpperCase());
-
-            BookingStatusHistory bookingStatusHistory = bookingStatusHistoryRepository.findTheLatestBookingStatusByBookingId(bookingId);
-            if (bookingStatusHistory != null) {
-                if (Objects.equals(bookingStatusHistory.getBookingStatus(), BookingStatusEnum.FINISHED)) {
-                    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                            .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString()
-                                    , "You can't update FINISHED Booking", null));
-                }
-            }
-            User userUpdate = findAccount(userId);
-            if (Objects.equals(RoleEnum.RENTER.name(), userUpdate.getRole().getTitle().toUpperCase())) {
-                bookingForUpdateStatus = mappingUpdateBookingForRenter(booking, optionalBookingStatus, bookingRequest.getEmpId(), bookingRequest);
-            }
-            bookingRepository.save(bookingForUpdateStatus);
-
-            //SEND NOTIFICATION
-            List<DeviceToken> deviceTokens = deviceTokenRepository.findByUserId(userId);
-
-            NotificationRequestDto notificationRequestDto = new NotificationRequestDto();
-            notificationRequestDto.setTarget(convertToListFcmToken(deviceTokens));
-            notificationRequestDto.setTitle("iClean - Helping Hand Hub Platform");
-            notificationRequestDto.setBody("Đơn hàng " + booking.getBookingId() + " của bạn đã được cập nhật trạng thái mới.");
-
-            fcmService.sendPnsToTopic(notificationRequestDto);
-            //---------
-            return ResponseEntity.status(HttpStatus.OK)
-                    .body(new ResponseObject(HttpStatus.OK.toString()
-                            , "Update Status Booking Successfully!", null));
-        } catch (Exception e) {
-            if (e instanceof UserNotHavePermissionException) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                        .body(new ResponseObject(HttpStatus.FORBIDDEN.toString()
-                                , e.getMessage(), null));
-            }
-            if (e instanceof NotFoundException) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(new ResponseObject(HttpStatus.NOT_FOUND.toString()
-                                , "Something wrong occur!", e.getMessage()));
-            }
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString()
-                            , "Something wrong occur!", null));
-        }
-    }
-
-    @Override
-    public ResponseEntity<ResponseObject> getBookingHistory(int userId, String status, Pageable pageable) {
-        try {
-            BookingStatusEnum bookingStatusEnum = BookingStatusEnum.valueOf(status.toUpperCase());
-            Page<Booking> bookings = bookingRepository.findBookingHistoryByUserId(userId, bookingStatusEnum, pageable);
-            PageResponseObject pageResponseObject = getResponseObjectResponseEntity(bookings);
-            return ResponseEntity.status(HttpStatus.OK)
-                    .body(new ResponseObject(HttpStatus.OK.toString(),
-                            "Get Booking History!", pageResponseObject));
-        } catch (Exception e) {
-            log.error(e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new ResponseObject(HttpStatus.INTERNAL_SERVER_ERROR.toString(),
-                            "Something wrong occur!", null));
-        }
-
-    }
-
-    @Override
-    public ResponseEntity<ResponseObject> acceptBookingForHelper(CreateBookingHelperRequest request, Integer userId) {
-        try {
-            Booking booking = bookingRepository.findBookingByBookingDetailAndStatus(request.getBookingDetailId(), BookingStatusEnum.APPROVED);
-            if (booking == null) throw new NotFoundException("The booking cannot do this action");
-            BookingDetail bookingDetail = findBookingDetail(request.getBookingDetailId());
-            ServiceRegistration serviceRegistration = serviceRegistrationRepository
-                    .findByServiceIdAndUserId(bookingDetail.getServiceUnit().getService().getServiceId(), userId,
-                            ServiceHelperStatusEnum.ACTIVE);
-            BookingDetailHelper bookingDetailHelper = new BookingDetailHelper();
-            bookingDetailHelper.setBookingDetail(bookingDetail);
-            bookingDetailHelper.setServiceRegistration(serviceRegistration);
-            bookingDetailHelper.setBookingDetailHelperStatus(BookingDetailHelperStatusEnum.INACTIVE);
-            bookingDetailHelperRepository.save(bookingDetailHelper);
-            return ResponseEntity.status(HttpStatus.OK)
-                    .body(new ResponseObject(HttpStatus.OK.toString(),
-                            "Accept a booking successful", null));
-        } catch (Exception e) {
-            log.error(e.getMessage());
-            if (e instanceof NotFoundException) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(new ResponseObject(HttpStatus.NOT_FOUND.toString(),
-                                e.getMessage(), null));
-            }
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new ResponseObject(HttpStatus.INTERNAL_SERVER_ERROR.toString(),
-                            "Something wrong occur!", null));
-        }
-    }
-
-    @Override
-    public ResponseEntity<ResponseObject> validateBookingToStart(Integer userId, Integer detailId, QRCodeValidate request) {
-        try {
-            BookingDetail bookingDetail = findBookingDetail(detailId);
-            isPermissionForHelper(userId, bookingDetail);
-            ValidateOTPRequest validateOTPRequest = new ValidateOTPRequest(request.getQrCode(), bookingDetail.getQrCode());
-            boolean check = qrCodeService.validateQRCode(validateOTPRequest);
-            if (check) {
-                bookingDetail.setBookingDetailStatusEnum(BookingDetailStatusEnum.IN_PROCESS);
-                bookingDetail.setQrCode(null);
-                bookingDetailRepository.save(bookingDetail);
-                return ResponseEntity.status(HttpStatus.OK)
-                        .body(new ResponseObject(HttpStatus.OK.toString(),
-                                "Validate booking successful, helper can start to do this service", null));
+            boolean checkMoney = createTransaction(new TransactionRequest(booking.getTotalPriceActual(),
+                    MessageVariable.PAYMENT_SUCCESS,
+                    renter.getUserId(),
+                    TransactionTypeEnum.WITHDRAW.name(),
+                    WalletTypeEnum.MONEY.name(),
+                    bookingId));
+            if (!checkMoney) {
+                bookingDetailStatusEnum = BookingDetailStatusEnum.NO_MONEY;
+                bookingStatusEnum = BookingStatusEnum.NO_MONEY;
+                NotificationRequestDto notificationRequestDto = new NotificationRequestDto();
+                notificationRequestDto.setTitle(MessageVariable.TITLE_APP);
+                notificationRequestDto.setBody(MessageVariable.PAYMENT_NO_MONEY);
+                sendMessage(notificationRequestDto, renter);
             } else {
+                booking.setBookingStatus(bookingStatusEnum);
+                booking.setUpdateAt(Utils.getLocalDateTimeNow());
+            }
+            List<BookingDetailStatusHistory> bookingDetailStatusHistories = new ArrayList<>();
+            List<BookingDetail> bookingDetails = booking.getBookingDetails();
+            for (BookingDetail bookingDetail :
+                    bookingDetails) {
+                bookingDetail.setBookingDetailStatus(bookingDetailStatusEnum);
+                BookingDetailStatusHistory bookingDetailStatusHistory = new BookingDetailStatusHistory();
+                bookingDetailStatusHistory.setBookingDetailStatus(bookingDetailStatusEnum);
+                bookingDetailStatusHistory.setBookingDetail(bookingDetail);
+                bookingDetailStatusHistories.add(bookingDetailStatusHistory);
+            }
+
+            booking.setBookingStatus(bookingStatusEnum);
+            bookingDetailRepository.saveAll(bookingDetails);
+            bookingDetailStatusHistoryRepository.saveAll(bookingDetailStatusHistories);
+            bookingRepository.save(booking);
+
+            return ResponseEntity.status(HttpStatus.OK)
+                    .body(new ResponseObject(HttpStatus.OK.toString(),
+                            "Accept/Reject a booking successful", null));
+
+        } catch (Exception e) {
+            log.error(e.getMessage());
+            if (e instanceof BadRequestException) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString(),
-                                "Invalid QR Code, cannot do this service", null));
+                                e.getMessage(), null));
             }
+            if (e instanceof NotFoundException) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new ResponseObject(HttpStatus.NOT_FOUND.toString(),
+                                e.getMessage(), null));
+            }
+            if (e instanceof UserNotHavePermissionException) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(new ResponseObject(HttpStatus.FORBIDDEN.toString(),
+                                e.getMessage(), null));
+            }
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ResponseObject(HttpStatus.INTERNAL_SERVER_ERROR.toString(),
+                            "Something wrong occur!", null));
+        }
+    }
+
+    @Override
+    public ResponseEntity<ResponseObject> paymentBooking(Integer bookingId, Integer renterId) {
+        try {
+            Booking booking = findBookingById(bookingId);
+            User renter = findAccount(renterId);
+            isPermission(renterId, booking);
+            if (booking.getBookingStatus() != BookingStatusEnum.NO_MONEY)
+                throw new BadRequestException("The booking cannot make a payment!");
+            boolean checkTransactionMoney = createTransaction(new TransactionRequest(booking.getTotalPriceActual(),
+                    MessageVariable.USING_MONEY_FOR_BOOKING,
+                    renterId,
+                    TransactionTypeEnum.WITHDRAW.name(),
+                    WalletTypeEnum.MONEY.name(),
+                    booking.getBookingId()));
+            NotificationRequestDto notificationRequestDto = new NotificationRequestDto();
+            notificationRequestDto.setTitle(String.format(MessageVariable.PAYMENT_A_SERVICE, booking.getBookingCode()));
+            List<BookingDetailStatusHistory> bookingDetailStatusHistories = new ArrayList<>();
+            if (checkTransactionMoney) {
+                booking.setBookingStatus(BookingStatusEnum.APPROVED);
+                for (BookingDetail bookingDetail :
+                        booking.getBookingDetails()) {
+                    BookingDetailStatusHistory bookingDetailStatusHistory = new BookingDetailStatusHistory();
+                    bookingDetailStatusHistory.setBookingDetail(bookingDetail);
+                    bookingDetailStatusHistory.setBookingDetailStatus(BookingDetailStatusEnum.APPROVED);
+                    bookingDetailStatusHistories.add(bookingDetailStatusHistory);
+                }
+
+                bookingDetailStatusHistoryRepository.saveAll(bookingDetailStatusHistories);
+                notificationRequestDto.setBody(MessageVariable.PAYMENT_SUCCESS);
+            } else {
+                notificationRequestDto.setBody(MessageVariable.PAYMENT_NO_MONEY);
+            }
+            sendMessage(notificationRequestDto, renter);
+            Notification notification = new Notification();
+            notification.setUser(renter);
+            notification.setTitle(notificationRequestDto.getTitle());
+            notification.setContent(notificationRequestDto.getBody());
+            bookingRepository.save(booking);
+            notificationRepository.save(notification);
+            return ResponseEntity.status(HttpStatus.OK)
+                    .body(new ResponseObject(HttpStatus.OK.toString(),
+                            "Make a payment booking successful", null));
         } catch (Exception e) {
             log.error(e.getMessage());
             if (e instanceof UserNotHavePermissionException) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
                         .body(new ResponseObject(HttpStatus.FORBIDDEN.toString(),
+                                e.getMessage(), null));
+            }
+            if (e instanceof BadRequestException) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString(),
+                                e.getMessage(), null));
+            }
+            if (e instanceof NotFoundException) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new ResponseObject(HttpStatus.NOT_FOUND.toString(),
+                                e.getMessage(), null));
+            }
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ResponseObject(HttpStatus.INTERNAL_SERVER_ERROR.toString(),
+                            "Something wrong occur!", null));
+        }
+    }
+
+    @Override
+    public ResponseEntity<ResponseObject> cancelBooking(Integer bookingId, Integer renterId) {
+        try {
+            Booking booking = findBookingById(bookingId);
+            List<BookingDetail> bookingDetails = booking.getBookingDetails();
+            isPermission(renterId, booking);
+
+            switch (booking.getBookingStatus()) {
+                case NOT_YET:
+                case NO_MONEY:
+                    Transaction transaction = transactionRepository.findByBookingIdAndWalletTypeAndTransactionTypeAndUserId(
+                            bookingId,
+                            WalletTypeEnum.POINT,
+                            TransactionTypeEnum.WITHDRAW,
+                            renterId);
+                    if (transaction != null) {
+                        createTransaction(new TransactionRequest(
+                                transaction.getAmount(),
+                                String.format(MessageVariable.REFUND_POINT_CANCEL_BOOKING, booking.getBookingCode()),
+                                renterId,
+                                TransactionTypeEnum.DEPOSIT.name(),
+                                WalletTypeEnum.POINT.name(),
+                                bookingId));
+                    }
+                    booking.setBookingStatus(BookingStatusEnum.CANCELED);
+                    booking.setUpdateAt(Utils.getLocalDateTimeNow());
+                    List<BookingDetailStatusHistory> bookingDetailStatusHistories = new ArrayList<>();
+                    for (BookingDetail bookingDetail :
+                            bookingDetails) {
+                        bookingDetail.setBookingDetailStatus(BookingDetailStatusEnum.CANCEL_BY_RENTER);
+                        BookingDetailStatusHistory bookingDetailStatusHistory = new BookingDetailStatusHistory();
+                        bookingDetailStatusHistory.setBookingDetail(bookingDetail);
+                        bookingDetailStatusHistory.setBookingDetailStatus(BookingDetailStatusEnum.CANCEL_BY_RENTER);
+                    }
+                    bookingDetailStatusHistoryRepository.saveAll(bookingDetailStatusHistories);
+                    bookingDetailRepository.saveAll(bookingDetails);
+                    bookingRepository.save(booking);
+                    break;
+                case CANCELED:
+                    throw new BadRequestException(String.format(MessageVariable.ALREADY_CANCEL_BOOKING, booking.getBookingCode()));
+                default:
+                    throw new BadRequestException(String.format(MessageVariable.CANNOT_CANCEL_BOOKING, booking.getBookingCode()));
+            }
+            return ResponseEntity.status(HttpStatus.OK)
+                    .body(new ResponseObject(HttpStatus.OK.toString(),
+                            "Make a payment booking successful", null));
+        } catch (Exception e) {
+            log.error(e.getMessage());
+            if (e instanceof UserNotHavePermissionException) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(new ResponseObject(HttpStatus.FORBIDDEN.toString(),
+                                e.getMessage(), null));
+            }
+            if (e instanceof BadRequestException) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString(),
+                                e.getMessage(), null));
+            }
+            if (e instanceof NotFoundException) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new ResponseObject(HttpStatus.NOT_FOUND.toString(),
+                                e.getMessage(), null));
+            }
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ResponseObject(HttpStatus.INTERNAL_SERVER_ERROR.toString(),
+                            "Something wrong occur!", null));
+        }
+    }
+
+    @Override
+    public ResponseEntity<ResponseObject> getCheckoutCart(Integer renterId) {
+        try {
+            Booking booking = bookingRepository.findCartByRenterId(renterId, BookingStatusEnum.ON_CART);
+
+            if (booking != null && !booking.getBookingDetails().isEmpty()) {
+                CheckOutCartRequest checkOutCartRequest = new CheckOutCartRequest(null, booking.getUsingPoint(), booking.getAutoAssign());
+                if (booking.getUsingPoint()) {
+                    Wallet walletPoint = walletRepository.getWalletByUserIdAndType(renterId, WalletTypeEnum.POINT);
+                    Double minusMoney = Utils.roundingNumber(walletPoint.getBalance() * getPointToMoney(), 1000D, RoundingMode.UP);
+                    if (minusMoney > booking.getTotalPrice()) {
+                        booking.setTotalPriceActual(0D);
+                    } else {
+                        booking.setTotalPriceActual(Utils.roundingNumber(booking.getTotalPrice() - minusMoney, 1000D, RoundingMode.DOWN));
+                    }
+                }
+                GetCheckOutResponseDetail responseDetail = modelMapper.map(booking, GetCheckOutResponseDetail.class);
+                responseDetail.setAutoAssign(Optional.of(checkOutCartRequest)
+                        .map(CheckOutCartRequest::getAutoAssign)
+                        .orElse(false));
+                return ResponseEntity.status(HttpStatus.OK)
+                        .body(new ResponseObject(HttpStatus.OK.toString(),
+                                "Checkout Response Successfully!", responseDetail));
+            }
+            return ResponseEntity.status(HttpStatus.OK)
+                    .body(new ResponseObject(HttpStatus.OK.toString(),
+                            "Checkout Response Successfully!", null));
+
+        } catch (Exception e) {
+            if (e instanceof NotFoundException) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new ResponseObject(HttpStatus.NOT_FOUND.toString(),
                                 e.getMessage(), null));
             }
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
@@ -649,26 +938,51 @@ public class BookingServiceImpl implements BookingService {
         }
     }
 
-    private BookingDetail findBookingDetailByStatus(Integer detailId, BookingStatusEnum statusEnum) {
-        return bookingDetailRepository.findByBookingDetailIdAndBookingStatus(detailId, statusEnum)
-                .orElseThrow(() -> new NotFoundException("Booking Detail is not found"));
-    }
     @Override
-    public ResponseEntity<ResponseObject> generateQrCode(Integer renterId, Integer detailId) {
+    public ResponseEntity<ResponseObject> updateCheckoutCart(Integer renterId, CheckOutCartRequest request) {
         try {
-            BookingDetail bookingDetail = findBookingDetailByStatus(detailId, BookingStatusEnum.WAITING);
-            isPermission(renterId, bookingDetail);
-            String qrCode = qrCodeService.generateCodeValue();
-            QRCodeResponse response = new QRCodeResponse();
-            response.setValue(qrCode);
-            String hashQrCode = qrCodeService.hashQrCode(qrCode);
-            bookingDetail.setQrCode(hashQrCode);
-            bookingDetailRepository.save(bookingDetail);
+            if (Objects.isNull(request)) {
+                request = new CheckOutCartRequest();
+            }
+            ObjectMapper objectMapper = new ObjectMapper();
+            Booking booking = bookingRepository.findCartByRenterId(renterId, BookingStatusEnum.ON_CART);
+            if (booking == null) return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new ResponseObject(HttpStatus.NOT_FOUND.toString(),
+                            "User do not have any cart", null));
+            if (Objects.nonNull(request.getAddressId())) {
+                Address address = findAddressById(request.getAddressId());
+                if (!Objects.equals(address.getUser().getUserId(), renterId)) {
+                    throw new UserNotHavePermissionException("Address is not available!");
+                }
+                booking.setLongitude(address.getLongitude());
+                booking.setLatitude(address.getLatitude());
+                booking.setLocation(address.getLocationName());
+                booking.setLocationDescription(address.getDescription());
+            }
+            booking.setUsingPoint(request.getUsingPoint());
+            booking.setAutoAssign(request.getAutoAssign());
+            booking.setOption(objectMapper.writeValueAsString(request));
+            bookingRepository.save(booking);
+            if (booking.getUsingPoint()) {
+                Wallet walletPoint = walletRepository.getWalletByUserIdAndType(renterId, WalletTypeEnum.POINT);
+                Double minusMoney = Utils.roundingNumber(walletPoint.getBalance() * getPointToMoney(), 1000D, RoundingMode.UP);
+                if (minusMoney > booking.getTotalPrice()) {
+                    booking.setTotalPriceActual(0D);
+                } else {
+                    booking.setTotalPriceActual(Utils.roundingNumber(booking.getTotalPrice() - minusMoney, 1000D, RoundingMode.DOWN));
+                }
+            }
+            CheckOutCartRequest checkOutCartRequest = objectMapper.readValue(booking.getOption(), CheckOutCartRequest.class);
+            GetCheckOutResponseDetail responseDetail = modelMapper.map(booking, GetCheckOutResponseDetail.class);
+            responseDetail.setUsingPoint(request.getUsingPoint());
+            responseDetail.setAutoAssign(Optional.ofNullable(checkOutCartRequest)
+                    .map(CheckOutCartRequest::getAutoAssign)
+                    .orElse(false));
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseObject(HttpStatus.OK.toString(),
-                            "Generate qr code successful!", response));
+                            "Update checkout Successfully!", responseDetail));
+
         } catch (Exception e) {
-            log.error(e.getMessage());
             if (e instanceof NotFoundException) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body(new ResponseObject(HttpStatus.NOT_FOUND.toString(),
@@ -685,12 +999,67 @@ public class BookingServiceImpl implements BookingService {
         }
     }
 
-    private void isPermissionForHelper(Integer userId, BookingDetail bookingDetail) throws UserNotHavePermissionException {
-        List<BookingDetailHelper> helpers = bookingDetailHelperRepository.findByBookingDetailIdAndActive(bookingDetail.getBookingDetailId(),
-                BookingDetailHelperStatusEnum.ACTIVE);
-        User helper = helpers.get(0).getServiceRegistration().getHelperInformation().getUser();
-        if (!Objects.equals(helper.getUserId(), userId))
-            throw new UserNotHavePermissionException("User do not have permission to do this action");
+    private void sendMessage(NotificationRequestDto notificationRequestDto, User user) {
+        List<DeviceToken> deviceTokens = user.getDeviceTokens();
+        if (!deviceTokens.isEmpty()) {
+            notificationRequestDto.setTarget(convertToListFcmToken(deviceTokens));
+            fcmService.sendPnsToTopic(notificationRequestDto);
+        }
+    }
+
+    public boolean createTransaction(TransactionRequest request) {
+        User user = findAccount(request.getUserId());
+        Booking booking = findBookingById(request.getBookingId());
+        if (request.getBookingId() != null) {
+            request.setNote(String.format(request.getNote(), booking.getBookingCode()));
+        }
+        NotificationRequestDto notificationRequestDto = new NotificationRequestDto();
+        notificationRequestDto.setTitle(MessageVariable.TITLE_APP);
+        Wallet wallet = walletRepository.getWalletByUserIdAndType(request.getUserId(),
+                WalletTypeEnum.valueOf(request.getWalletType().toUpperCase()));
+        if (wallet == null) {
+            wallet = new Wallet();
+            wallet.setUser(user);
+            wallet.setBalance(0D);
+            wallet.setWalletTypeEnum(WalletTypeEnum.valueOf(request.getWalletType().toUpperCase()));
+        }
+
+        wallet.setUpdateAt(Utils.getLocalDateTimeNow());
+        TransactionTypeEnum transactionTypeEnum = TransactionTypeEnum.valueOf(request.getTransactionType().toUpperCase());
+        switch (transactionTypeEnum) {
+            case DEPOSIT:
+                wallet.setBalance(wallet.getBalance() + request.getBalance());
+                notificationRequestDto.setBody(request.getNote());
+                sendMessage(notificationRequestDto, user);
+                break;
+            case TRANSFER:
+                break;
+            case WITHDRAW:
+                if (wallet.getBalance() < request.getBalance()) {
+                    return false;
+                }
+                wallet.setBalance(wallet.getBalance() - request.getBalance());
+                notificationRequestDto.setBody(request.getNote());
+                sendMessage(notificationRequestDto, user);
+                break;
+        }
+        Wallet walletUpdate = walletRepository.save(wallet);
+        Transaction transaction = mappingForCreate(request);
+        transaction.setWallet(walletUpdate);
+        transactionRepository.save(transaction);
+        return true;
+    }
+
+    private Transaction mappingForCreate(TransactionRequest request) {
+        Transaction transaction = modelMapper.map(request, Transaction.class);
+        Booking booking = findBookingById(request.getBookingId());
+        transaction.setAmount(request.getBalance());
+        transaction.setBooking(booking);
+        transaction.setTransactionCode(Utils.generateRandomCode());
+        transaction.setCreateAt(Utils.getLocalDateTimeNow());
+        transaction.setTransactionStatusEnum(TransactionStatusEnum.SUCCESS);
+        transaction.setTransactionTypeEnum(TransactionTypeEnum.valueOf(request.getTransactionType().toUpperCase()));
+        return transaction;
     }
 
     private PageResponseObject getResponseObjectResponseEntity(Page<Booking> bookings) {
@@ -698,14 +1067,21 @@ public class BookingServiceImpl implements BookingService {
                 .stream()
                 .map(booking -> {
                             GetBookingResponse response = modelMapper.map(booking, GetBookingResponse.class);
-                            response.setServiceName(booking.getBookingDetails()
+                            List<iclean.code.data.domain.Service> services = booking.getBookingDetails()
                                     .stream()
                                     .map(detail -> detail.getServiceUnit()
-                                            .getService().getServiceName())
-                                    .collect(Collectors.joining(",")));
-                            if (booking.getBookingStatusHistories().size() > 0) {
-                                response.setBookingStatus(booking.getBookingStatusHistories()
-                                        .get(booking.getBookingStatusHistories().size() - 1).getBookingStatus().getValue());
+                                            .getService()).collect(Collectors.toList());
+                            if (!services.isEmpty()) {
+                                response.setServiceNames(services
+                                        .stream()
+                                        .map(iclean.code.data.domain.Service::getServiceName)
+                                        .collect(Collectors.joining(", ")));
+                                response.setServiceAvatar(services.get(0).getServiceImage());
+                            } else {
+                                response.setServiceNames(null);
+                            }
+                            if (booking.getBookingStatus() != null) {
+                                response.setBookingStatus(booking.getBookingStatus().name());
                             }
                             return response;
                         }
@@ -714,130 +1090,14 @@ public class BookingServiceImpl implements BookingService {
         return Utils.convertToPageResponse(bookings, Collections.singletonList(dtoList));
     }
 
-    private Booking mappingUpdateBookingForManager(Booking optionalBooking,
-                                                   BookingStatusEnum optionalBookingStatus,
-                                                   UpdateStatusBookingRequest request) throws UserNotHavePermissionException {
-
-        optionalBooking.setRequestCount(optionalBooking.getRequestCount() + 1);
-//        optionalBooking.setBookingStatusHistories(optionalBookingStatus);
-        optionalBooking.setUpdateAt(Utils.getDateTimeNow());
-
-        Booking booking = modelMapper.map(optionalBooking, Booking.class);
-
-        if (Objects.equals(BookingStatusEnum.REJECTED, optionalBookingStatus)) {
-            if (request.getRejectReasonId() != null) {
-                RejectionReason rejectionReason = findReject(request.getRejectReasonId());
-                booking.setRejectionReason(rejectionReason);
-            }
-        } else if (BookingStatusEnum.APPROVED == optionalBookingStatus) {
-            booking.setAcceptDate(LocalDateTime.now());
-        } else {
-            throw new UserNotHavePermissionException("You can't update this status");
-        }
-        addBookingStatusHistory(optionalBooking, optionalBookingStatus);
-        return booking;
-    }
-
-    private Booking mappingUpdateBookingForEmployee(Booking optionalBooking,
-                                                    BookingStatusEnum optionalBookingStatus,
-                                                    Integer empId,
-                                                    UpdateStatusBookingRequest request) throws UserNotHavePermissionException {
-
-        optionalBooking.setRequestCount(optionalBooking.getRequestCount() + 1);
-//        optionalBooking.setBookingStatusHistories(optionalBookingStatus);
-        optionalBooking.setUpdateAt(Utils.getDateTimeNow());
-
-        Booking booking = modelMapper.map(optionalBooking, Booking.class);
-
-        if (Objects.equals(BookingStatusEnum.EMPLOYEE_ACCEPTED, optionalBookingStatus)) {
-            addBookingEmployee(optionalBooking, empId);
-
-        } else if (BookingStatusEnum.EMPLOYEE_CANCELED == optionalBookingStatus) {
-            if (request.getRejectReasonId() != null) {
-                RejectionReason rejectionReason = findReject(request.getRejectReasonId());
-                booking.setRejectionReason(rejectionReason);
-            }
-        } else if (BookingStatusEnum.IN_PROCESSING == optionalBookingStatus) {
-//            if (booking.getEmployee() == null) {
-//                throw new NotFoundException("Booking này hiện tại chưa có nhân viên");
-//            }
-        } else if (BookingStatusEnum.FINISHED == optionalBookingStatus) {
-//            if (booking.getEmployee() == null) {
-//                throw new NotFoundException("Booking này hiện tại chưa có nhân viên");
-//            }
-        } else {
-            throw new UserNotHavePermissionException("You can't update this status");
-        }
-        addBookingStatusHistory(optionalBooking, optionalBookingStatus);
-        return booking;
-    }
-
-    private Booking mappingUpdateBookingForRenter(Booking optionalBooking,
-                                                  BookingStatusEnum optionalBookingStatus,
-                                                  Integer empId,
-                                                  UpdateStatusBookingAsRenterRequest request) throws UserNotHavePermissionException {
-
-        optionalBooking.setRequestCount(optionalBooking.getRequestCount() + 1);
-        optionalBooking.setUpdateAt(Utils.getDateTimeNow());
-
-        Booking booking = modelMapper.map(optionalBooking, Booking.class);
-
-        if (Objects.equals(BookingStatusEnum.RENTER_ASSIGNED, optionalBookingStatus)) {
-//            addBookingEmployee(optionalBooking, empId);
-            BookingDetailHelper bookingDetailHelper = findEmployeeBooking(empId);
-            bookingDetailHelper.setBookingDetailHelperStatus(BookingDetailHelperStatusEnum.ACTIVE);
-            bookingEmployeeRepository.save(bookingDetailHelper);
-
-            User employee = findAccount(empId, EMPLOYEE.name());
-//            booking.setEmployee(employee);
-
-        } else if (BookingStatusEnum.RENTER_CANCELED == optionalBookingStatus) {
-            if (request.getRejectReasonId() != null) {
-                RejectionReason rejectionReason = findReject(request.getRejectReasonId());
-                booking.setRejectionReason(rejectionReason);
-            }
-        } else {
-            throw new UserNotHavePermissionException("You can't update this status");
-        }
-        addBookingStatusHistory(optionalBooking, optionalBookingStatus);
-        return booking;
-    }
-
-    private void addBookingStatusHistory(Booking booking, BookingStatusEnum bookingStatus) {
-        BookingStatusHistory bookingStatusHistory = new BookingStatusHistory();
-        bookingStatusHistory.setBooking(booking);
-        bookingStatusHistory.setBookingStatus(bookingStatus);
-        bookingStatusHistory.setCreateAt(LocalDateTime.now());
-        bookingStatusHistoryRepository.save(bookingStatusHistory);
-    }
-
-    private void addBookingEmployee(Booking booking, Integer epmId) {
-        User employee = findAccount(epmId, EMPLOYEE.name());
-
-        BookingDetailHelper bookingDetailHelper = new BookingDetailHelper();
-//        bookingDetailHelper.setBooking(booking);
-//        bookingDetailHelper.setEmployee(employee);
-        bookingEmployeeRepository.save(bookingDetailHelper);
-    }
-
-    private User findAccount(int userId, String role) {
-        return userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException(role + " is not exist"));
-    }
-
     private User findAccount(int userId) {
         return userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("User is not exist"));
     }
 
-    private BookingDetail findBookingDetail(int id) {
-        return bookingDetailRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException(String.format("Booking Detail ID %s is not exist!", id)));
-    }
-
-    private BookingDetailHelper findEmployeeBooking(int userId) {
-        return bookingEmployeeRepository.findTopByEmployeeUserIdOrderByBookingEmpIdDesc(userId)
-                .orElseThrow(() -> new NotFoundException("Employee is not exist"));
+    private RejectionReason findById(int id) {
+        return rejectionReasonRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Rejection Reason is not exist"));
     }
 
     private Booking findBookingById(int bookingId) {
@@ -845,13 +1105,21 @@ public class BookingServiceImpl implements BookingService {
                 .orElseThrow(() -> new NotFoundException("Booking is not exist"));
     }
 
-    private Unit findJobUnit(Integer jobUnitId) {
-        return unitRepository.findById(jobUnitId)
-                .orElseThrow(() -> new NotFoundException("Job Unit is not exist"));
+    private Double getPointToMoney() {
+        SystemParameter systemParameter = systemParameterRepository.findSystemParameterByParameterField(SystemParameterField.POINT_TO_MONEY);
+        try {
+            return Double.parseDouble(systemParameter.getParameterValue());
+        } catch (Exception e) {
+            return pointToMoney;
+        }
     }
 
-    private RejectionReason findReject(int rejectId) {
-        return rejectionReasonRepository.findById(rejectId)
-                .orElseThrow(() -> new NotFoundException("Reject Reason is not exist"));
+    private Integer getMaxRequestCount() {
+        SystemParameter systemParameter = systemParameterRepository.findSystemParameterByParameterField(SystemParameterField.REQUEST_BOOKING_COUNT);
+        try {
+            return Integer.parseInt(systemParameter.getParameterValue());
+        } catch (Exception e) {
+            return maxRequestCount;
+        }
     }
 }

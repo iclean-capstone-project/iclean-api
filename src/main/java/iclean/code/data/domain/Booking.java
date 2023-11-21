@@ -2,6 +2,7 @@ package iclean.code.data.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import iclean.code.data.enumjava.BookingStatusEnum;
 import iclean.code.utils.Utils;
 import lombok.Getter;
 import lombok.Setter;
@@ -20,6 +21,8 @@ public class Booking {
     @Column(name = "booking_id")
     private Integer bookingId;
 
+    private String bookingCode;
+
     private String location;
 
     @Column(name = "location_description")
@@ -30,7 +33,7 @@ public class Booking {
     private Double latitude;
 
     @Column(name = "order_date")
-    private LocalDateTime orderDate = Utils.getDateTimeNow();
+    private LocalDateTime orderDate = Utils.getLocalDateTimeNow();
 
     @Column(name = "accept_date")
     private LocalDateTime acceptDate;
@@ -47,8 +50,22 @@ public class Booking {
     @Column(name = "total_price_actual")
     private Double totalPriceActual;
 
+    private Double point;
+
+    @Column(name = "using_point")
+    private Boolean usingPoint = false;
+
+    @Column(name = "option_json")
+    private String option;
+
+    @Column(name = "auto_assign")
+    private Boolean autoAssign;
+
     @Column(name = "update_at")
     private LocalDateTime updateAt;
+
+    @Column(name = "booking_status")
+    private BookingStatusEnum bookingStatus;
 
     @ManyToOne
     @JsonIgnore
@@ -69,14 +86,5 @@ public class Booking {
     @JsonIgnoreProperties("booking")
     @JsonIgnore
     private List<BookingDetail> bookingDetails;
-
-    @OneToMany(mappedBy = "booking")
-    @JsonIgnoreProperties("booking")
-    @JsonIgnore
-    private List<BookingStatusHistory> bookingStatusHistories;
-
-    @OneToOne(mappedBy = "booking")
-    @JsonIgnoreProperties("booking")
-    private Report report;
 
 }

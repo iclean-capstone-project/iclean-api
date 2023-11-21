@@ -53,7 +53,7 @@ public class SystemParameterServiceImpl implements SystemParameterService {
         try {
             SystemParameter systemParameterForUpdate = findSystemParameter(systemId);
                     //modelMapper.map(systemParameter, SystemParameter.class);
-            systemParameterForUpdate.setUpdateAt(Utils.getDateTimeNow());
+            systemParameterForUpdate.setUpdateAt(Utils.getLocalDateTimeNow());
             systemParameterForUpdate.setUpdateVersion(systemParameter.getUpdateVersion());
 
             SystemParameter update = modelMapper.map(systemParameterForUpdate, SystemParameter.class);

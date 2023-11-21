@@ -11,11 +11,6 @@ import java.util.List;
 @Repository
 public interface ServicePriceRepository extends JpaRepository<ServicePrice, Integer>  {
     @Query("SELECT servicePrice FROM ServicePrice servicePrice WHERE " +
-            "servicePrice.startTime <= ?1 " +
-            "AND servicePrice.endTime >= ?1 ")
-    List<ServicePrice> findByStartTimeAndEndTime(LocalTime startTime, LocalTime endTime);
-
-    @Query("SELECT servicePrice FROM ServicePrice servicePrice WHERE " +
             "servicePrice.serviceUnit.serviceUnitId = ?1 " +
             "ORDER BY servicePrice.startTime")
     List<ServicePrice> findByServiceUnitId(Integer serviceUnitId);
