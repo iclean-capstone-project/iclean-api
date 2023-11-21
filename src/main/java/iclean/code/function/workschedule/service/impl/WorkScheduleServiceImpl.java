@@ -7,7 +7,6 @@ import iclean.code.data.dto.request.workschedule.CreateWorkScheduleRequest;
 import iclean.code.data.dto.request.workschedule.TimeRange;
 import iclean.code.data.dto.response.workschedule.GetWorkScheduleResponse;
 import iclean.code.data.dto.response.workschedule.TimeRangeOfDay;
-import iclean.code.data.enumjava.DayOfWeekEnum;
 import iclean.code.data.repository.HelperInformationRepository;
 import iclean.code.data.repository.WorkScheduleRepository;
 import iclean.code.exception.NotFoundException;
@@ -21,6 +20,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import java.time.DayOfWeek;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -66,7 +66,7 @@ public class WorkScheduleServiceImpl implements WorkScheduleService {
                             request.getTimes().stream()
                                     .map(timeRange -> {
                                         WorkSchedule workSchedule = modelMapper.map(timeRange, WorkSchedule.class);
-                                        workSchedule.setDayOfWeek(DayOfWeekEnum.valueOf(request.getDayOfWeekEnum().toUpperCase()));
+                                        workSchedule.setDayOfWeek(DayOfWeek.valueOf(request.getDayOfWeekEnum().toUpperCase()));
                                         workSchedule.setHelperInformation(helperInformation);
                                         return workSchedule;
                                     }))
@@ -103,9 +103,9 @@ public class WorkScheduleServiceImpl implements WorkScheduleService {
     }
 
     private List<GetWorkScheduleResponse> mappingFromDomain(List<WorkSchedule> workSchedules) {
-        Map<DayOfWeekEnum, List<TimeRangeOfDay>> customWorkSchedulesMap = new HashMap<>();
+        Map<DayOfWeek, List<TimeRangeOfDay>> customWorkSchedulesMap = new HashMap<>();
         for (WorkSchedule schedule : workSchedules) {
-            DayOfWeekEnum dayOfWeek = schedule.getDayOfWeek();
+            DayOfWeek dayOfWeek = schedule.getDayOfWeek();
             TimeRangeOfDay timeRangeOfDay = new TimeRangeOfDay(schedule.getWorkScheduleId(), schedule.getStartTime(), schedule.getEndTime());
 
             if (!customWorkSchedulesMap.containsKey(dayOfWeek)) {
@@ -114,7 +114,7 @@ public class WorkScheduleServiceImpl implements WorkScheduleService {
             customWorkSchedulesMap.get(dayOfWeek).add(timeRangeOfDay);
         }
         List<GetWorkScheduleResponse> customWorkSchedules = new ArrayList<>();
-        for (Map.Entry<DayOfWeekEnum, List<TimeRangeOfDay>> entry : customWorkSchedulesMap.entrySet()) {
+        for (Map.Entry<DayOfWeek, List<TimeRangeOfDay>> entry : customWorkSchedulesMap.entrySet()) {
             GetWorkScheduleResponse customSchedule = new GetWorkScheduleResponse();
             customSchedule.setDayOfWeekEnum(entry.getKey());
             customSchedule.setTimes(entry.getValue());

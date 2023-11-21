@@ -114,7 +114,7 @@ public class AutoAssignIfNoChoose {
                 bookingDetail.setPriceHelper(0D);
             }
             bookingDetailRepository.saveAll(bookingDetails);
-            log.info(Utils.getDateTimeNowAsString() + " ----> Set Helper successful!");
+            log.info(Utils.getDateTimeNowAsString() + " ----> Auto Send Money Successful!");
         } catch (Exception e) {
             log.error(e.getMessage());
         }

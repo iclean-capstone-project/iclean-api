@@ -157,7 +157,7 @@ public class PaymentServiceImplement implements PaymentService {
                         wallet.setWalletTypeEnum(WalletTypeEnum.MONEY);
                     }
                     wallet.setBalance(wallet.getBalance() + balance);
-                    wallet.setUpdateAt(Utils.getDateTimeNow());
+                    wallet.setUpdateAt(Utils.getLocalDateTimeNow());
                     Wallet walletUpdate = walletRepository.save(wallet);
 
                     Transaction transaction = new Transaction();

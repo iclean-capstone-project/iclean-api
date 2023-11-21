@@ -25,7 +25,7 @@ public interface BookingDetailHelperRepository extends JpaRepository<BookingDeta
 
     @Query("SELECT bdh FROM BookingDetailHelper bdh " +
             "WHERE bdh.bookingDetail.bookingDetailId = ?1 " +
-            "AND bdh.bookingDetailHelperStatus = ?2 LIMIT 1")
+            "AND bdh.bookingDetailHelperStatus = ?2")
     BookingDetailHelper findByBookingDetailIdAndActiveLimit(Integer detailId, BookingDetailHelperStatusEnum statusEnum);
     @Query("SELECT bdh FROM BookingDetailHelper bdh " +
             "WHERE bdh.serviceRegistration.helperInformation.user.userId = ?1 ")
@@ -59,13 +59,6 @@ public interface BookingDetailHelperRepository extends JpaRepository<BookingDeta
             "GROUP BY hi.helper_information_id, hi.full_name " +
             "ORDER BY count DESC", nativeQuery = true)
     List<Object[]> findTopEmployeesOnDay();
-
-    @Query("SELECT bdh FROM BookingDetailHelper bdh " +
-            "LEFT JOIN bdh.bookingDetail bd " +
-            "LEFT JOIN bd.booking b " +
-            "LEFT JOIN b.bookingStatusHistories bsh " +
-            "WHERE bsh.statusHistoryId = ?1 AND bd.bookingDetailStatusEnum = ?2")
-    List<BookingDetailHelper> findBookingDetailHelperHaveFinishedStatus(Integer statusBookingHistoryId, BookingDetailStatusEnum bookingDetailStatusEnum);
 
     @Query("SELECT bdh FROM BookingDetailHelper bdh " +
             "WHERE bdh.serviceRegistration.helperInformation.user.userId IN ?1 " +
