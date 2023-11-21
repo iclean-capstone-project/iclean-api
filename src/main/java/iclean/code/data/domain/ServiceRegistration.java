@@ -32,8 +32,8 @@ public class ServiceRegistration {
     @JoinColumn(name = "helper_information_id")
     private HelperInformation helperInformation;
 
-    @OneToMany(mappedBy = "helperInformation")
-    @JsonIgnoreProperties("helperInformation")
+    @OneToMany(mappedBy = "serviceRegistration")
+    @JsonIgnoreProperties("serviceRegistration")
     @JsonIgnore
     private List<BookingDetailHelper> bookingDetailHelpers;
 

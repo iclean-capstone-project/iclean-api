@@ -113,6 +113,6 @@ public interface BookingDetailRepository extends JpaRepository<BookingDetail, In
             "AND bds.serviceRegistration.helperInformation.helperInformationId = ?3 ")
     GetPriorityResponse findPriority(BookingDetailStatusEnum bookingDetailStatusEnum, Integer serviceId, Integer helperInformationId);
 
-    @Query("SELECT bd FROM BookingDetail bd WHERE bd.bookingDetailStatus = ?3 AND bd.priceHelper > 0")
+    @Query("SELECT bd FROM BookingDetail bd WHERE bd.bookingDetailStatus = ?1 AND bd.priceHelper > 0")
     List<BookingDetail> findAllByBookingDetailStatus(BookingDetailStatusEnum bookingDetailStatusEnum);
 }

@@ -2,7 +2,6 @@ package iclean.code.data.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import iclean.code.data.enumjava.DayOfWeekEnum;
 import lombok.Getter;
 import lombok.Setter;
 
