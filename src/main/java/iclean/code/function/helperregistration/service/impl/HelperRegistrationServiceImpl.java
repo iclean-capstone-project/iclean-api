@@ -6,8 +6,7 @@ import iclean.code.data.domain.HelperInformation;
 import iclean.code.data.domain.ServiceRegistration;
 import iclean.code.data.domain.User;
 import iclean.code.data.dto.common.ResponseObject;
-import iclean.code.data.dto.request.helperinformation.HelperRegistrationRequest;
-import iclean.code.data.dto.request.helperinformation.CancelHelperRequest;
+import iclean.code.data.dto.request.helperinformation.*;
 import iclean.code.data.dto.response.PageResponseObject;
 import iclean.code.data.dto.response.helperinformation.GetHelperInformationDetailResponse;
 import iclean.code.data.dto.response.helperinformation.GetHelperInformationRequestResponse;
@@ -17,10 +16,12 @@ import iclean.code.data.dto.response.others.CMTFrontResponse;
 import iclean.code.data.dto.response.others.FrontCCCD;
 import iclean.code.data.enumjava.GenderEnum;
 import iclean.code.data.enumjava.HelperStatusEnum;
+import iclean.code.data.enumjava.SendMailOptionEnum;
 import iclean.code.data.enumjava.ServiceHelperStatusEnum;
 import iclean.code.data.repository.*;
 import iclean.code.exception.BadRequestException;
 import iclean.code.exception.NotFoundException;
+import iclean.code.exception.UserNotHavePermissionException;
 import iclean.code.function.helperregistration.service.HelperRegistrationService;
 import iclean.code.service.EmailSenderService;
 import iclean.code.service.ExternalApiService;
@@ -36,8 +37,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -61,6 +65,7 @@ public class HelperRegistrationServiceImpl implements HelperRegistrationService 
     private StorageService storageService;
     @Autowired
     private ModelMapper modelMapper;
+
     @Override
     public ResponseEntity<ResponseObject> getAllRequestToBecomeHelper(Integer managerId, Boolean isAllRequest, Pageable pageable) {
         try {
@@ -140,7 +145,7 @@ public class HelperRegistrationServiceImpl implements HelperRegistrationService 
             }
             attachmentRepository.saveAll(attachments);
             List<ServiceRegistration> serviceRegistrations = new ArrayList<>();
-            for (Integer serviceId:
+            for (Integer serviceId :
                     serviceIds
             ) {
                 iclean.code.data.domain.Service service = findServiceById(serviceId);
@@ -172,16 +177,23 @@ public class HelperRegistrationServiceImpl implements HelperRegistrationService 
         }
     }
 
+    private void isPermission(User manager, HelperInformation helperInformation) throws UserNotHavePermissionException {
+        if (!Objects.equals(helperInformation.getManagerId(), manager.getUserId())) {
+            throw new UserNotHavePermissionException("You do not have permission to do this request!");
+        }
+    }
+
     @Override
-    public ResponseEntity<ResponseObject> cancelHelperInformationRequest(Integer id, CancelHelperRequest request) {
+    public ResponseEntity<ResponseObject> cancelHelperInformationRequest(Integer managerId, Integer id, CancelHelperRequest request) {
         try {
+            User manager = findUserById(managerId);
             HelperInformation helperInformation = findHelperInformationById(id);
+            isPermission(manager, helperInformation);
             helperInformation.setHelperStatus(HelperStatusEnum.DISABLED);
             helperInformation.setRejectionReason(request.getReason());
-
-            //send Mail to helper
-            ///
-
+            CancelHelperRequestSendMail requestSendMail = new CancelHelperRequestSendMail(helperInformation.getEmail(),
+                    helperInformation.getFullName(), request.getReason(), manager.getFullName());
+            emailSenderService.sendEmailTemplate(SendMailOptionEnum.REJECT_HELPER, requestSendMail);
             helperInformationRepository.save(helperInformation);
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseObject(HttpStatus.OK.toString(),
@@ -194,12 +206,18 @@ public class HelperRegistrationServiceImpl implements HelperRegistrationService 
                         .body(new ResponseObject(HttpStatus.NOT_FOUND.toString(),
                                 e.getMessage(),
                                 null));
+            if (e instanceof UserNotHavePermissionException)
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(new ResponseObject(HttpStatus.FORBIDDEN.toString(),
+                                e.getMessage(),
+                                null));
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new ResponseObject(HttpStatus.INTERNAL_SERVER_ERROR.toString(),
                             "Something wrong occur!",
                             null));
         }
     }
+
     private HelperInformation mappingCMTToHelperInformation(FrontCCCD frontCCCD,
                                                             BackCCCD backCCCD,
                                                             String avatarLink) {
@@ -223,15 +241,21 @@ public class HelperRegistrationServiceImpl implements HelperRegistrationService 
         return serviceRepository.findById(id).orElseThrow(() ->
                 new NotFoundException("Service is not exist!"));
     }
+
     private ServiceRegistration findServiceRegistrationByUserIdAndServiceId(Integer userId, Integer serviceId) {
         return serviceRegistrationRepository.findByServiceIdAndUserId(userId, serviceId);
     }
+
+    private ServiceRegistration findById(Integer id) {
+        return serviceRegistrationRepository.findById(id).orElseThrow(() -> new NotFoundException("Service Registration is not found!"));
+    }
+
     @Override
     public ResponseEntity<ResponseObject> createHelperRegistration(HelperRegistrationRequest helperRegistrationRequest,
                                                                    Integer renterId) {
         try {
             ObjectMapper objectMapper = new ObjectMapper();
-            String imgAvatarLink =  storageService.uploadFile(helperRegistrationRequest.getAvatar());
+            String imgAvatarLink = storageService.uploadFile(helperRegistrationRequest.getAvatar());
             List<Attachment> attachments = new ArrayList<>();
             String frontResponse = externalApiService.scanNationId(helperRegistrationRequest.getFrontIdCard());
             CMTFrontResponse cmtFrontResponse = objectMapper.readValue(frontResponse, CMTFrontResponse.class);
@@ -250,9 +274,9 @@ public class HelperRegistrationServiceImpl implements HelperRegistrationService 
             helperInformationRepository.save(helperInformation);
 
             List<ServiceRegistration> serviceRegistrations = new ArrayList<>();
-            for (Integer serviceId:
+            for (Integer serviceId :
                     helperRegistrationRequest.getServiceIds()
-            ){
+            ) {
                 iclean.code.data.domain.Service service = findServiceById(serviceId);
                 ServiceRegistration serviceRegistration = new ServiceRegistration();
                 serviceRegistration.setHelperInformation(helperInformation);
@@ -315,6 +339,103 @@ public class HelperRegistrationServiceImpl implements HelperRegistrationService 
                             response));
         } catch (Exception e) {
             log.error(e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString(),
+                            "Something wrong occur!",
+                            null));
+        }
+    }
+
+    @Override
+    public ResponseEntity<ResponseObject> acceptHelperInformation(Integer managerId, Integer id) {
+        try {
+            HelperInformation helperInformation = findHelperInformationById(id);
+            helperInformation.setHelperStatus(HelperStatusEnum.WAITING_FOR_CONFIRM);
+            User manager = findUserById(id);
+            isPermission(manager, helperInformation);
+            LocalDateTime current = Utils.getLocalDateTimeNow();
+            LocalDateTime meetingDateTime = current.plusDays(7);
+            Optional<HelperInformation> helperInformationOptional = helperInformationRepository
+                    .findMaxByMeetingDateTimeAndHelperStatus(HelperStatusEnum.WAITING_FOR_APPROVE);
+            if (helperInformationOptional.isPresent()) {
+                if (current.isBefore(helperInformationOptional.get().getMeetingDateTime())) {
+                    LocalDateTime startTime = helperInformationOptional.get().getMeetingDateTime().toLocalDate().atStartOfDay();
+                    LocalDateTime endTime = startTime.plusDays(1);
+                    Integer count = helperInformationRepository.findAllByMeetingDatetime(startTime, endTime);
+                    if (count >= getMaxRequestADay()) {
+                        meetingDateTime = endTime.plusHours(8);
+                    } else {
+                        meetingDateTime = helperInformationOptional.get().getMeetingDateTime();
+                    }
+                }
+            }
+            helperInformation.setMeetingDateTime(meetingDateTime);
+            AcceptHelperRequest request = new AcceptHelperRequest(helperInformation.getEmail(), helperInformation.getFullName(), manager.getFullName(),
+                    meetingDateTime);
+            emailSenderService.sendEmailTemplate(SendMailOptionEnum.ACCEPT_HELPER, request);
+
+            helperInformationRepository.save(helperInformation);
+            return ResponseEntity.status(HttpStatus.OK)
+                    .body(new ResponseObject(HttpStatus.OK.toString(),
+                            "Accept Helper Information Successful!",
+                            "Meeting Time: " + meetingDateTime));
+        } catch (Exception e) {
+            if (e instanceof NotFoundException)
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new ResponseObject(HttpStatus.NOT_FOUND.toString(),
+                                e.getMessage(),
+                                null));
+            if (e instanceof UserNotHavePermissionException)
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(new ResponseObject(HttpStatus.FORBIDDEN.toString(),
+                                e.getMessage(),
+                                null));
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString(),
+                            "Something wrong occur!",
+                            null));
+        }
+    }
+
+    private Integer getMaxRequestADay() {
+        return 10;
+    }
+
+    @Override
+    public ResponseEntity<ResponseObject> confirmHelperInformation(Integer managerId, Integer id, ConfirmHelperRequest request) {
+        try {
+            try {
+                HelperInformation helperInformation = findHelperInformationById(id);
+                User manager = findUserById(managerId);
+                isPermission(manager, helperInformation);
+                helperInformation.setHelperStatus(HelperStatusEnum.ONLINE);
+                List<ServiceRegistration> serviceRegistrations = new ArrayList<>();
+                List<String> serviceNames = new ArrayList<>();
+                for (Integer requestService :
+                        request.getServiceRegistrationIds()) {
+                    ServiceRegistration serviceRegistration = findById(requestService);
+                    serviceRegistration.setServiceHelperStatus(ServiceHelperStatusEnum.ACTIVE);
+                    serviceRegistrations.add(serviceRegistration);
+                    serviceNames.add(serviceRegistration.getService().getServiceName());
+                }
+                ConfirmHelperRequestSendMail requestSendMail = new ConfirmHelperRequestSendMail(helperInformation.getEmail(),
+                        serviceNames, helperInformation.getFullName(),
+                        manager.getFullName());
+                serviceRegistrationRepository.saveAll(serviceRegistrations);
+                emailSenderService.sendEmailTemplate(SendMailOptionEnum.CONFIRM_HELPER, requestSendMail);
+
+                helperInformationRepository.save(helperInformation);
+                return ResponseEntity.status(HttpStatus.OK)
+                        .body(new ResponseObject(HttpStatus.OK.toString(),
+                                "Confirm Helper Information Successful!",
+                                null));
+            } catch (Exception e) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString(),
+                                "Something wrong occur!",
+                                null));
+            }
+        } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString(),
                             "Something wrong occur!",

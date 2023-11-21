@@ -20,9 +20,14 @@ public interface BookingRepository extends JpaRepository<Booking, Integer> {
     Page<Booking> findAllBooking(BookingStatusEnum bookingStatusEnum, Pageable pageable);
 
     @Query("SELECT booking FROM Booking booking WHERE booking.renter.userId = ?1 " +
-            "AND (?2 IS NULL OR booking.bookingStatus = ?2) " +
+            "AND booking.bookingStatus IN ?2 " +
             "AND booking.bookingStatus != ?3")
-    Page<Booking> findByRenterId(Integer userId, BookingStatusEnum bookingStatusEnum, BookingStatusEnum noStatus, Pageable pageable);
+    Page<Booking> findByRenterId(Integer userId, List<BookingStatusEnum> bookingStatusEnums, BookingStatusEnum noStatus, Pageable pageable);
+
+    @Query("SELECT booking FROM Booking booking WHERE " +
+            " booking.renter.userId = ?1 " +
+            "AND booking.bookingStatus != ?2 ")
+    Page<Booking> findByRenterId(Integer userId, BookingStatusEnum noStatus, Pageable pageable);
 
     @Query("SELECT booking FROM Booking booking " +
             "LEFT JOIN booking.bookingDetails bd " +
@@ -31,17 +36,19 @@ public interface BookingRepository extends JpaRepository<Booking, Integer> {
             "LEFT JOIN sr.helperInformation hi " +
             "LEFT JOIN hi.user u " +
             "WHERE u.userId = ?1 " +
-            "AND (?2 IS NULL OR booking.bookingStatus = ?2)" +
-            "AND booking.bookingStatus != 3")
-    Page<Booking> findByHelperId(Integer userId, BookingStatusEnum bookingStatusEnum, BookingStatusEnum noStatus, Pageable pageable);
+            "AND booking.bookingStatus IN ?2 " +
+            "AND booking.bookingStatus != ?3")
+    Page<Booking> findByHelperId(Integer userId, List<BookingStatusEnum> bookingStatusEnum, BookingStatusEnum noStatus, Pageable pageable);
 
-    @Query("SELECT b FROM Booking b " +
-            "LEFT JOIN b.bookingStatusHistories bs " +
-            "WHERE b.renter.userId = ?1 " +
-            "AND bs.bookingStatus = ?2 " +
-            "AND bs.createAt = (SELECT MAX(bsh.createAt) FROM BookingStatusHistory bsh " +
-            "WHERE bsh.statusHistoryId = bs.statusHistoryId)")
-    Page<Booking> findBookingHistoryByUserId(Integer userId, BookingStatusEnum status, Pageable pageable);
+    @Query("SELECT booking FROM Booking booking " +
+            "LEFT JOIN booking.bookingDetails bd " +
+            "LEFT JOIN bd.bookingDetailHelpers bdh " +
+            "LEFT JOIN bdh.serviceRegistration sr " +
+            "LEFT JOIN sr.helperInformation hi " +
+            "LEFT JOIN hi.user u " +
+            "WHERE u.userId = ?1 " +
+            "AND booking.bookingStatus != ?2")
+    Page<Booking> findByHelperId(Integer userId, BookingStatusEnum noStatus, Pageable pageable);
 
     @Query("SELECT b FROM Booking b " +
             "WHERE b.renter.userId = ?1 " +
@@ -71,6 +78,6 @@ public interface BookingRepository extends JpaRepository<Booking, Integer> {
     @Query("select sum(b.totalPriceActual) from Booking b")
     Double getSumOfIncome();
 
-    @Query("SELECT b FROM Booking b WHERE b.bookingStatus = ?1 AND b.bookingStatus != ?2")
-    Page<Booking> findAllByBookingStatus(BookingStatusEnum statusEnum, BookingStatusEnum notStatus, Pageable pageable);
+    @Query("SELECT b FROM Booking b WHERE b.bookingStatus IN ?1 AND b.bookingStatus != ?2")
+    Page<Booking> findAllByBookingStatus(List<BookingStatusEnum> bookingStatusEnums, BookingStatusEnum notStatus, Pageable pageable);
 }

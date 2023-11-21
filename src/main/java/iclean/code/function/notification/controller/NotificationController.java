@@ -53,6 +53,7 @@ public class NotificationController {
     })
     @PreAuthorize("hasAnyAuthority('renter', 'employee', 'admin', 'manager')")
     public ResponseEntity<ResponseObject> getNotifications(
+            @RequestParam(name = "isHelper", defaultValue = "false", required = false) Boolean isHelper,
             @RequestParam(name = "page", defaultValue = "1") int page,
             @RequestParam(name = "size", defaultValue = "10") int size,
             @RequestParam(name = "sort", required = false) @ValidSortFields(value = GetNotificationResponse.class) List<String> sortFields,
@@ -61,7 +62,7 @@ public class NotificationController {
         if (sortFields != null && !sortFields.isEmpty()) {
             pageable = PageRequestBuilder.buildPageRequest(page, size, sortFields);
         }
-        return notificationService.getNotifications(JwtUtils.decodeToAccountId(authentication), pageable);
+        return notificationService.getNotifications(JwtUtils.decodeToAccountId(authentication), isHelper, pageable);
     }
 
     @PutMapping(value = "{notificationId}")

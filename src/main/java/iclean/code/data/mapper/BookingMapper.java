@@ -5,6 +5,9 @@ import iclean.code.data.dto.response.booking.GetDetailBookingResponse;
 import iclean.code.data.dto.response.booking.GetBookingHistoryResponse;
 import iclean.code.data.dto.response.booking.GetBookingResponse;
 import iclean.code.data.dto.response.booking.GetCartResponseDetail;
+import iclean.code.data.dto.response.bookingdetail.GetAddressResponseBooking;
+import iclean.code.data.dto.response.bookingdetail.GetCheckOutResponseDetail;
+import iclean.code.data.mapper.converter.BookingDetailToCartResponseConverter;
 import iclean.code.data.mapper.converter.BookingDetailToDtoResponseConverter;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.PropertyMap;
@@ -18,16 +21,21 @@ public class BookingMapper {
         this.modelMapper = modelMapper;
 
         modelMapper.addConverter(new BookingDetailToDtoResponseConverter());
+        modelMapper.addConverter(new BookingDetailToCartResponseConverter());
         modelMapper.typeMap(Booking.class, GetCartResponseDetail.class)
                 .addMappings(mapper -> {
                     mapper.map(Booking::getBookingDetails, GetCartResponseDetail::setDetails);
+                });
+
+        modelMapper.typeMap(Booking.class, GetCheckOutResponseDetail.class)
+                .addMappings(mapper -> {
+                    mapper.map(Booking::getBookingDetails, GetCheckOutResponseDetail::setDetails);
                 });
 
         modelMapper.typeMap(Booking.class, GetDetailBookingResponse.class)
                 .addMappings(mapper -> {
                     mapper.map(Booking::getBookingStatus, GetDetailBookingResponse::setCurrentStatus);
                     mapper.map(Booking::getBookingDetails, GetDetailBookingResponse::setDetails);
-                    mapper.map(Booking::getBookingStatusHistories, GetDetailBookingResponse::setStatuses);
                 });
         modelMapper.typeMap(Booking.class, GetBookingResponse.class)
                 .addMappings(mapper -> {
@@ -52,12 +60,37 @@ public class BookingMapper {
                 map().setTotalPrice(source.getTotalPrice());
                 map().setTotalPriceActual(source.getTotalPriceActual());
                 map().setUpdateAt(source.getUpdateAt());
+                map().setManagerName(source.getManager().getFullName());
             }
         });
         modelMapper.addMappings(new PropertyMap<Booking, GetCartResponseDetail>() {
             @Override
             protected void configure() {
                 map().setCartId(source.getBookingId());
+            }
+        });
+
+        modelMapper.addMappings(new PropertyMap<Booking, GetCheckOutResponseDetail>() {
+            @Override
+            protected void configure() {
+                map().setCartId(source.getBookingId());
+                map().setLongitude(source.getLongitude());
+                map().setLatitude(source.getLatitude());
+                map().setLocationName(source.getLocation());
+                map().setLocationDescription(source.getLocationDescription());
+                map().setTotalPrice(source.getTotalPrice());
+                map().setTotalPriceActual(source.getTotalPriceActual());
+                map().setUsingPoint(source.getUsingPoint());
+            }
+        });
+
+        modelMapper.addMappings(new PropertyMap<Booking, GetAddressResponseBooking>() {
+            @Override
+            protected void configure() {
+                map().setLongitude(source.getLongitude());
+                map().setLatitude(source.getLatitude());
+                map().setLocationName(source.getLocation());
+                map().setLocationDescription(source.getLocationDescription());
             }
         });
     }

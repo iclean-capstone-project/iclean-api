@@ -26,7 +26,7 @@ public class BookingAttachment {
 
     @ManyToOne
     @JsonIgnore
-    @JoinColumn(name = "booking_id")
-    private Booking booking;
+    @JoinColumn(name = "report_id")
+    private Report report;
 
 }

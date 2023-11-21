@@ -22,6 +22,5 @@ public class GetDetailBookingResponse {
     private String bookingCode;
     private String renterName;
     private String currentStatus;
-    private List<GetBookingStatusHistoryResponse> statuses;
     private List<GetBookingDetailResponse> details;
 }

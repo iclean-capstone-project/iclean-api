@@ -23,6 +23,9 @@ public class HelperInformation {
     @Column(name = "helper_information_id")
     private Integer helperInformationId;
 
+    @Column(name = "meeting_date_time")
+    private LocalDateTime meetingDateTime;
+
     @Column(name = "personal_avatar")
     private String personalAvatar;
 
@@ -86,6 +89,11 @@ public class HelperInformation {
     @JsonIgnoreProperties("helperInformation")
     @JsonIgnore
     private List<Attachment> attachments;
+
+    @OneToMany(mappedBy = "helperInformation")
+    @JsonIgnoreProperties("helperInformation")
+    @JsonIgnore
+    private List<WorkSchedule> workSchedules;
 
     @OneToMany(mappedBy = "helperInformation")
     @JsonIgnoreProperties("helperInformation")

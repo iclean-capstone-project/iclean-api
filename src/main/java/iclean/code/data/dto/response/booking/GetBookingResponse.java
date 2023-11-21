@@ -36,4 +36,5 @@ public class GetBookingResponse {
     private LocalDateTime updateAt;
 
     private String bookingStatus;
+    private String managerName;
 }

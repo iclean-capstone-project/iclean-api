@@ -1,6 +1,7 @@
 package iclean.code.function.test.controller;
 
 import iclean.code.data.dto.request.others.SendMailRequest;
+import iclean.code.data.enumjava.SendMailOptionEnum;
 import iclean.code.service.EmailSenderService;
 import iclean.code.service.StorageService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,7 +40,7 @@ public class TestController {
     @PostMapping("/send-html-email")
     public String sendHtmlEmail(@RequestParam(defaultValue = "IN_PROCESS") @Nullable String option,
                                 @RequestBody SendMailRequest emailRequest) {
-        emailSenderService.sendEmailTemplate(option, emailRequest);
+        emailSenderService.sendEmailTemplate(SendMailOptionEnum.REJECT_HELPER, emailRequest);
         return "HTML email sent successfully!";
     }
 }

@@ -58,6 +58,9 @@ public class Booking {
     @Column(name = "option_json")
     private String option;
 
+    @Column(name = "auto_assign")
+    private Boolean autoAssign;
+
     @Column(name = "update_at")
     private LocalDateTime updateAt;
 
@@ -83,14 +86,5 @@ public class Booking {
     @JsonIgnoreProperties("booking")
     @JsonIgnore
     private List<BookingDetail> bookingDetails;
-
-    @OneToMany(mappedBy = "booking")
-    @JsonIgnoreProperties("booking")
-    @JsonIgnore
-    private List<BookingStatusHistory> bookingStatusHistories;
-
-    @OneToOne(mappedBy = "booking")
-    @JsonIgnoreProperties("booking")
-    private Report report;
 
 }

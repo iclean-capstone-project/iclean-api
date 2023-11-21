@@ -4,7 +4,7 @@ import lombok.Data;
 
 @Data
 public class GetBookingDetailResponse {
-    private Integer cartItemId;
+    private Integer bookingDetailId;
     private Integer serviceId;
     private Integer serviceUnitId;
     private String serviceName;
@@ -15,4 +15,5 @@ public class GetBookingDetailResponse {
     private String value;
     private Double equivalent;
     private Double price;
+    private String status;
 }

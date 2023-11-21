@@ -41,6 +41,7 @@ public class ProfileServiceImpl implements ProfileService {
         try {
             User user = findUser(userId);
             ProfileUserResponse profileUserResponse = modelMapper.map(user, ProfileUserResponse.class);
+            profileUserResponse.setRoleName(user.getRole().getTitle());
             List<Address> addressList = addressRepository.findByUserIdAnAndIsDefault(user.getUserId());
             if (!addressList.isEmpty()) {
                 profileUserResponse.setDefaultAddress(addressList.get(0).getDescription());

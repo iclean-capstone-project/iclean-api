@@ -1,6 +1,7 @@
 package iclean.code.utils;
 
 import iclean.code.data.dto.common.SortResponse;
+import iclean.code.data.dto.request.workschedule.DateTimeRange;
 import iclean.code.data.dto.request.workschedule.TimeRange;
 import iclean.code.data.dto.response.PageResponseObject;
 import org.springframework.data.domain.Page;
@@ -9,6 +10,7 @@ import org.springframework.util.ObjectUtils;
 
 import javax.annotation.Nullable;
 import java.math.RoundingMode;
+import java.sql.Time;
 import java.text.DecimalFormat;
 import java.text.Normalizer;
 import java.time.*;
@@ -42,6 +44,13 @@ public class Utils {
         DecimalFormat df = new DecimalFormat("#.###");
         df.setRoundingMode(RoundingMode.UP);
         return Double.parseDouble(df.format(duration.toSeconds() / 3600.0));
+    }
+
+    public static long minusLocalTimeAsMinutes(LocalTime value, LocalTime other) {
+        Duration duration = Duration.between(value, other);
+        DecimalFormat df = new DecimalFormat("#.###");
+        df.setRoundingMode(RoundingMode.UP);
+        return Long.parseLong(df.format(duration.toMinutes()));
     }
 
     public static long minusLocalDateTime(LocalDateTime value, LocalDateTime other) {
@@ -83,6 +92,13 @@ public class Utils {
         return value.plusHours(wholeHours).plusMinutes(minutesToAdd).plusSeconds(secondsToAdd);
     }
 
+    public static LocalDateTime plusLocalDateTime(LocalDateTime value, double hoursToAdd) {
+        int wholeHours = (int) hoursToAdd;
+        int minutesToAdd = (int) ((hoursToAdd - wholeHours) * 60);
+        int secondsToAdd = (int) ((hoursToAdd - wholeHours) * 60) - minutesToAdd;
+        return value.plusHours(wholeHours).plusMinutes(minutesToAdd).plusSeconds(secondsToAdd);
+    }
+
     public static String convertToTitleCase(String input) {
         if (input == null || input.isEmpty()) {
             return input;
@@ -107,14 +123,30 @@ public class Utils {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
         return LocalDateTime.now(gmtPlus7Zone).format(formatter);
     }
-    public static Double roundingNumber(Double number, String pattern, RoundingMode roundingMode) {
-        DecimalFormat df = new DecimalFormat(pattern);
-        df.setRoundingMode(roundingMode);
-        return Double.parseDouble(df.format(number));
+
+    public static Double roundingNumber(Double number, Double divisor, RoundingMode roundingMode) {
+        int result = 0;
+        switch (roundingMode) {
+            case DOWN:
+                result = (int) ((number / divisor) * divisor);
+                break;
+            case UP:
+                result = (int) ((number / divisor) * divisor + divisor);
+                break;
+        }
+        return (double) result;
     }
 
     public static String getLocalDateAsString(LocalDate localDate) {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+        if (Objects.isNull(localDate)) {
+            return null;
+        }
+        return localDate.format(formatter);
+    }
+
+    public static String getLocalTimeAsString(LocalTime localDate) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm");
         if (Objects.isNull(localDate)) {
             return null;
         }
@@ -153,7 +185,7 @@ public class Utils {
         List<SortResponse> sortResponseList = null;
         if (page.getPageable().getSort().isSorted()) {
             sortResponseList = new ArrayList<>();
-            for (Sort.Order order:
+            for (Sort.Order order :
                     page.getPageable().getSort()) {
                 sortResponseList.add(new SortResponse(order.getProperty(), order.getDirection()));
             }
@@ -178,4 +210,10 @@ public class Utils {
         }
         return false;
     }
+
+    public static boolean hasOverlapTime(DateTimeRange timeRanges, DateTimeRange otherRanges) {
+        return (timeRanges.getStartDateTime().isBefore(otherRanges.getEndDateTime()) || timeRanges.getStartDateTime().isEqual(otherRanges.getEndDateTime())) &&
+                (timeRanges.getEndDateTime().isAfter(otherRanges.getStartDateTime()) || timeRanges.getEndDateTime().isEqual(otherRanges.getStartDateTime()));
+    }
+
 }

@@ -65,7 +65,7 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
-    public ResponseEntity<ResponseObject> getNotifications(Integer userIdAuth, Pageable pageable) {
+    public ResponseEntity<ResponseObject> getNotifications(Integer userIdAuth,Boolean isHelper, Pageable pageable) {
         try {
             Page<Notification> notifications;
             Sort order = Sort.by(Sort.Order.desc("createAt"));
@@ -77,10 +77,11 @@ public class NotificationServiceImpl implements NotificationService {
             RoleEnum roleEnum = RoleEnum.valueOf(roleUser);
             switch (roleEnum) {
                 case EMPLOYEE:
-                    notifications = notificationRepository.findByUserIdPageable(userIdAuth, Boolean.parseBoolean(NotificationEnum.IS_EMPLOYEE.toString()), pageable);
-                    break;
-                case RENTER:
-                    notifications = notificationRepository.findByUserIdPageable(userIdAuth, Boolean.parseBoolean(NotificationEnum.NOT_EMPLOYEE.toString()), pageable);
+                    if (isHelper) {
+                        notifications = notificationRepository.findByUserIdPageable(userIdAuth, Boolean.parseBoolean(NotificationEnum.IS_EMPLOYEE.toString()), pageable);
+                    } else {
+                        notifications = notificationRepository.findByUserIdPageable(userIdAuth, Boolean.parseBoolean(NotificationEnum.NOT_EMPLOYEE.toString()), pageable);
+                    }
                     break;
                 default:
                     notifications = notificationRepository.findByUserIdPageable(userIdAuth, pageable);

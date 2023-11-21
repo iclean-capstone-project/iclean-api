@@ -30,7 +30,12 @@ public class BookingDetail {
     private Double priceHelper;
 
     @Column(name = "booking_detail_status")
-    private BookingDetailStatusEnum bookingDetailStatusEnum;
+    private BookingDetailStatusEnum bookingDetailStatus;
+
+    @OneToMany(mappedBy = "bookingDetail")
+    @JsonIgnoreProperties("bookingDetail")
+    @JsonIgnore
+    private List<BookingDetailStatusHistory> bookingDetailStatusHistories;
 
     @Column(name = "note")
     private String note;
@@ -64,6 +69,10 @@ public class BookingDetail {
     @JsonIgnore
     @JoinColumn(name = "booking_id")
     private Booking booking;
+
+    @OneToOne(mappedBy = "bookingDetail")
+    @JsonIgnoreProperties("bookingDetail")
+    private Report report;
 
     @OneToMany(mappedBy = "bookingDetail")
     @JsonIgnoreProperties("bookingDetail")

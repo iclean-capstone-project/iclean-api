@@ -26,4 +26,6 @@ public class GetBookingResponseForHelper {
     private Double longitude;
 
     private Double latitude;
+
+    private String noteMessage;
 }

@@ -7,6 +7,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import javax.persistence.*;
+import java.time.DayOfWeek;
 import java.time.LocalTime;
 
 @Entity
@@ -20,7 +21,7 @@ public class WorkSchedule {
     private Integer workScheduleId;
 
     @Column(name = "day_of_week")
-    private DayOfWeekEnum dayOfWeek;
+    private DayOfWeek dayOfWeek;
 
     @Column(name = "start_time")
     private LocalTime startTime;
@@ -28,7 +29,7 @@ public class WorkSchedule {
     @Column(name = "end_time")
     private LocalTime endTime;
 
-    @OneToOne
+    @ManyToOne
     @JsonIgnore
     @JoinColumn(name = "helper_information_id")
     private HelperInformation helperInformation;

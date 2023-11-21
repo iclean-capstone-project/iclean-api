@@ -3,6 +3,8 @@ package iclean.code.function.helperregistration.controller;
 import iclean.code.config.JwtUtils;
 import iclean.code.data.dto.common.PageRequestBuilder;
 import iclean.code.data.dto.common.ResponseObject;
+import iclean.code.data.dto.request.helperinformation.AcceptHelperRequest;
+import iclean.code.data.dto.request.helperinformation.ConfirmHelperRequest;
 import iclean.code.data.dto.request.helperinformation.HelperRegistrationRequest;
 import iclean.code.data.dto.request.helperinformation.CancelHelperRequest;
 import iclean.code.data.dto.response.helperinformation.GetHelperInformationRequestResponse;
@@ -127,8 +129,32 @@ public class HelperRegistrationController {
             @ApiResponse(responseCode = "401", description = "Unauthorized - Login please"),
             @ApiResponse(responseCode = "400", description = "Bad request - Missing some field required")
     })
-    public ResponseEntity<ResponseObject> cancelHelperRequest(@PathVariable Integer id, @RequestBody CancelHelperRequest request) {
-        return helperRegistrationService.cancelHelperInformationRequest(id, request);
+    public ResponseEntity<ResponseObject> cancelHelperRequest(Authentication authentication, @PathVariable Integer id, @RequestBody CancelHelperRequest request) {
+        return helperRegistrationService.cancelHelperInformationRequest(JwtUtils.decodeToAccountId(authentication), id, request);
     }
 
+    @PostMapping("/acceptance/{id}")
+    @PreAuthorize("hasAuthority('manager')")
+    @Operation(summary = "Cancel a request become to a helper by helper information id", description = "Return message fail or successful")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Delete a RegisterEmployee Successful"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - Login please"),
+            @ApiResponse(responseCode = "400", description = "Bad request - Missing some field required")
+    })
+    public ResponseEntity<ResponseObject> acceptHelperRequest(Authentication authentication, @PathVariable Integer id) {
+        return helperRegistrationService.acceptHelperInformation(JwtUtils.decodeToAccountId(authentication), id);
+    }
+
+    @PostMapping("/confirmation/{id}")
+    @PreAuthorize("hasAuthority('manager')")
+    @Operation(summary = "Cancel a request become to a helper by helper information id", description = "Return message fail or successful")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Delete a RegisterEmployee Successful"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - Login please"),
+            @ApiResponse(responseCode = "400", description = "Bad request - Missing some field required")
+    })
+    public ResponseEntity<ResponseObject> confirmHelperRequest(Authentication authentication, @PathVariable Integer id,
+                                                               @RequestBody ConfirmHelperRequest request) {
+        return helperRegistrationService.confirmHelperInformation(JwtUtils.decodeToAccountId(authentication), id, request);
+    }
 }

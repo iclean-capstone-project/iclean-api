@@ -41,8 +41,8 @@ public class Report {
 
     @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JsonIgnoreProperties("report")
-    @JoinColumn(name = "booking_id")
-    private Booking booking;
+    @JoinColumn(name = "booking_detail_id")
+    private BookingDetail bookingDetail;
 
     @ManyToOne
     @JsonIgnore

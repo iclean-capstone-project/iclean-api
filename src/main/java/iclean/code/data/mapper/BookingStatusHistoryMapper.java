@@ -1,6 +1,6 @@
 package iclean.code.data.mapper;
 
-import iclean.code.data.domain.BookingStatusHistory;
+import iclean.code.data.domain.BookingDetailStatusHistory;
 import iclean.code.data.dto.response.bookingstatushistory.GetBookingStatusHistoryResponse;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Component;
@@ -11,12 +11,11 @@ public class BookingStatusHistoryMapper {
     public BookingStatusHistoryMapper(ModelMapper modelMapper) {
         this.modelMapper = modelMapper;
 
-
-        modelMapper.typeMap(BookingStatusHistory.class, GetBookingStatusHistoryResponse.class)
+        modelMapper.typeMap(BookingDetailStatusHistory.class, GetBookingStatusHistoryResponse.class)
                 .addMappings(mapper -> {
-                    mapper.map(BookingStatusHistory::getStatusHistoryId, GetBookingStatusHistoryResponse::setStatusHistoryId);
-                    mapper.map(BookingStatusHistory::getCreateAt, GetBookingStatusHistoryResponse::setCreateAt);
-                    mapper.map(BookingStatusHistory::getBookingStatus, GetBookingStatusHistoryResponse::setBookingStatus);
+                    mapper.map(BookingDetailStatusHistory::getStatusHistoryId, GetBookingStatusHistoryResponse::setStatusHistoryId);
+                    mapper.map(BookingDetailStatusHistory::getCreateAt, GetBookingStatusHistoryResponse::setCreateAt);
+                    mapper.map(BookingDetailStatusHistory::getBookingDetailStatus, GetBookingStatusHistoryResponse::setBookingDetailStatus);
                 });
     }
 

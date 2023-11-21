@@ -2,6 +2,7 @@ package iclean.code.data.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import iclean.code.data.enumjava.BookingDetailStatusEnum;
 import iclean.code.data.enumjava.BookingStatusEnum;
 import iclean.code.utils.Utils;
 import lombok.Getter;
@@ -14,7 +15,7 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @JsonIgnoreProperties({"hibernateLazyInitializer"})
-public class BookingStatusHistory {
+public class BookingDetailStatusHistory {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "status_history_id")
@@ -25,9 +26,9 @@ public class BookingStatusHistory {
 
     @ManyToOne
     @JsonIgnore
-    @JoinColumn(name = "booking_id")
-    private Booking booking;
+    @JoinColumn(name = "booking_detail_id")
+    private BookingDetail bookingDetail;
 
-    @JoinColumn(name = "booking_status")
-    private BookingStatusEnum bookingStatus;
+    @JoinColumn(name = "booking_detail_status")
+    private BookingDetailStatusEnum bookingDetailStatus;
 }

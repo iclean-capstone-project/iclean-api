@@ -37,6 +37,7 @@ public class TransactionRequest {
     @Pattern(regexp = "(?i)(Money|Point)", message = "Wallet Type are not valid")
     @Schema(example = "Money|Point")
     private String walletType;
+
     private Integer bookingId;
 
     public TransactionRequest(Double balance, String note, Integer userId, String transactionType, String walletType) {
@@ -45,7 +46,5 @@ public class TransactionRequest {
         this.userId = userId;
         this.transactionType = transactionType;
         this.walletType = walletType;
-
-
     }
 }

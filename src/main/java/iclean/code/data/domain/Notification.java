@@ -2,6 +2,7 @@ package iclean.code.data.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import iclean.code.utils.Utils;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -29,16 +30,13 @@ public class Notification {
     private Boolean isHelper = false;
 
     @Column(name = "create_at")
-    private LocalDateTime createAt;
+    private LocalDateTime createAt = Utils.getLocalDateTimeNow();
 
     @Column(name = "is_read")
     private Boolean isRead = false;
 
-    @Column(name = "user_id")
-    private Integer userId;
-
     @ManyToOne
     @JsonIgnore
-    @JoinColumn(name = "user_id", insertable = false, updatable = false)
+    @JoinColumn(name = "user_id")
     private User user;
 }

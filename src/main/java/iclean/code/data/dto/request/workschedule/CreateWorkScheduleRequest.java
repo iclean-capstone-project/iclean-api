@@ -2,9 +2,10 @@ package iclean.code.data.dto.request.workschedule;
 
 import lombok.Data;
 
+import java.util.List;
+
 @Data
 public class CreateWorkScheduleRequest {
-    private String dayOfWeek;
-    private String startTime;
-    private String endTime;
+    private String dayOfWeekEnum;
+    private List<TimeRangeOfDayRequest> times;
 }

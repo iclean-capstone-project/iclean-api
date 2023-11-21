@@ -17,6 +17,4 @@ public class GetNotificationResponse {
     private LocalDateTime createAt;
 
     private Boolean isRead;
-
-    private Boolean isHelper;
 }
