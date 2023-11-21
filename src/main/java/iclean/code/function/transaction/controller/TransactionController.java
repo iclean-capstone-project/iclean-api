@@ -4,6 +4,7 @@ import iclean.code.config.JwtUtils;
 import iclean.code.data.dto.common.PageRequestBuilder;
 import iclean.code.data.dto.common.ResponseObject;
 import iclean.code.data.dto.request.transaction.TransactionRequest;
+import iclean.code.exception.UserNotHavePermissionException;
 import iclean.code.function.transaction.service.TransactionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Schema;

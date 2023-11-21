@@ -114,10 +114,8 @@ public class BookingDetailServiceImpl implements BookingDetailService {
     private FeedbackService feedbackService;
     @Autowired
     private ServicePriceService servicePriceService;
-
     @Autowired
     GoogleMapService googleMapService;
-
     @Autowired
     private ModelMapper modelMapper;
 
