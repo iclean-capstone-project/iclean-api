@@ -6,7 +6,6 @@ import iclean.code.data.domain.*;
 import iclean.code.data.dto.common.Position;
 import iclean.code.data.dto.common.ResponseObject;
 import iclean.code.data.dto.request.authen.NotificationRequestDto;
-import iclean.code.data.dto.request.booking.CheckOutCartRequest;
 import iclean.code.data.dto.request.booking.CreateBookingHelperRequest;
 import iclean.code.data.dto.request.booking.QRCodeValidate;
 import iclean.code.data.dto.request.bookingdetail.HelperChoiceRequest;
@@ -31,9 +30,9 @@ import iclean.code.exception.UserNotHavePermissionException;
 import iclean.code.function.bookingdetail.service.BookingDetailService;
 import iclean.code.function.feedback.service.FeedbackService;
 import iclean.code.function.serviceprice.service.ServicePriceService;
-import iclean.code.service.FCMService;
-import iclean.code.service.GoogleMapService;
-import iclean.code.service.QRCodeService;
+import iclean.code.function.common.service.FCMService;
+import iclean.code.function.common.service.GoogleMapService;
+import iclean.code.function.common.service.QRCodeService;
 import iclean.code.utils.Utils;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.ObjectUtils;
@@ -671,6 +670,12 @@ public class BookingDetailServiceImpl implements BookingDetailService {
             BookingDetail bookingDetail = findBookingDetail(bookingDetailId);
             isPermission(renterId, bookingDetail);
             GetBookingDetailDetailResponse response = modelMapper.map(bookingDetail, GetBookingDetailDetailResponse.class);
+            if (bookingDetail.getBooking().getBookingCode() != null)
+                response.setBookingCode(bookingDetail.getBooking().getBookingCode());
+            if (bookingDetail.getBooking().getRejectionReason() != null && bookingDetail.getBooking().getRjReasonDescription() != null) {
+                response.setRejectionReasonContent(bookingDetail.getBooking().getRejectionReason().getRejectionContent());
+                response.setRejectionReasonContent(bookingDetail.getBooking().getRjReasonDescription());
+            }
             response.setServiceId(bookingDetail.getServiceUnit().getService().getServiceId());
             response.setServiceUnitId(bookingDetail.getServiceUnit().getServiceUnitId());
             response.setServiceIcon(bookingDetail.getServiceUnit().getService().getServiceImage());
@@ -1007,10 +1012,14 @@ public class BookingDetailServiceImpl implements BookingDetailService {
     private PageResponseObject getResponseObjectResponseEntity(Page<BookingDetail> bookingDetails) {
         List<GetBookingDetailResponse> dtoList = bookingDetails
                 .stream()
-                .map(detail -> modelMapper.map(detail, GetBookingDetailResponse.class)
+                .map(detail -> {
+                            GetBookingDetailResponse response = modelMapper.map(detail, GetBookingDetailResponse.class);
+                            response.setStatus(detail.getBookingDetailStatus().name());
+                            return response;
+                        }
                 )
                 .collect(Collectors.toList());
-        return Utils.convertToPageResponse(bookingDetails, Collections.singletonList(dtoList));
+        return Utils.convertToPageResponse(bookingDetails, dtoList);
     }
 
     private String checkInTime(LocalDateTime startDateTime) {

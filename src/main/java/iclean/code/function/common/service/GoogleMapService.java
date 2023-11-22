@@ -1,8 +1,7 @@
-package iclean.code.service;
+package iclean.code.function.common.service;
 
 import iclean.code.data.domain.BookingDetail;
 import iclean.code.data.dto.common.Position;
-import iclean.code.data.dto.response.booking.GetBookingResponseForHelper;
 
 import java.util.List;
 

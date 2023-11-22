@@ -12,7 +12,7 @@ import iclean.code.data.enumjava.DeleteStatusEnum;
 import iclean.code.data.repository.ServiceRepository;
 import iclean.code.exception.NotFoundException;
 import iclean.code.function.service.service.ServiceService;
-import iclean.code.service.StorageService;
+import iclean.code.function.common.service.StorageService;
 import iclean.code.utils.Utils;
 import lombok.extern.log4j.Log4j2;
 import org.modelmapper.ModelMapper;

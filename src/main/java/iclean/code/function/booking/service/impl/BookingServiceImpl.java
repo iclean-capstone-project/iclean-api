@@ -21,8 +21,8 @@ import iclean.code.exception.NotFoundException;
 import iclean.code.exception.UserNotHavePermissionException;
 import iclean.code.function.booking.service.BookingService;
 import iclean.code.function.serviceprice.service.ServicePriceService;
-import iclean.code.service.FCMService;
-import iclean.code.service.GoogleMapService;
+import iclean.code.function.common.service.FCMService;
+import iclean.code.function.common.service.GoogleMapService;
 import iclean.code.utils.Utils;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.ObjectUtils;
@@ -620,6 +620,25 @@ public class BookingServiceImpl implements BookingService {
                     );
                 }
             }
+            boolean checkTransactionMoney = createTransaction(new TransactionRequest(booking.getTotalPriceActual(),
+                    MessageVariable.USING_MONEY_FOR_BOOKING,
+                    userId,
+                    TransactionTypeEnum.WITHDRAW.name(),
+                    WalletTypeEnum.MONEY.name(),
+                    booking.getBookingId()));
+            NotificationRequestDto notificationRequestDtoPayment = new NotificationRequestDto();
+            notificationRequestDtoPayment.setTitle(String.format(MessageVariable.PAYMENT_A_SERVICE, booking.getBookingCode()));
+            if (checkTransactionMoney) {
+                notificationRequestDtoPayment.setBody(MessageVariable.PAYMENT_SUCCESS);
+            } else {
+                throw new BadRequestException(MessageVariable.PAYMENT_FAIL);
+            }
+            sendMessage(notificationRequestDtoPayment, renter);
+            Notification notificationPayment = new Notification();
+            notificationPayment.setUser(renter);
+            notificationPayment.setTitle(notificationRequestDtoPayment.getTitle());
+            notificationPayment.setContent(notificationRequestDtoPayment.getBody());
+            notificationRepository.save(notificationPayment);
             List<BookingDetailStatusHistory> bookingDetailStatusHistories = new ArrayList<>();
             List<BookingDetail> bookingDetails = booking.getBookingDetails();
             for (BookingDetail bookingDetail :
@@ -656,6 +675,11 @@ public class BookingServiceImpl implements BookingService {
             if (e instanceof UserNotHavePermissionException) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
                         .body(new ResponseObject(HttpStatus.FORBIDDEN.toString(),
+                                e.getMessage(), null));
+            }
+            if (e instanceof BadRequestException) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString(),
                                 e.getMessage(), null));
             }
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
@@ -698,29 +722,23 @@ public class BookingServiceImpl implements BookingService {
                             ));
                         }
                     }
+                    createTransaction(new TransactionRequest(booking.getTotalPriceActual(),
+                            MessageVariable.REFUND_REJECT_BOOKING,
+                            renter.getUserId(),
+                            TransactionTypeEnum.DEPOSIT.name(),
+                            WalletTypeEnum.MONEY.name(),
+                            bookingId));
+                    NotificationRequestDto notificationRequestDto = new NotificationRequestDto();
+                    notificationRequestDto.setTitle(MessageVariable.TITLE_APP);
+                    notificationRequestDto.setBody(MessageVariable.REFUND_REJECT_BOOKING);
+                    sendMessage(notificationRequestDto, renter);
                     break;
                 case APPROVED:
                     break;
                 default:
                     throw new UserNotHavePermissionException("Cannot update to this status");
             }
-            boolean checkMoney = createTransaction(new TransactionRequest(booking.getTotalPriceActual(),
-                    MessageVariable.PAYMENT_SUCCESS,
-                    renter.getUserId(),
-                    TransactionTypeEnum.WITHDRAW.name(),
-                    WalletTypeEnum.MONEY.name(),
-                    bookingId));
-            if (!checkMoney) {
-                bookingDetailStatusEnum = BookingDetailStatusEnum.NO_MONEY;
-                bookingStatusEnum = BookingStatusEnum.NO_MONEY;
-                NotificationRequestDto notificationRequestDto = new NotificationRequestDto();
-                notificationRequestDto.setTitle(MessageVariable.TITLE_APP);
-                notificationRequestDto.setBody(MessageVariable.PAYMENT_NO_MONEY);
-                sendMessage(notificationRequestDto, renter);
-            } else {
-                booking.setBookingStatus(bookingStatusEnum);
-                booking.setUpdateAt(Utils.getLocalDateTimeNow());
-            }
+            booking.setUpdateAt(Utils.getLocalDateTimeNow());
             List<BookingDetailStatusHistory> bookingDetailStatusHistories = new ArrayList<>();
             List<BookingDetail> bookingDetails = booking.getBookingDetails();
             for (BookingDetail bookingDetail :
@@ -756,71 +774,6 @@ public class BookingServiceImpl implements BookingService {
             if (e instanceof UserNotHavePermissionException) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
                         .body(new ResponseObject(HttpStatus.FORBIDDEN.toString(),
-                                e.getMessage(), null));
-            }
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new ResponseObject(HttpStatus.INTERNAL_SERVER_ERROR.toString(),
-                            "Something wrong occur!", null));
-        }
-    }
-
-    @Override
-    public ResponseEntity<ResponseObject> paymentBooking(Integer bookingId, Integer renterId) {
-        try {
-            Booking booking = findBookingById(bookingId);
-            User renter = findAccount(renterId);
-            isPermission(renterId, booking);
-            if (booking.getBookingStatus() != BookingStatusEnum.NO_MONEY)
-                throw new BadRequestException("The booking cannot make a payment!");
-            boolean checkTransactionMoney = createTransaction(new TransactionRequest(booking.getTotalPriceActual(),
-                    MessageVariable.USING_MONEY_FOR_BOOKING,
-                    renterId,
-                    TransactionTypeEnum.WITHDRAW.name(),
-                    WalletTypeEnum.MONEY.name(),
-                    booking.getBookingId()));
-            NotificationRequestDto notificationRequestDto = new NotificationRequestDto();
-            notificationRequestDto.setTitle(String.format(MessageVariable.PAYMENT_A_SERVICE, booking.getBookingCode()));
-            List<BookingDetailStatusHistory> bookingDetailStatusHistories = new ArrayList<>();
-            if (checkTransactionMoney) {
-                booking.setBookingStatus(BookingStatusEnum.APPROVED);
-                for (BookingDetail bookingDetail :
-                        booking.getBookingDetails()) {
-                    BookingDetailStatusHistory bookingDetailStatusHistory = new BookingDetailStatusHistory();
-                    bookingDetailStatusHistory.setBookingDetail(bookingDetail);
-                    bookingDetailStatusHistory.setBookingDetailStatus(BookingDetailStatusEnum.APPROVED);
-                    bookingDetailStatusHistories.add(bookingDetailStatusHistory);
-                }
-
-                bookingDetailStatusHistoryRepository.saveAll(bookingDetailStatusHistories);
-                notificationRequestDto.setBody(MessageVariable.PAYMENT_SUCCESS);
-            } else {
-                notificationRequestDto.setBody(MessageVariable.PAYMENT_NO_MONEY);
-            }
-            sendMessage(notificationRequestDto, renter);
-            Notification notification = new Notification();
-            notification.setUser(renter);
-            notification.setTitle(notificationRequestDto.getTitle());
-            notification.setContent(notificationRequestDto.getBody());
-            bookingRepository.save(booking);
-            notificationRepository.save(notification);
-            return ResponseEntity.status(HttpStatus.OK)
-                    .body(new ResponseObject(HttpStatus.OK.toString(),
-                            "Make a payment booking successful", null));
-        } catch (Exception e) {
-            log.error(e.getMessage());
-            if (e instanceof UserNotHavePermissionException) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                        .body(new ResponseObject(HttpStatus.FORBIDDEN.toString(),
-                                e.getMessage(), null));
-            }
-            if (e instanceof BadRequestException) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString(),
-                                e.getMessage(), null));
-            }
-            if (e instanceof NotFoundException) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(new ResponseObject(HttpStatus.NOT_FOUND.toString(),
                                 e.getMessage(), null));
             }
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -1087,7 +1040,7 @@ public class BookingServiceImpl implements BookingService {
                         }
                 )
                 .collect(Collectors.toList());
-        return Utils.convertToPageResponse(bookings, Collections.singletonList(dtoList));
+        return Utils.convertToPageResponse(bookings, dtoList);
     }
 
     private User findAccount(int userId) {

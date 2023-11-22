@@ -14,7 +14,7 @@ public class MessageVariable {
     public static final String RENTER_CANCEL_BOOKING = "Dịch vụ #%s đã được người dùng hủy, vui lòng kiểm tra lại thông tin!";
     public static final String HELPER_CANCEL_BOOKING = "Dịch vụ #%s đã bị hủy bởi nhân viên, kiểm tra lại ngay!";
     public static final String PAYMENT_SUCCESS = "Thanh toán cho dịch vụ số #%s thành công";
-    public static final String PAYMENT_NO_MONEY = "Thanh toán cho dịch vụ #%s thất bại do số dư không đủ";
+    public static final String REFUND_REJECT_BOOKING = "Hoàn tiền cho dịch vụ #%s";
     public static final String USING_POINT_FOR_BOOKING = "Sử dụng điểm cho dịch vụ";
     public static final String USING_MONEY_FOR_BOOKING = "Thanh toán cho dịch vụ #%s thành công";
     public static final String NEED_ADD_LOCATION_FOR_BOOKING = "Bạn cần có địa chỉ hiện tại để đặt dịch vụ";
@@ -35,4 +35,5 @@ public class MessageVariable {
     public static final String PAYMENT_FOR_HELPER = "Nhận tiền cho dịch vụ số #%s - %s";
     public static final String DEPOSIT_SUCCESSFUL = "Nạp tiền vào ví thành công";
     public static final String TRANSFER_SUCCESSFUL = "Thanh toán cho Helper#%s thành công";
+    public static final String PAYMENT_FAIL = "Số dư hiện tại không đủ để thực hiện giao dịch!";
 }
