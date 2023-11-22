@@ -83,7 +83,7 @@ public class EmailSenderServiceImpl implements EmailSenderService {
                     helper.setTo(cancelHelperRequestSendMail.getTo());
                     context.setVariable("helper_name", cancelHelperRequestSendMail.getHelperName());
                     context.setVariable("manager_name", cancelHelperRequestSendMail.getManagerName());
-                    context.setVariable("reject_reason", cancelHelperRequestSendMail.getManagerName());
+                    context.setVariable("reject_reason", cancelHelperRequestSendMail.getRejectReason());
                     context.setVariable("company_name", EmailEnum.COMPANY_NAME.getValue());
                     helper.setSubject(EmailEnum.REJECT_HELPER_TITLE.getValue() + EmailEnum.COMPANY_NAME.getValue());
                     htmlContent = templateEngine.process(Objects.requireNonNull(resourceRejectHelper.getFilename()), context);

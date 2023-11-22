@@ -351,21 +351,21 @@ public class HelperRegistrationServiceImpl implements HelperRegistrationService 
         try {
             HelperInformation helperInformation = findHelperInformationById(id);
             helperInformation.setHelperStatus(HelperStatusEnum.WAITING_FOR_CONFIRM);
-            User manager = findUserById(id);
+            User manager = findUserById(managerId);
             isPermission(manager, helperInformation);
             LocalDateTime current = Utils.getLocalDateTimeNow();
             LocalDateTime meetingDateTime = current.plusDays(7);
-            Optional<HelperInformation> helperInformationOptional = helperInformationRepository
+            List<HelperInformation> helperInformationOptional = helperInformationRepository
                     .findMaxByMeetingDateTimeAndHelperStatus(HelperStatusEnum.WAITING_FOR_APPROVE);
-            if (helperInformationOptional.isPresent()) {
-                if (current.isBefore(helperInformationOptional.get().getMeetingDateTime())) {
-                    LocalDateTime startTime = helperInformationOptional.get().getMeetingDateTime().toLocalDate().atStartOfDay();
+            if (!helperInformationOptional.isEmpty()) {
+                if (current.isBefore(helperInformationOptional.get(0).getMeetingDateTime())) {
+                    LocalDateTime startTime = helperInformationOptional.get(0).getMeetingDateTime().toLocalDate().atStartOfDay();
                     LocalDateTime endTime = startTime.plusDays(1);
-                    Integer count = helperInformationRepository.findAllByMeetingDatetime(startTime, endTime);
+                    Integer count = helperInformationRepository.findAllByMeetingDatetime(startTime, endTime, HelperStatusEnum.WAITING_FOR_CONFIRM);
                     if (count >= getMaxRequestADay()) {
                         meetingDateTime = endTime.plusHours(8);
                     } else {
-                        meetingDateTime = helperInformationOptional.get().getMeetingDateTime();
+                        meetingDateTime = helperInformationOptional.get(0).getMeetingDateTime().toLocalDate().atStartOfDay().plusHours(8);
                     }
                 }
             }
