@@ -51,4 +51,18 @@ public class DashboardController {
                                                             @RequestParam @Nullable String option) {
         return dashboardService.findBookingByDate(time, option);
     }
+
+    @GetMapping("/count-booking-per-day")
+    @Operation(summary = "Count and get Sale of booking per day", description = "Return sum of booking in system")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Tổng đơn hàng "),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - Login please"),
+            @ApiResponse(responseCode = "403", description = "Forbidden - You don't have permission to access on this api"),
+            @ApiResponse(responseCode = "400", description = "Bad request - Missing some field required")
+    })
+    @PreAuthorize("hasAnyAuthority('admin', 'manager')")
+    public ResponseEntity<ResponseObject> getSumOfBookingPerDay(@RequestParam Integer month,
+                                                            @RequestParam Integer year) {
+        return dashboardService.getSumOfBookingPerDay(month, year);
+    }
 }
