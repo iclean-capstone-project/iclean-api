@@ -27,14 +27,15 @@ public interface HelperInformationRepository extends JpaRepository<HelperInforma
     Page<HelperInformation> findAllByStatus(HelperStatusEnum helperStatusEnum, Pageable pageable);
 
     @Query("SELECT count(*) FROM HelperInformation hi " +
-            "WHERE hi.meetingDateTime >= :startOfDay AND hi.meetingDateTime < :endOfDay")
+            "WHERE hi.meetingDateTime >= ?1 AND hi.meetingDateTime < ?2 AND hi.helperStatus = ?3")
     Integer findAllByMeetingDatetime(
-            @Param("startOfDay") LocalDateTime startOfDay,
-            @Param("endOfDay") LocalDateTime endOfDay);
+            LocalDateTime startOfDay,
+            LocalDateTime endOfDay,
+            HelperStatusEnum statusEnum);
 
     @Query("SELECT hi FROM HelperInformation hi " +
             "WHERE hi.meetingDateTime = (SELECT max(hi2.meetingDateTime) FROM HelperInformation hi2 WHERE hi2.helperStatus = ?1)")
-    Optional<HelperInformation> findMaxByMeetingDateTimeAndHelperStatus(HelperStatusEnum helperStatusEnum);
+    List<HelperInformation> findMaxByMeetingDateTimeAndHelperStatus(HelperStatusEnum helperStatusEnum);
 
     @Query("SELECT hi FROM HelperInformation hi " +
             "WHERE hi.managerId = ?1 " +
