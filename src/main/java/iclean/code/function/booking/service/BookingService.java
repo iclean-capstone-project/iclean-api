@@ -24,8 +24,6 @@ public interface BookingService {
 
     ResponseEntity<ResponseObject> acceptOrRejectBooking(Integer bookingId, AcceptRejectBookingRequest request, Integer managerId);
 
-    ResponseEntity<ResponseObject> paymentBooking(Integer bookingId, Integer renterId);
-
     ResponseEntity<ResponseObject> cancelBooking(Integer bookingId, Integer renterId);
 
     ResponseEntity<ResponseObject> getCheckoutCart(Integer renterId);

@@ -1,4 +1,4 @@
-package iclean.code.service;
+package iclean.code.function.common.service;
 
 import org.springframework.web.multipart.MultipartFile;
 

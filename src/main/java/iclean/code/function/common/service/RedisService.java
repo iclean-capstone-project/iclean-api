@@ -1,4 +1,4 @@
-package iclean.code.service;
+package iclean.code.function.common.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import iclean.code.data.domain.RefreshToken;

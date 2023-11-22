@@ -6,11 +6,14 @@ import iclean.code.data.dto.response.bookingstatushistory.GetBookingStatusHistor
 import iclean.code.data.dto.response.feedback.GetFeedbackResponse;
 import lombok.Data;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
 public class GetBookingDetailDetailResponse {
     private Integer bookingDetailId;
+    private String bookingCode;
+    private LocalDateTime orderDate;
     private Integer serviceId;
     private Integer serviceUnitId;
     private String serviceName;
@@ -22,6 +25,8 @@ public class GetBookingDetailDetailResponse {
     private Double equivalent;
     private Double price;
     private String currentStatus;
+    private String rejectionReasonContent;
+    private String rejectionReasonDescription;
     private GetAddressResponseBooking address;
     private GetHelpersResponse helper;
     private GetTransactionBookingResponse transaction;

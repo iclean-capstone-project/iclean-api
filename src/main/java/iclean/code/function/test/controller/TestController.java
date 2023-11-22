@@ -2,8 +2,8 @@ package iclean.code.function.test.controller;
 
 import iclean.code.data.dto.request.others.SendMailRequest;
 import iclean.code.data.enumjava.SendMailOptionEnum;
-import iclean.code.service.EmailSenderService;
-import iclean.code.service.StorageService;
+import iclean.code.function.common.service.EmailSenderService;
+import iclean.code.function.common.service.StorageService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;

@@ -1,11 +1,11 @@
-package iclean.code.service.impl;
+package iclean.code.function.common.service.impl;
 
 import com.twilio.rest.api.v2010.account.Message;
 import com.twilio.type.PhoneNumber;
 import iclean.code.config.TwilioConfig;
 import iclean.code.data.dto.request.security.ValidateOTPRequest;
 import iclean.code.data.repository.SystemParameterRepository;
-import iclean.code.service.TwilioOTPService;
+import iclean.code.function.common.service.TwilioOTPService;
 import iclean.code.utils.Utils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;

@@ -20,7 +20,7 @@ import iclean.code.exception.BadRequestException;
 import iclean.code.exception.NotFoundException;
 import iclean.code.function.moneyrequest.service.MoneyRequestService;
 import iclean.code.function.transaction.service.TransactionService;
-import iclean.code.service.TwilioOTPService;
+import iclean.code.function.common.service.TwilioOTPService;
 import iclean.code.utils.Utils;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;

@@ -1,4 +1,4 @@
-package iclean.code.service.impl;
+package iclean.code.function.common.service.impl;
 
 import iclean.code.data.dto.request.helperinformation.AcceptHelperRequest;
 import iclean.code.data.dto.request.helperinformation.CancelHelperRequestSendMail;
@@ -6,7 +6,7 @@ import iclean.code.data.dto.request.helperinformation.ConfirmHelperRequestSendMa
 import iclean.code.data.dto.request.others.SendMailRequest;
 import iclean.code.data.enumjava.EmailEnum;
 import iclean.code.data.enumjava.SendMailOptionEnum;
-import iclean.code.service.EmailSenderService;
+import iclean.code.function.common.service.EmailSenderService;
 import iclean.code.utils.Utils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;

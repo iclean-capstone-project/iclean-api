@@ -10,7 +10,7 @@ import iclean.code.data.repository.UserRepository;
 import iclean.code.exception.NotFoundException;
 import iclean.code.exception.UserNotHavePermissionException;
 import iclean.code.function.profile.service.ProfileService;
-import iclean.code.service.StorageService;
+import iclean.code.function.common.service.StorageService;
 import iclean.code.utils.Utils;
 import lombok.extern.log4j.Log4j2;
 import org.modelmapper.ModelMapper;

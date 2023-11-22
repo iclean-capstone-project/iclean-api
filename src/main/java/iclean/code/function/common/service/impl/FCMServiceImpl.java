@@ -1,4 +1,4 @@
-package iclean.code.service.impl;
+package iclean.code.function.common.service.impl;
 
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.firebase.FirebaseApp;
@@ -7,7 +7,7 @@ import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.messaging.Message;
 import com.google.firebase.messaging.Notification;
 import iclean.code.data.dto.request.authen.NotificationRequestDto;
-import iclean.code.service.FCMService;
+import iclean.code.function.common.service.FCMService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;

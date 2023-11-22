@@ -1,4 +1,4 @@
-package iclean.code.service;
+package iclean.code.function.common.service;
 
 import iclean.code.data.dto.request.security.ValidateOTPRequest;
 

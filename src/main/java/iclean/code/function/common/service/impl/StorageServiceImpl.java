@@ -1,10 +1,10 @@
-package iclean.code.service.impl;
+package iclean.code.function.common.service.impl;
 
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.cloud.StorageClient;
-import iclean.code.service.StorageService;
+import iclean.code.function.common.service.StorageService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;

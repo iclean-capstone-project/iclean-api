@@ -32,6 +32,13 @@ public class BookingDetailMapper {
                 map().setTotalPrice(source.getPriceDetail());
             }
         });
+
+        modelMapper.addMappings(new PropertyMap<BookingDetail, GetBookingDetailDetailResponse>() {
+            @Override
+            protected void configure() {
+                map().setOrderDate(source.getBooking().getOrderDate());
+            }
+        });
     }
 
     public <S, D> D map(S source, Class<D> destinationType) {

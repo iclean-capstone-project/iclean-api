@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import iclean.code.data.domain.RefreshToken;
 import iclean.code.exception.TokenRefreshException;
 import iclean.code.function.authentication.service.RefreshTokenService;
-import iclean.code.service.RedisService;
+import iclean.code.function.common.service.RedisService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;

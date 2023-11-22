@@ -1,4 +1,4 @@
-package iclean.code.service.impl;
+package iclean.code.function.common.service.impl;
 
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.EncodeHintType;
@@ -6,7 +6,7 @@ import com.google.zxing.common.BitMatrix;
 import com.google.zxing.qrcode.QRCodeWriter;
 import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel;
 import iclean.code.data.dto.request.security.ValidateOTPRequest;
-import iclean.code.service.QRCodeService;
+import iclean.code.function.common.service.QRCodeService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;

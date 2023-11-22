@@ -1,6 +1,6 @@
-package iclean.code.service.impl;
+package iclean.code.function.common.service.impl;
 
-import iclean.code.service.ExternalApiService;
+import iclean.code.function.common.service.ExternalApiService;
 import iclean.code.utils.Utils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -8,7 +8,6 @@ import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.util.UriComponentsBuilder;

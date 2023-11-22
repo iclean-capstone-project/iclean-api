@@ -58,20 +58,6 @@ public class BookingController {
         return bookingService.getBookings(JwtUtils.decodeToAccountId(authentication), pageable, statuses, isHelper);
     }
 
-    @PutMapping("/make-payment/{bookingId}")
-    @Operation(summary = "Payment booking by renter", description = "Return all booking information")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Booking Information"),
-            @ApiResponse(responseCode = "401", description = "Unauthorized - Login please"),
-            @ApiResponse(responseCode = "403", description = "Forbidden - You don't have permission to access on this api"),
-            @ApiResponse(responseCode = "400", description = "Bad request - Missing some field required")
-    })
-    @PreAuthorize("hasAnyAuthority('employee', 'renter')")
-    public ResponseEntity<ResponseObject> paymentABooking(Authentication authentication,
-                                                          @PathVariable Integer bookingId) {
-        return bookingService.paymentBooking(bookingId, JwtUtils.decodeToAccountId(authentication));
-    }
-
     @GetMapping("/cart")
     @Operation(summary = "Get cart of a user", description = "Return Cart information")
     @ApiResponses(value = {

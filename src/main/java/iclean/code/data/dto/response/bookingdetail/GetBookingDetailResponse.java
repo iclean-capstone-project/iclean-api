@@ -5,6 +5,8 @@ import lombok.Data;
 @Data
 public class GetBookingDetailResponse {
     private Integer bookingDetailId;
+    private String bookingCode;
+    private String orderDate;
     private Integer serviceId;
     private Integer serviceUnitId;
     private String serviceName;
