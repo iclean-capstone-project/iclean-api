@@ -1,12 +1,14 @@
 package iclean.code.data.repository;
 
 import iclean.code.data.domain.Booking;
+import iclean.code.data.dto.response.booking.GetSumOfBookingPerDay;
 import iclean.code.data.enumjava.BookingStatusEnum;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
+
 import java.util.List;
 
 @Repository
@@ -68,6 +70,12 @@ public interface BookingRepository extends JpaRepository<Booking, Integer> {
 
     @Query("SELECT e FROM Booking e WHERE DATE(e.orderDate) = ?1")
     List<Booking> getBookingByOrderDate(String orderDate);
+
+    @Query("SELECT new iclean.code.data.dto.response.booking.GetSumOfBookingPerDay(date(b.orderDate), count(b), sum(b.totalPriceActual)) " +
+            "FROM Booking b " +
+            "WHERE MONTH(b.orderDate) = ?1 and Year(b.orderDate) = ?2 " +
+            "GROUP BY  DATE(b.orderDate)")
+    List<GetSumOfBookingPerDay> getGetSumOfBookings(Integer month, Integer year);
 
     @Query("SELECT e FROM Booking e WHERE MONTH(e.orderDate) = CAST(?1 AS int) AND YEAR(e.orderDate) = YEAR(CURRENT_DATE)")
     List<Booking> getBookingByMoth(String orderDate);

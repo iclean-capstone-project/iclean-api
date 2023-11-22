@@ -2,6 +2,7 @@ package iclean.code.function.dashboard.service.impl;
 
 import iclean.code.data.domain.Booking;
 import iclean.code.data.dto.common.ResponseObject;
+import iclean.code.data.dto.response.booking.GetSumOfBookingPerDay;
 import iclean.code.data.dto.response.dashboard.HomeResponse;
 import iclean.code.data.dto.response.dashboard.TopEmployee;
 import iclean.code.data.repository.BookingDetailHelperRepository;
@@ -87,5 +88,15 @@ public class DashboardServiceImpl implements DashboardService {
         return ResponseEntity.status(HttpStatus.OK)
                 .body(new ResponseObject(HttpStatus.OK.toString(),
                         "Tổng đơn hàng trong ngày: ", bookings));
+    }
+
+    public ResponseEntity<ResponseObject> getSumOfBookingPerDay(Integer month, Integer year) {
+
+        List<GetSumOfBookingPerDay> bookings;
+        bookings = bookingRepository.getGetSumOfBookings(month, year);
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(new ResponseObject(HttpStatus.OK.toString(),
+                        "Thống kê đơn trong tháng: ", bookings));
     }
 }
