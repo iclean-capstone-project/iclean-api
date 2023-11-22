@@ -33,7 +33,7 @@ public interface HelperInformationRepository extends JpaRepository<HelperInforma
             @Param("endOfDay") LocalDateTime endOfDay);
 
     @Query("SELECT hi FROM HelperInformation hi " +
-            "WHERE hi.meetingDateTime = (SELECT max(hi2.meetingDateTime) FROM HelperInformation hi2 WHERE hi2.helperStatus = ?2)")
+            "WHERE hi.meetingDateTime = (SELECT max(hi2.meetingDateTime) FROM HelperInformation hi2 WHERE hi2.helperStatus = ?1)")
     Optional<HelperInformation> findMaxByMeetingDateTimeAndHelperStatus(HelperStatusEnum helperStatusEnum);
 
     @Query("SELECT hi FROM HelperInformation hi " +

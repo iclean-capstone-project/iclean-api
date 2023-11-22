@@ -36,4 +36,5 @@ public class MessageVariable {
     public static final String DEPOSIT_SUCCESSFUL = "Nạp tiền vào ví thành công";
     public static final String TRANSFER_SUCCESSFUL = "Thanh toán cho Helper#%s thành công";
     public static final String PAYMENT_FAIL = "Số dư hiện tại không đủ để thực hiện giao dịch!";
+    public static final String NOT_FOUND_HELPER_FOR_THIS_SERVICE = "Hiện tại không tìm thấy người làm cho dịch vụ %s, vui lòng thử lại!";
 }

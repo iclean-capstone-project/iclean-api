@@ -351,7 +351,7 @@ public class HelperRegistrationServiceImpl implements HelperRegistrationService 
         try {
             HelperInformation helperInformation = findHelperInformationById(id);
             helperInformation.setHelperStatus(HelperStatusEnum.WAITING_FOR_CONFIRM);
-            User manager = findUserById(id);
+            User manager = findUserById(managerId);
             isPermission(manager, helperInformation);
             LocalDateTime current = Utils.getLocalDateTimeNow();
             LocalDateTime meetingDateTime = current.plusDays(7);

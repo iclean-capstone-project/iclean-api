@@ -14,6 +14,7 @@ import iclean.code.data.dto.response.booking.GetBookingResponse;
 import iclean.code.data.dto.response.booking.GetCartResponseDetail;
 import iclean.code.data.dto.response.booking.GetDetailBookingResponse;
 import iclean.code.data.dto.response.bookingdetail.GetCheckOutResponseDetail;
+import iclean.code.data.dto.response.helperinformation.GetPriorityResponse;
 import iclean.code.data.enumjava.*;
 import iclean.code.data.repository.*;
 import iclean.code.exception.BadRequestException;
@@ -37,6 +38,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.RoundingMode;
+import java.time.DayOfWeek;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -52,6 +55,8 @@ public class BookingServiceImpl implements BookingService {
     @Autowired
     private BookingRepository bookingRepository;
     @Autowired
+    private BookingDetailHelperRepository bookingDetailHelperRepository;
+    @Autowired
     private AddressRepository addressRepository;
     @Autowired
     private UserRepository userRepository;
@@ -62,9 +67,13 @@ public class BookingServiceImpl implements BookingService {
     @Autowired
     private ServiceUnitRepository serviceUnitRepository;
     @Autowired
+    private ServiceRegistrationRepository serviceRegistrationRepository;
+    @Autowired
     private RejectionReasonRepository rejectionReasonRepository;
     @Autowired
     private NotificationRepository notificationRepository;
+    @Autowired
+    private HelperInformationRepository helperInformationRepository;
     @Autowired
     private BookingDetailRepository bookingDetailRepository;
     @Autowired
@@ -559,6 +568,7 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
+    @Transactional
     public ResponseEntity<ResponseObject> checkoutCart(Integer userId, CheckOutCartRequest request) {
         try {
             ObjectMapper objectMapper = new ObjectMapper();
@@ -740,17 +750,76 @@ public class BookingServiceImpl implements BookingService {
             }
             booking.setUpdateAt(Utils.getLocalDateTimeNow());
             List<BookingDetailStatusHistory> bookingDetailStatusHistories = new ArrayList<>();
+            LocalDateTime now = Utils.getLocalDateTimeNow();
+            DayOfWeek currentDate = now.getDayOfWeek();
             List<BookingDetail> bookingDetails = booking.getBookingDetails();
+            List<BookingDetailHelper> needToAssigns = new ArrayList<>();
+            int numberReject = 0;
             for (BookingDetail bookingDetail :
                     bookingDetails) {
-                bookingDetail.setBookingDetailStatus(bookingDetailStatusEnum);
                 BookingDetailStatusHistory bookingDetailStatusHistory = new BookingDetailStatusHistory();
                 bookingDetailStatusHistory.setBookingDetailStatus(bookingDetailStatusEnum);
                 bookingDetailStatusHistory.setBookingDetail(bookingDetail);
                 bookingDetailStatusHistories.add(bookingDetailStatusHistory);
+
+                if (booking.getAutoAssign()) {
+                    LocalDateTime startDateTime = LocalDateTime.of(bookingDetail.getWorkDate(), bookingDetail.getWorkStart());
+                    LocalDateTime endDateTime = Utils.plusLocalDateTime(startDateTime, bookingDetail.getServiceUnit().getUnit().getUnitValue());
+                    List<HelperInformation> helpersInformation = helperInformationRepository.findAllByWorkScheduleStartEndAndServiceId(startDateTime, endDateTime, currentDate,
+                            bookingDetail.getServiceUnit().getService().getServiceId(), ServiceHelperStatusEnum.ACTIVE, BookingDetailHelperStatusEnum.ACTIVE);
+                    HelperInformation helperInformation = getPriority(helpersInformation, bookingDetail.getServiceUnit().getService().getServiceId());
+                    BookingDetailHelper bookingDetailHelper = new BookingDetailHelper();
+                    bookingDetailHelper.setBookingDetail(bookingDetail);
+                    bookingDetailHelper.setBookingDetailHelperStatus(BookingDetailHelperStatusEnum.ACTIVE);
+                    if (helperInformation != null) {
+                        bookingDetail.setBookingDetailStatus(bookingDetailStatusEnum);
+                        ServiceRegistration serviceRegistration = serviceRegistrationRepository.findByServiceIdAndUserId(bookingDetail.getServiceUnit().getService().getServiceId(),
+                                helperInformation.getUser().getUserId());
+                        bookingDetailHelper.setServiceRegistration(serviceRegistration);
+                        needToAssigns.add(bookingDetailHelper);
+                    } else {
+                        numberReject++;
+                        bookingDetail.setBookingDetailStatus(BookingDetailStatusEnum.REJECTED);
+                        if (booking.getUsingPoint()) {
+                            Transaction transactionPoint = transactionRepository.findByBookingIdAndWalletTypeAndTransactionTypeAndUserId(bookingId,
+                                    WalletTypeEnum.POINT, TransactionTypeEnum.WITHDRAW, renter.getUserId());
+                            if (transactionPoint != null) {
+                                createTransaction(new TransactionRequest(
+                                        transactionPoint.getAmount(),
+                                        String.format(MessageVariable.REFUND_POINT_CANCEL_BOOKING, bookingId),
+                                        renter.getUserId(),
+                                        TransactionTypeEnum.DEPOSIT.name(),
+                                        WalletTypeEnum.POINT.name()
+                                ));
+                            }
+                        }
+                        Transaction transaction = transactionRepository.findByBookingIdAndWalletTypeAndTransactionTypeAndUserId(bookingId,
+                                WalletTypeEnum.MONEY, TransactionTypeEnum.WITHDRAW, renter.getUserId());
+                        createTransaction(new TransactionRequest(transaction.getAmount(),
+                                MessageVariable.REFUND_REJECT_BOOKING,
+                                renter.getUserId(),
+                                TransactionTypeEnum.DEPOSIT.name(),
+                                WalletTypeEnum.MONEY.name(),
+                                bookingId));
+                        NotificationRequestDto notificationRequestDto1 = new NotificationRequestDto();
+                        notificationRequestDto1.setTitle(MessageVariable.TITLE_APP);
+                        notificationRequestDto1.setBody(String.format(MessageVariable.NOT_FOUND_HELPER_FOR_THIS_SERVICE,
+                                bookingDetail.getServiceUnit().getService().getServiceName()));
+                        sendMessage(notificationRequestDto1, renter);
+                        NotificationRequestDto notificationRequestDto = new NotificationRequestDto();
+                        notificationRequestDto.setTitle(MessageVariable.TITLE_APP);
+                        notificationRequestDto.setBody(MessageVariable.REFUND_REJECT_BOOKING);
+                        sendMessage(notificationRequestDto, renter);
+                        break;
+                    }
+                }
             }
 
             booking.setBookingStatus(bookingStatusEnum);
+            if (numberReject == booking.getBookingDetails().size()) {
+                booking.setBookingStatus(BookingStatusEnum.REJECTED);
+            }
+            bookingDetailHelperRepository.saveAll(needToAssigns);
             bookingDetailRepository.saveAll(bookingDetails);
             bookingDetailStatusHistoryRepository.saveAll(bookingDetailStatusHistories);
             bookingRepository.save(booking);
@@ -782,6 +851,32 @@ public class BookingServiceImpl implements BookingService {
         }
     }
 
+    private HelperInformation getPriority(List<HelperInformation> helpersInformation, Integer serviceId) {
+        try {
+            List<Integer> helperIds = helpersInformation.stream().map(HelperInformation::getHelperInformationId).collect(Collectors.toList());
+            List<GetPriorityResponse> priorityResponses = new ArrayList<>();
+            for (Integer helperId :
+                    helperIds) {
+                GetPriorityResponse priorityResponse = bookingDetailRepository.findPriority(BookingDetailStatusEnum.FINISHED, serviceId, helperId);
+                priorityResponses.add(priorityResponse);
+            }
+            double maxValue = 0D;
+            Integer helperId = helperIds.get(0);
+            for (GetPriorityResponse response :
+                    priorityResponses) {
+                double check = response.getAvgRate() * 0.4 + (double) 5 / (response.getNumberOfBookingDetail() + 1) * 0.6;
+                if (check > maxValue) {
+                    maxValue = check;
+                    helperId = response.getHelperInformationId();
+                }
+            }
+            return helperInformationRepository.findById(helperId).orElseThrow(() -> new NotFoundException("Helper Not Found"));
+
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     @Override
     public ResponseEntity<ResponseObject> cancelBooking(Integer bookingId, Integer renterId) {
         try {
@@ -804,6 +899,21 @@ public class BookingServiceImpl implements BookingService {
                                 renterId,
                                 TransactionTypeEnum.DEPOSIT.name(),
                                 WalletTypeEnum.POINT.name(),
+                                bookingId));
+                    }
+
+                    Transaction transactionMoney = transactionRepository.findByBookingIdAndWalletTypeAndTransactionTypeAndUserId(
+                            bookingId,
+                            WalletTypeEnum.MONEY,
+                            TransactionTypeEnum.WITHDRAW,
+                            renterId);
+                    if (transactionMoney != null) {
+                        createTransaction(new TransactionRequest(
+                                transactionMoney.getAmount(),
+                                String.format(MessageVariable.REFUND_REJECT_BOOKING, booking.getBookingCode()),
+                                renterId,
+                                TransactionTypeEnum.DEPOSIT.name(),
+                                WalletTypeEnum.MONEY.name(),
                                 bookingId));
                     }
                     booking.setBookingStatus(BookingStatusEnum.CANCELED);
