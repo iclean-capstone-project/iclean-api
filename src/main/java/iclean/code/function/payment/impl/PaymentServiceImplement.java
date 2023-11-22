@@ -43,10 +43,9 @@ public class PaymentServiceImplement implements PaymentService {
     private TransactionRepository transactionRepository;
 
     @Override
-    public ResponseEntity<?> createPayment() {
+    public ResponseEntity<ResponseObject> createPayment(Long amount) {
         try {
             String orderType = "other";
-            long amount = 10000 * 100;
             String bankCode = "NCB";
 
             String vnp_TxnRef = VnPayConfig.getRandomNumber(8);
@@ -56,7 +55,7 @@ public class PaymentServiceImplement implements PaymentService {
             vnp_Params.put("vnp_Version", VnPayConfig.vnp_Version);
             vnp_Params.put("vnp_Command", VnPayConfig.vnp_Command);
             vnp_Params.put("vnp_TmnCode", VnPayConfig.vnp_TmnCode);
-            vnp_Params.put("vnp_Amount", String.valueOf(amount));
+            vnp_Params.put("vnp_Amount", String.valueOf(amount * 100));
             vnp_Params.put("vnp_CurrCode", "VND");
 
             vnp_Params.put("vnp_BankCode", bankCode);
@@ -120,7 +119,7 @@ public class PaymentServiceImplement implements PaymentService {
     }
 
     @Override
-    public ResponseEntity<?> paymentReturn(HttpServletRequest request) {
+    public ResponseEntity<ResponseObject> paymentReturn(HttpServletRequest request) {
         try {
             Map fields = new HashMap();
             for (Enumeration params = request.getParameterNames(); params.hasMoreElements(); ) {
@@ -168,7 +167,10 @@ public class PaymentServiceImplement implements PaymentService {
                     transaction.setWallet(walletUpdate);
                     transaction.setNote(MessageVariable.DEPOSIT_SUCCESSFUL);
                     transactionRepository.save(transaction);
-                    return ResponseEntity.ok("Payment handled successfully");
+                    return ResponseEntity.status(HttpStatus.OK)
+                            .body(new ResponseObject(HttpStatus.OK.toString(),
+                                    "Payment handled successfully",
+                                    transaction));
                 } else {
                     return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                             .body(new ResponseObject(HttpStatus.INTERNAL_SERVER_ERROR.toString(),
