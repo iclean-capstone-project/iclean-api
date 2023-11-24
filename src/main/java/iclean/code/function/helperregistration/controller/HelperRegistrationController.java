@@ -39,7 +39,7 @@ public class HelperRegistrationController {
             @ApiResponse(responseCode = "401", description = "Unauthorized - Login please"),
             @ApiResponse(responseCode = "400", description = "Bad request - Missing some field required")
     })
-    @PreAuthorize("hasAuthority('manager')")
+    @PreAuthorize("hasAnyAuthority('manager', 'admin')")
     public ResponseEntity<ResponseObject> getAllRequestToBecomeHelper(@RequestParam(defaultValue = "true") Boolean isAllRequest,
                                                                       @RequestParam(name = "page", defaultValue = "1") int page,
                                                                       @RequestParam(name = "size", defaultValue = "10") int size,
@@ -60,7 +60,7 @@ public class HelperRegistrationController {
             @ApiResponse(responseCode = "401", description = "Unauthorized - Login please"),
             @ApiResponse(responseCode = "400", description = "Bad request - Missing some field required")
     })
-    @PreAuthorize("hasAuthority('manager')")
+    @PreAuthorize("hasAnyAuthority('manager', 'admin')")
     public ResponseEntity<ResponseObject> getHelpersInformation(@RequestParam(defaultValue = "true") Boolean isAllRequest,
                                                                 @RequestParam(name = "page", defaultValue = "1") int page,
                                                                 @RequestParam(name = "size", defaultValue = "10") int size,
@@ -81,7 +81,7 @@ public class HelperRegistrationController {
             @ApiResponse(responseCode = "401", description = "Unauthorized - Login please"),
             @ApiResponse(responseCode = "400", description = "Bad request - Missing some field required")
     })
-    @PreAuthorize("hasAuthority('manager')")
+    @PreAuthorize("hasAnyAuthority('manager', 'admin')")
     public ResponseEntity<ResponseObject> getHelperInformationById(@PathVariable Integer id) {
         return helperRegistrationService.getHelperInformation(id);
     }
@@ -122,7 +122,7 @@ public class HelperRegistrationController {
     }
 
     @PutMapping("/cancellation/{id}")
-    @PreAuthorize("hasAuthority('manager')")
+    @PreAuthorize("hasAnyAuthority('manager', 'admin')")
     @Operation(summary = "Cancel a request become to a helper by helper information id", description = "Return message fail or successful")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Delete a RegisterEmployee Successful"),
@@ -134,7 +134,7 @@ public class HelperRegistrationController {
     }
 
     @PostMapping("/acceptance/{id}")
-    @PreAuthorize("hasAuthority('manager')")
+    @PreAuthorize("hasAnyAuthority('manager', 'admin')")
     @Operation(summary = "Cancel a request become to a helper by helper information id", description = "Return message fail or successful")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Delete a RegisterEmployee Successful"),
@@ -146,7 +146,7 @@ public class HelperRegistrationController {
     }
 
     @PostMapping("/confirmation/{id}")
-    @PreAuthorize("hasAuthority('manager')")
+    @PreAuthorize("hasAnyAuthority('manager', 'admin')")
     @Operation(summary = "Cancel a request become to a helper by helper information id", description = "Return message fail or successful")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Delete a RegisterEmployee Successful"),

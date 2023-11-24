@@ -39,7 +39,7 @@ public class WorkScheduleController {
     }
 
     @GetMapping("{helperId}")
-    @PreAuthorize("hasAuthority('manager')")
+    @PreAuthorize("hasAnyAuthority('manager', 'admin')")
     @Operation(summary = "Get helper work schedule by manager", description = "Return all helper work schedule")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Helper work schedules Information"),
