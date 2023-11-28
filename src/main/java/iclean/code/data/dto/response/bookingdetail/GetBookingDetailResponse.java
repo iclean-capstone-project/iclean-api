@@ -7,6 +7,7 @@ import java.time.LocalDateTime;
 @Data
 public class GetBookingDetailResponse {
     private Integer bookingDetailId;
+    private String renterName;
     private String bookingCode;
     private LocalDateTime orderDate;
     private Integer serviceId;
