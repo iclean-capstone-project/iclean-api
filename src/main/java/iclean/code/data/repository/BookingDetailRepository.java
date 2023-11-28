@@ -45,7 +45,7 @@ public interface BookingDetailRepository extends JpaRepository<BookingDetail, In
             "AND bd.serviceUnit.service.serviceId = ?2")
     PointFeedbackOfHelper findPointByHelperId(Integer userId, Integer serviceId);
 
-    @Query("SELECT bd FROM BookingDetail bd " +
+    @Query("SELECT DISTINCT bd FROM BookingDetail bd " +
             "LEFT JOIN bd.booking b " +
             "LEFT JOIN bd.bookingDetailHelpers bdh " +
             "WHERE bd.bookingDetailStatus = ?1 " +

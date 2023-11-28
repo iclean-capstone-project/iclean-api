@@ -526,9 +526,9 @@ public class BookingDetailServiceImpl implements BookingDetailService {
             }
             //Tìm tất cả những booking mà thằng này đã được nhận đi làm
             List<BookingDetail> bookingDetails = bookingDetailRepository.findByHelperIdAndBookingStatus(userId, BookingDetailStatusEnum.WAITING);
-            List<String> bookingCodes = bookingDetails
+            List<Integer> bookingIds = bookingDetails
                     .stream()
-                    .map(element -> element.getBooking().getBookingCode()).collect(Collectors.toList());
+                    .map(BookingDetail::getBookingDetailId).collect(Collectors.toList());
 
             //Loại bỏ các booking bị chồng chéo thời gian
             List<BookingDetail> notOverlapBookings = null;
@@ -555,7 +555,8 @@ public class BookingDetailServiceImpl implements BookingDetailService {
                                     responseForHelper.setServiceImages(booking.getServiceUnit().getService().getServiceImage());
                                     responseForHelper.setAmount(booking.getPriceHelper());
                                     responseForHelper.setLocationDescription(booking.getBooking().getLocationDescription());
-                                    if (bookingCodes.contains(booking.getBooking().getBookingCode())) {
+                                    if (bookingIds.contains(booking.getBookingDetailId())) {
+                                        responseForHelper.setIsApplied(true);
                                         responseForHelper.setNoteMessage(String.format(MessageVariable.DUPLICATE_BOOKING, booking.getBooking().getBookingCode()));
                                     }
                                     return responseForHelper;
@@ -563,6 +564,8 @@ public class BookingDetailServiceImpl implements BookingDetailService {
                         )
                         .collect(Collectors.toList());
             }
+
+
 
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseObject(HttpStatus.OK.toString(),
