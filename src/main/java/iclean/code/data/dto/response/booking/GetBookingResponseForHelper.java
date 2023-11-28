@@ -30,4 +30,5 @@ public class GetBookingResponseForHelper {
     private Double latitude;
 
     private String noteMessage;
+    private Boolean isApplied = false;
 }

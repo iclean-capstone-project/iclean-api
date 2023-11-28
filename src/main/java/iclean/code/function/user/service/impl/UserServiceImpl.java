@@ -52,7 +52,7 @@ public class UserServiceImpl implements UserService {
                 }
             } else {
                 if (banStatus != null && banStatus) {
-                    users = userRepository.findAllByBanStatus(true, phoneName, pageable);
+                    users = userRepository.findAllByBanStatus(banStatus, phoneName, pageable);
                 } else if (banStatus == null) {
                     users = userRepository.findAllByPhoneName(phoneName, pageable);
                 } else {

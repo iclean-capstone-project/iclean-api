@@ -47,19 +47,7 @@ public class MoneyRequestController {
         return moneyRequestService.getMoneyRequests(phoneNumber, pageable);
     }
 
-    @GetMapping("/{userId}")
-    @PreAuthorize("hasAnyAuthority('manager', 'admin')")
-    @Operation(summary = "Get a money request of a user by id", description = "Return money request information")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Money Request Information"),
-            @ApiResponse(responseCode = "401", description = "Unauthorized - Login please"),
-            @ApiResponse(responseCode = "400", description = "Bad request - Missing some field required")
-    })
-    public ResponseEntity<ResponseObject> getMoneyRequest(@PathVariable Integer userId) {
-        return moneyRequestService.getMoneyRequest(userId);
-    }
-
-    @PutMapping("{id}")
+    @PutMapping()
     @PreAuthorize("hasAnyAuthority('manager', 'admin')")
     @Operation(summary = "Resend OTP request of a user", description = "Return message fail or successful")
     @ApiResponses(value = {

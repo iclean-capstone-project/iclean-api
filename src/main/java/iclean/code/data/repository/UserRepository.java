@@ -37,7 +37,7 @@ public interface UserRepository extends JpaRepository<User, Integer> {
             "AND (u.phoneNumber LIKE ?2 OR u.fullName LIKE ?2)")
     Page<User> findAllByRole(List<String> role, String phoneName, Pageable pageable);
 
-    @Query("SELECT u FROM User u WHERE u.role.title IN ?1" +
+    @Query("SELECT u FROM User u WHERE u.role.title IN ?1 " +
             "AND u.isLocked = ?2 " +
             "AND (u.phoneNumber LIKE ?3 OR u.fullName LIKE ?3)")
     Page<User> findAllByRoleAndBanStatus(List<String> role, Boolean banStatus, String phoneName, Pageable pageable);
@@ -47,9 +47,9 @@ public interface UserRepository extends JpaRepository<User, Integer> {
             "AND (u.phoneNumber LIKE ?2 OR u.fullName LIKE ?2)")
     Page<User> findAllByRoleAndNotBan(List<String> role, String phoneName, Pageable pageable);
 
-    @Query("SELECT u FROM User u WHERE u.isLocked = ?1" +
+    @Query("SELECT u FROM User u WHERE u.isLocked = ?1 " +
             "AND (u.phoneNumber LIKE ?2 OR u.fullName LIKE ?2)")
-    Page<User> findAllByBanStatus(boolean b, String phoneName, Pageable pageable);
+    Page<User> findAllByBanStatus(Boolean isLocked, String phoneName, Pageable pageable);
 
     @Query("SELECT u FROM User u WHERE (u.isLocked = null OR u.isLocked = false ) " +
             "AND (u.phoneNumber LIKE ?1 OR u.fullName LIKE ?1)")
