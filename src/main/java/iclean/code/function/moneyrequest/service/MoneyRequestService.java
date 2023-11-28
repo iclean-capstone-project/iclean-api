@@ -9,11 +9,9 @@ import org.springframework.http.ResponseEntity;
 public interface MoneyRequestService {
     ResponseEntity<ResponseObject> getMoneyRequests(String phoneNumber, Pageable pageable);
 
-    ResponseEntity<ResponseObject> getMoneyRequest(Integer id);
-
     ResponseEntity<ResponseObject> createMoneyRequest(CreateMoneyRequestRequest request);
 
     ResponseEntity<ResponseObject> validateMoneyRequest(ValidateMoneyRequest request);
 
-    ResponseEntity<ResponseObject> resendOtp(Integer id);
+    ResponseEntity<ResponseObject> resendOtp(String phoneNumber);
 }

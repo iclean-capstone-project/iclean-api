@@ -43,6 +43,8 @@ public class BookingController {
     public ResponseEntity<ResponseObject> getBookings(
             @RequestParam(name = "page", defaultValue = "1") int page,
             @RequestParam(name = "size", defaultValue = "10") int size,
+            @RequestParam(name = "startDate", required = false) String startDate,
+            @RequestParam(name = "endDate", required = false) String endDate,
             @RequestParam(name = "statuses", required = false)
             @ValidInputList(value = "(?i)(rejected|not_yet|approved" +
                     "|finished|no_money|canceled)", message = "Booking Status is not valid")
@@ -55,7 +57,7 @@ public class BookingController {
         if (sortFields != null && !sortFields.isEmpty()) {
             pageable = PageRequestBuilder.buildPageRequest(page, size, sortFields, GetBookingResponse.class);
         }
-        return bookingService.getBookings(JwtUtils.decodeToAccountId(authentication), pageable, statuses, isHelper);
+        return bookingService.getBookings(JwtUtils.decodeToAccountId(authentication), pageable, statuses, isHelper, startDate, endDate);
     }
 
     @GetMapping("/cart")
@@ -115,19 +117,19 @@ public class BookingController {
 
     @PostMapping("resend/{id}")
     @PreAuthorize("hasAnyAuthority('renter', 'employee')")
-    @Operation(summary = "Resend a booking reject by manager", description = "Return message fail or successful")
+    @Operation(summary = "Resend a booking reject by manager for renter", description = "Return message fail or successful")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Create new booking Successful"),
             @ApiResponse(responseCode = "401", description = "Unauthorized - Login please"),
             @ApiResponse(responseCode = "403", description = "Forbidden - You don't have permission to access on this api"),
             @ApiResponse(responseCode = "400", description = "Bad request - Missing some field required")
     })
-    public ResponseEntity<ResponseObject> resendBooking(@RequestBody CheckOutCartRequest request,
+    public ResponseEntity<ResponseObject> resendBooking(@RequestBody(required = false) CheckOutCartRequest request,
             Authentication authentication, @PathVariable Integer id) {
         return bookingService.resendBooking(request , id, JwtUtils.decodeToAccountId(authentication));
     }
 
-    @PostMapping("/now")
+    @PostMapping("/request-now")
     @PreAuthorize("hasAnyAuthority('renter', 'employee')")
     @Operation(summary = "Create new booking of a user (not add to cart)", description = "Return message fail or successful")
     @ApiResponses(value = {
@@ -136,7 +138,22 @@ public class BookingController {
             @ApiResponse(responseCode = "403", description = "Forbidden - You don't have permission to access on this api"),
             @ApiResponse(responseCode = "400", description = "Bad request - Missing some field required")
     })
-    public ResponseEntity<ResponseObject> addServiceToCart(
+    public ResponseEntity<ResponseObject> getServiceAddNow(
+            @RequestBody @Valid CreateBookingRequestNow request,
+            Authentication authentication) {
+        return bookingService.getBookingNow(request, JwtUtils.decodeToAccountId(authentication));
+    }
+
+    @PostMapping("/checkout-now")
+    @PreAuthorize("hasAnyAuthority('renter', 'employee')")
+    @Operation(summary = "Create new booking of a user (not add to cart)", description = "Return message fail or successful")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Create new booking Successful"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - Login please"),
+            @ApiResponse(responseCode = "403", description = "Forbidden - You don't have permission to access on this api"),
+            @ApiResponse(responseCode = "400", description = "Bad request - Missing some field required")
+    })
+    public ResponseEntity<ResponseObject> createBookingNow(
             @RequestBody @Valid CreateBookingRequestNow request,
             Authentication authentication) {
         return bookingService.createBookingNow(request, JwtUtils.decodeToAccountId(authentication));

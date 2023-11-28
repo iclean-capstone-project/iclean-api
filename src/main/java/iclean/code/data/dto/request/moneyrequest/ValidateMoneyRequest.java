@@ -8,6 +8,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class ValidateMoneyRequest {
-    private Integer requestId;
+    private String phoneNumber;
     private String otpToken;
 }

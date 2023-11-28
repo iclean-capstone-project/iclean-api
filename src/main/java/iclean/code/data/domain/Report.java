@@ -10,6 +10,7 @@ import lombok.Setter;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Getter
@@ -43,6 +44,11 @@ public class Report {
     @JsonIgnoreProperties("report")
     @JoinColumn(name = "booking_detail_id")
     private BookingDetail bookingDetail;
+
+    @OneToMany(mappedBy = "report")
+    @JsonIgnoreProperties("report")
+    @JsonIgnore
+    private List<ReportAttachment> reportAttachments;
 
     @ManyToOne
     @JsonIgnore

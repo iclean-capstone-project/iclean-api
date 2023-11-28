@@ -99,11 +99,12 @@ public class ReportController {
             @ApiResponse(responseCode = "403", description = "Forbidden - You don't have permission to access on this api"),
             @ApiResponse(responseCode = "400", description = "Bad request - Missing some field required")
     })
-    @PreAuthorize("hasAnyAuthority('admin')")
+    @PreAuthorize("hasAnyAuthority('manager', 'admin')")
     public ResponseEntity<ResponseObject> updateReport(
             @PathVariable("reportId") int reportId,
-            @RequestBody @Valid UpdateReportRequest request) {
-        return reportService.updateReport(reportId, request);
+            @RequestBody @Valid UpdateReportRequest request,
+            Authentication authentication) {
+        return reportService.updateReport(reportId, request, JwtUtils.decodeToAccountId(authentication));
     }
 
     @DeleteMapping(value = "{reportId}")

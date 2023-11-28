@@ -52,7 +52,6 @@ public class EmailSenderServiceImpl implements EmailSenderService {
             MimeMessage mimeMessage = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, MimeMessageHelper.MULTIPART_MODE_MIXED_RELATED, "UTF-8");
 
-            ClassPathResource logo = new ClassPathResource("static/img/iClean_logo.png");
             helper.setFrom("iclean.service2001@gmail.com", "IcleanService");
 
             Context context = new Context();
@@ -63,6 +62,7 @@ public class EmailSenderServiceImpl implements EmailSenderService {
                     ConfirmHelperRequestSendMail confirmHelperRequestSendMail = (ConfirmHelperRequestSendMail) mailRequest;
                     helper.setTo(confirmHelperRequestSendMail.getTo());
                     context.setVariable("name", confirmHelperRequestSendMail.getHelperName());
+                    context.setVariable("manager_name", confirmHelperRequestSendMail.getManagerName());
                     context.setVariable("company_name", EmailEnum.COMPANY_NAME.getValue());
                     context.setVariable("list_of_jobs", confirmHelperRequestSendMail.getListOfJobs());
                     helper.setSubject(EmailEnum.ACCEPT_HELPER_TITLE.getValue() + EmailEnum.COMPANY_NAME.getValue());
@@ -72,6 +72,8 @@ public class EmailSenderServiceImpl implements EmailSenderService {
                     AcceptHelperRequest request = (AcceptHelperRequest) mailRequest;
                     helper.setTo(request.getTo());
                     context.setVariable("name", request.getHelperName());
+                    context.setVariable("location", EmailEnum.LOCATION.getValue());
+                    context.setVariable("manager_name", request.getManagerName());
                     context.setVariable("company_name", EmailEnum.COMPANY_NAME.getValue());
                     context.setVariable("date_meeting", Utils.getLocalDateAsString(request.getDateMeeting().toLocalDate()) + " vào lúc: " +
                             Utils.getLocalTimeAsString(request.getDateMeeting().toLocalTime()));
@@ -109,7 +111,6 @@ public class EmailSenderServiceImpl implements EmailSenderService {
 //            helper.setSubject(EmailEnum.ACCEPT_HELPER_TITLE.getValue());
 //            String htmlContent = templateEngine.process(Objects.requireNonNull(resourceRejectHelper.getFilename()), context);
             helper.setText(htmlContent, true);
-            helper.addInline("logo", logo);
 
             mailSender.send(mimeMessage);
         } catch (MessagingException e) {

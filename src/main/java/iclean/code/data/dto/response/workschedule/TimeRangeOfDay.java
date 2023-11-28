@@ -11,6 +11,6 @@ import java.time.LocalTime;
 @NoArgsConstructor
 public class TimeRangeOfDay {
     private Integer workScheduleId;
-    private LocalTime startTime;
-    private LocalTime endTime;
+    private String startTime;
+    private String endTime;
 }

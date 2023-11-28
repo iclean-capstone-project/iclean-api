@@ -13,7 +13,7 @@ public interface ReportService {
 
     ResponseEntity<ResponseObject> createReport(CreateReportRequest reportRequest, Integer renterId);
 
-    ResponseEntity<ResponseObject> updateReport(int reportId, UpdateReportRequest reportRequest);
+    ResponseEntity<ResponseObject> updateReport(int reportId, UpdateReportRequest reportRequest, Integer managerId);
 
     ResponseEntity<ResponseObject> deleteReport(int reportId);
 }

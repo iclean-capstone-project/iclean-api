@@ -77,6 +77,9 @@ public class HelperInformation {
     @Column(name = "create_at")
     private LocalDateTime createAt = Utils.getLocalDateTimeNow();
 
+    @Column(name = "lock_date_expired")
+    private LocalDate lockDateExpired;
+
     @Column(name = "manager_id")
     private Integer managerId;
 

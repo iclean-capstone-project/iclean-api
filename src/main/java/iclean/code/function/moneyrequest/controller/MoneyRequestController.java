@@ -67,8 +67,8 @@ public class MoneyRequestController {
             @ApiResponse(responseCode = "401", description = "Unauthorized - Login please"),
             @ApiResponse(responseCode = "400", description = "Bad request - Missing some field required")
     })
-    public ResponseEntity<ResponseObject> resendOtpForMoneyRequest(@PathVariable Integer id) {
-        return moneyRequestService.resendOtp(id);
+    public ResponseEntity<ResponseObject> resendOtpForMoneyRequest(String phoneNumber) {
+        return moneyRequestService.resendOtp(phoneNumber);
     }
 
     @PostMapping

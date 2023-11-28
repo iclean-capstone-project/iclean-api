@@ -1,18 +1,31 @@
 package iclean.code.function.report;
 
+import iclean.code.config.MessageVariable;
 import iclean.code.data.domain.*;
 import iclean.code.data.dto.common.ResponseObject;
+import iclean.code.data.dto.request.authen.NotificationRequestDto;
 import iclean.code.data.dto.request.report.CreateReportRequest;
+import iclean.code.data.dto.request.transaction.TransactionRequest;
+import iclean.code.data.dto.response.report.ReportResultResponse;
 import iclean.code.data.dto.request.report.UpdateReportRequest;
 import iclean.code.data.dto.response.PageResponseObject;
+import iclean.code.data.dto.response.booking.GetTransactionBookingResponse;
+import iclean.code.data.dto.response.bookingdetail.GetAddressResponseBooking;
+import iclean.code.data.dto.response.bookingdetail.GetBookingDetailDetailResponse;
+import iclean.code.data.dto.response.bookingdetailhelper.GetHelpersResponse;
+import iclean.code.data.dto.response.feedback.GetFeedbackResponse;
+import iclean.code.data.dto.response.feedback.PointFeedbackOfHelper;
 import iclean.code.data.dto.response.report.GetReportResponseAsManager;
 import iclean.code.data.dto.response.report.GetReportResponseDetail;
-import iclean.code.data.enumjava.BookingDetailStatusEnum;
-import iclean.code.data.enumjava.OptionProcessReportEnum;
-import iclean.code.data.enumjava.ReportStatusEnum;
+import iclean.code.data.dto.response.service.PriceService;
+import iclean.code.data.enumjava.*;
 import iclean.code.data.repository.*;
+import iclean.code.exception.BadRequestException;
 import iclean.code.exception.NotFoundException;
 import iclean.code.exception.UserNotHavePermissionException;
+import iclean.code.function.common.service.EmailSenderService;
+import iclean.code.function.common.service.FCMService;
+import iclean.code.function.feedback.service.FeedbackService;
 import iclean.code.function.report.service.ReportService;
 import iclean.code.function.common.service.StorageService;
 import iclean.code.utils.Utils;
@@ -41,6 +54,30 @@ public class ReportServiceImpl implements ReportService {
 
     @Autowired
     private BookingDetailRepository bookingDetailRepository;
+
+    @Autowired
+    private EmailSenderService emailSenderService;
+
+    @Autowired
+    private FCMService fcmService;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private NotificationRepository notificationRepository;
+
+    @Autowired
+    private WalletRepository walletRepository;
+
+    @Autowired
+    private FeedbackService feedbackService;
+
+    @Autowired
+    private TransactionRepository transactionRepository;
+
+    @Autowired
+    BookingDetailHelperRepository bookingDetailHelperRepository;
 
     @Autowired
     private ReportTypeRepository reportTypeRepository;
@@ -85,6 +122,87 @@ public class ReportServiceImpl implements ReportService {
         try {
             Report report = findReport(reportId);
             GetReportResponseDetail response = modelMapper.map(report, GetReportResponseDetail.class);
+            BookingDetail bookingDetail = report.getBookingDetail();
+            GetBookingDetailDetailResponse detailResponse = modelMapper.map(bookingDetail, GetBookingDetailDetailResponse.class);
+            if (bookingDetail.getBooking().getBookingCode() != null)
+                detailResponse.setBookingCode(bookingDetail.getBooking().getBookingCode());
+            if (bookingDetail.getBooking().getRejectionReason() != null && bookingDetail.getBooking().getRjReasonDescription() != null) {
+                detailResponse.setRejectionReasonContent(bookingDetail.getBooking().getRejectionReason().getRejectionContent());
+                detailResponse.setRejectionReasonContent(bookingDetail.getBooking().getRjReasonDescription());
+            }
+            detailResponse.setServiceId(bookingDetail.getServiceUnit().getService().getServiceId());
+            detailResponse.setServiceUnitId(bookingDetail.getServiceUnit().getServiceUnitId());
+            detailResponse.setServiceIcon(bookingDetail.getServiceUnit().getService().getServiceImage());
+            detailResponse.setServiceName(bookingDetail.getServiceUnit().getService().getServiceName());
+            detailResponse.setValue(bookingDetail.getServiceUnit().getUnit().getUnitDetail());
+            detailResponse.setEquivalent(bookingDetail.getServiceUnit().getUnit().getUnitValue());
+            detailResponse.setPrice(bookingDetail.getPriceDetail());
+            detailResponse.setCurrentStatus(bookingDetail.getBookingDetailStatus().name());
+            GetAddressResponseBooking addressResponseBooking = modelMapper.map(bookingDetail.getBooking(), GetAddressResponseBooking.class);
+            GetHelpersResponse getHelpersResponse = null;
+            BookingDetailHelper bookingDetailHelper = null;
+            List<BookingDetailHelper> bookingDetailHelpers = bookingDetailHelperRepository.findByBookingDetailIdAndActive(bookingDetail.getBookingDetailId(), BookingDetailHelperStatusEnum.ACTIVE);
+            if (!bookingDetailHelpers.isEmpty()) {
+                bookingDetailHelper = bookingDetailHelpers.get(0);
+            }
+            if (bookingDetailHelper != null) {
+                getHelpersResponse = new GetHelpersResponse();
+                User helper = bookingDetailHelper.getServiceRegistration().getHelperInformation().getUser();
+                PointFeedbackOfHelper pointFeedbackOfHelper = feedbackService
+                        .getDetailOfHelperFunction(bookingDetailHelper.getServiceRegistration().getHelperInformation().getUser().getUserId(),
+                                bookingDetail.getServiceUnit().getServiceUnitId());
+                getHelpersResponse.setServiceId(bookingDetail.getServiceUnit().getService().getServiceId());
+                getHelpersResponse.setHelperId(helper.getUserId());
+                getHelpersResponse.setHelperName(helper.getFullName());
+                getHelpersResponse.setHelperAvatar(helper.getAvatar());
+                getHelpersResponse.setRate(pointFeedbackOfHelper.getRate());
+                getHelpersResponse.setNumberOfFeedback(pointFeedbackOfHelper.getNumberOfFeedback());
+                getHelpersResponse.setPhoneNumber(helper.getPhoneNumber());
+            }
+
+            GetTransactionBookingResponse transactionBookingResponse = new GetTransactionBookingResponse();
+            Transaction transactionMoney = transactionRepository
+                    .findByBookingIdAndWalletTypeAndTransactionTypeAndUserId(bookingDetail.getBooking().getBookingId(),
+                            WalletTypeEnum.MONEY, TransactionTypeEnum.WITHDRAW, bookingDetail.getBooking().getRenter().getUserId());
+            List<PriceService> priceServices;
+            if (transactionMoney != null) {
+                priceServices = bookingDetail.getBooking().getBookingDetails()
+                        .stream()
+                        .map(element -> {
+                            PriceService priceService = new PriceService();
+                            priceService.setServiceName(element.getServiceUnit().getService().getServiceName());
+                            priceService.setPrice(element.getPriceDetail());
+                            return priceService;
+                        })
+                        .collect(Collectors.toList());
+                transactionBookingResponse.setStatus(TransactionBookingStatusEnum.PAID.name());
+                transactionBookingResponse.setTransactionCode(transactionMoney.getTransactionCode());
+            } else {
+                priceServices = bookingDetail.getBooking().getBookingDetails()
+                        .stream()
+                        .map(element -> {
+                            PriceService priceService = new PriceService();
+                            priceService.setServiceName(element.getServiceUnit().getService().getServiceName());
+                            priceService.setPrice(element.getPriceDetail());
+                            return priceService;
+                        })
+                        .collect(Collectors.toList());
+                transactionBookingResponse.setStatus(TransactionBookingStatusEnum.UNPAID.name());
+            }
+            transactionBookingResponse.setTotalPrice(bookingDetail.getBooking().getTotalPrice());
+            transactionBookingResponse.setTotalPriceActual(bookingDetail.getBooking().getTotalPriceActual());
+            transactionBookingResponse.setDiscount(bookingDetail.getBooking().getTotalPrice() - bookingDetail.getBooking().getTotalPriceActual());
+            transactionBookingResponse.setServicePrice(priceServices);
+            GetFeedbackResponse feedback = null;
+            if (bookingDetail.getFeedback() != null && !bookingDetail.getFeedback().isEmpty()) {
+                feedback = modelMapper.map(bookingDetail, GetFeedbackResponse.class);
+            }
+
+            detailResponse.setAddress(addressResponseBooking);
+            detailResponse.setHelper(getHelpersResponse);
+            detailResponse.setTransaction(transactionBookingResponse);
+            detailResponse.setFeedback(feedback);
+            response.setBookingDetail(detailResponse);
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseObject(HttpStatus.OK.toString(),
                             "Report type", response));
@@ -121,16 +239,16 @@ public class ReportServiceImpl implements ReportService {
                     reportRequest.getFiles()) {
                 images.add(storageService.uploadFile(file));
             }
-            List<BookingAttachment> bookingAttachments = new ArrayList<>();
+            List<ReportAttachment> reportAttachments = new ArrayList<>();
             for (String imageLink :
                     images) {
-                BookingAttachment bookingAttachment = new BookingAttachment();
-                bookingAttachment.setBookingAttachmentLink(imageLink);
-                bookingAttachment.setReport(report);
-                bookingAttachments.add(bookingAttachment);
+                ReportAttachment reportAttachment = new ReportAttachment();
+                reportAttachment.setReportAttachmentLink(imageLink);
+                reportAttachment.setReport(report);
+                reportAttachments.add(reportAttachment);
             }
-            if (!bookingAttachments.isEmpty()) {
-                bookingAttachmentRepository.saveAll(bookingAttachments);
+            if (!reportAttachments.isEmpty()) {
+                bookingAttachmentRepository.saveAll(reportAttachments);
             }
 
             return ResponseEntity.status(HttpStatus.OK)
@@ -154,12 +272,102 @@ public class ReportServiceImpl implements ReportService {
         }
     }
 
-    @Override
-    public ResponseEntity<ResponseObject> updateReport(int reportId, UpdateReportRequest reportRequest) {
-        try {
-            Report report = mappingReportForUpdate(reportId, reportRequest);
-            reportRepository.save(report);
+    private User findById(Integer id) {
+        return userRepository.findById(id).orElseThrow(() -> new NotFoundException("User is not found!"));
+    }
 
+    @Override
+    public ResponseEntity<ResponseObject> updateReport(int reportId, UpdateReportRequest reportRequest, Integer managerId) {
+        try {
+            User manager = findById(managerId);
+            ReportResultResponse reportResultResponse = new ReportResultResponse();
+            Report report = findReport(reportId);
+            BookingDetail bookingDetail = report.getBookingDetail();
+            bookingDetail.setBookingDetailStatus(BookingDetailStatusEnum.FINISHED);
+            List<BookingDetailHelper> bookingDetailHelpers = bookingDetailHelperRepository.findByBookingDetailIdAndActive(report.getBookingDetail().getBookingDetailId(),
+                    BookingDetailHelperStatusEnum.ACTIVE);
+            HelperInformation helperInformation = null;
+            if (!bookingDetailHelpers.isEmpty()) {
+                BookingDetailHelper bookingDetailHelper = bookingDetailHelpers.get(0);
+                helperInformation = bookingDetailHelper.getServiceRegistration().getHelperInformation();
+            }
+
+            User renter = report.getBookingDetail().getBooking().getRenter();
+            String solution = "";
+            reportResultResponse.setContentReport(report.getDetail());
+            reportResultResponse.setBookingCode(report.getBookingDetail().getBooking().getBookingCode());
+            if (reportRequest.getRefundPercent() == 0) {
+                if (reportRequest.getReason() == null || reportRequest.getReason().isEmpty()) {
+                    throw new BadRequestException("Need add reason to report");
+                }
+                solution = String.format(MessageVariable.REJECT_REPORT,
+                        reportRequest.getReason());
+                reportResultResponse.setStatus(ReportStatusEnum.REJECTED.name());
+                reportResultResponse.setSolution(solution);
+                report.setReportStatus(ReportStatusEnum.REJECTED);
+                report.setSolution(solution);
+            } else {
+                report.setReportStatus(ReportStatusEnum.PROCESSED);
+                if (helperInformation != null) {
+                    helperInformation.setLockDateExpired(Utils.getLocalDateTimeNow().toLocalDate().plusDays(2));
+                }
+                report.setRefund(reportRequest.getRefundPercent());
+                report.setOption(OptionProcessReportEnum.MONEY);
+                report.setProcessAt(Utils.getLocalDateTimeNow());
+                solution = String.format(MessageVariable.REFUND_CANCEL_BOOKING,
+                        report.getBookingDetail().getServiceUnit().getService().getServiceName());
+                report.setSolution(solution);
+                reportResultResponse.setStatus(ReportStatusEnum.PROCESSED.name());
+                reportResultResponse.setSolution(solution);
+                reportResultResponse.setManagerName(manager.getFullName());
+                if (renter.getEmail() != null && !renter.getEmail().isEmpty()) {
+                    reportResultResponse.setTo(renter.getEmail());
+                    reportResultResponse.setRenterName(renter.getFullName());
+                    emailSenderService.sendEmailTemplate(SendMailOptionEnum.REPORT_RESULT, reportResultResponse);
+                }
+                Transaction transactionMoney = transactionRepository.findByBookingIdAndWalletTypeAndTransactionTypeAndUserId(report.getBookingDetail().getBooking().getBookingId(),
+                        WalletTypeEnum.MONEY, TransactionTypeEnum.WITHDRAW, report.getBookingDetail().getBooking().getRenter().getUserId());
+                Transaction transactionPoint = transactionRepository.findByBookingIdAndWalletTypeAndTransactionTypeAndUserId(report.getBookingDetail().getBooking().getBookingId(),
+                        WalletTypeEnum.POINT, TransactionTypeEnum.WITHDRAW, report.getBookingDetail().getBooking().getRenter().getUserId());
+                Double percent = 0D;
+                double moneyRefund = 0D;
+                double pointRefund = 0D;
+                if (transactionMoney != null) {
+                    if (report.getBookingDetail().getPriceDetail() < transactionMoney.getAmount()) {
+                        percent = report.getBookingDetail().getPriceDetail() / transactionMoney.getAmount()
+                                * reportRequest.getRefundPercent() / 100;
+                        moneyRefund = transactionMoney.getAmount() * percent;
+                    } else {
+                        percent = transactionMoney.getAmount() / report.getBookingDetail().getPriceDetail()
+                                * reportRequest.getRefundPercent() / 100;
+                        moneyRefund = percent * transactionMoney.getAmount();
+                    }
+                }
+                if (transactionPoint != null) {
+                    pointRefund = transactionPoint.getAmount() * percent;
+                }
+                if (moneyRefund > 0) {
+                    createTransaction(new TransactionRequest(moneyRefund, String.format(MessageVariable.REFUND_CANCEL_BOOKING,
+                            report.getBookingDetail().getServiceUnit().getService().getServiceName()),
+                            renter.getUserId(),
+                            TransactionTypeEnum.DEPOSIT.name(),
+                            WalletTypeEnum.MONEY.name()));
+                }
+                if (pointRefund > 0) {
+                    createTransaction(new TransactionRequest(pointRefund, String.format(MessageVariable.REFUND_POINT_CANCEL_BOOKING,
+                            report.getBookingDetail().getServiceUnit().getService().getServiceName()),
+                            renter.getUserId(),
+                            TransactionTypeEnum.DEPOSIT.name(),
+                            WalletTypeEnum.POINT.name()));
+                }
+            }
+            Notification notification = new Notification();
+            notification.setUser(renter);
+            notification.setContent(solution);
+            notification.setTitle(MessageVariable.TITLE_APP);
+            notificationRepository.save(notification);
+            reportRepository.save(report);
+            bookingDetailRepository.save(bookingDetail);
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseObject(HttpStatus.OK.toString(),
                             "Update Report Successfully!", null));
@@ -176,6 +384,70 @@ public class ReportServiceImpl implements ReportService {
                             "Something wrong occur!", null));
         }
     }
+
+    private void sendMessage(NotificationRequestDto notificationRequestDto, User user) {
+        List<DeviceToken> deviceTokens = user.getDeviceTokens();
+        if (!deviceTokens.isEmpty()) {
+            notificationRequestDto.setTarget(convertToListFcmToken(deviceTokens));
+            fcmService.sendPnsToTopic(notificationRequestDto);
+        }
+    }
+
+    private List<String> convertToListFcmToken(List<DeviceToken> deviceTokens) {
+        return deviceTokens.stream()
+                .map(DeviceToken::getFcmToken)
+                .collect(Collectors.toList());
+    }
+
+    public boolean createTransaction(TransactionRequest request) {
+        User user = findById(request.getUserId());
+        NotificationRequestDto notificationRequestDto = new NotificationRequestDto();
+        notificationRequestDto.setTitle(MessageVariable.TITLE_APP);
+        Wallet wallet = walletRepository.getWalletByUserIdAndType(request.getUserId(),
+                WalletTypeEnum.valueOf(request.getWalletType().toUpperCase()));
+        if (wallet == null) {
+            wallet = new Wallet();
+            wallet.setUser(user);
+            wallet.setBalance(0D);
+            wallet.setWalletTypeEnum(WalletTypeEnum.valueOf(request.getWalletType().toUpperCase()));
+        }
+
+        wallet.setUpdateAt(Utils.getLocalDateTimeNow());
+        TransactionTypeEnum transactionTypeEnum = TransactionTypeEnum.valueOf(request.getTransactionType().toUpperCase());
+        switch (transactionTypeEnum) {
+            case DEPOSIT:
+                wallet.setBalance(wallet.getBalance() + request.getBalance());
+                notificationRequestDto.setBody(request.getNote());
+                sendMessage(notificationRequestDto, user);
+                break;
+            case TRANSFER:
+                break;
+            case WITHDRAW:
+                if (wallet.getBalance() < request.getBalance()) {
+                    return false;
+                }
+                wallet.setBalance(wallet.getBalance() - request.getBalance());
+                notificationRequestDto.setBody(request.getNote());
+                sendMessage(notificationRequestDto, user);
+                break;
+        }
+        Wallet walletUpdate = walletRepository.save(wallet);
+        Transaction transaction = mappingForCreate(request);
+        transaction.setWallet(walletUpdate);
+        transactionRepository.save(transaction);
+        return true;
+    }
+
+    private Transaction mappingForCreate(TransactionRequest request) {
+        Transaction transaction = modelMapper.map(request, Transaction.class);
+        transaction.setAmount(request.getBalance());
+        transaction.setTransactionCode(Utils.generateRandomCode());
+        transaction.setCreateAt(Utils.getLocalDateTimeNow());
+        transaction.setTransactionStatusEnum(TransactionStatusEnum.SUCCESS);
+        transaction.setTransactionTypeEnum(TransactionTypeEnum.valueOf(request.getTransactionType().toUpperCase()));
+        return transaction;
+    }
+
 
     @Override
     public ResponseEntity<ResponseObject> deleteReport(int reportId) {
@@ -213,16 +485,6 @@ public class ReportServiceImpl implements ReportService {
         report.setReportType(optionalReportType);
 
         return report;
-    }
-
-    private Report mappingReportForUpdate(int reportId, UpdateReportRequest request) {
-        Report optionalReport = findReport(reportId);
-        optionalReport.setSolution(request.getSolution());
-        optionalReport.setOption(OptionProcessReportEnum.valueOf(request.getOption().toUpperCase()));
-        optionalReport.setReportStatus(ReportStatusEnum.PROCESSED);
-        optionalReport.setRefund(request.getRefund());
-        optionalReport.setProcessAt(Utils.getLocalDateTimeNow());
-        return modelMapper.map(optionalReport, Report.class);
     }
 
     private Report findReport(int reportId) {

@@ -8,16 +8,18 @@ import java.time.LocalTime;
 @Data
 public class GetBookingResponseForHelper {
     private Integer bookingDetailId;
-
+    private Integer serviceUnitId;
+    private Double equivalent;
+    private String value;
     private String renterName;
 
     private String serviceName;
 
     private String serviceImages;
 
-    private LocalDate workDate;
+    private String workDate;
 
-    private LocalTime workStart;
+    private String workStart;
 
     private Double amount;
 

@@ -12,7 +12,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 
 public interface HelperRegistrationService {
-    ResponseEntity<ResponseObject> getAllRequestToBecomeHelper(Integer managerId, Boolean isAllRequest, Pageable pageable);
+    ResponseEntity<ResponseObject> getAllRequestToBecomeHelper(Integer managerId, Boolean isAllRequest, String startDate, String endDate, List<String> statuses, Pageable pageable);
     ResponseEntity<ResponseObject> getHelpersInformation(Integer managerId, Boolean isAllRequest, Pageable pageable);
     ResponseEntity<ResponseObject> updateMoreServiceForHelper(Integer userId, List<MultipartFile> applications, List<Integer> serviceId);
     ResponseEntity<ResponseObject> cancelHelperInformationRequest(Integer managerId, Integer id, CancelHelperRequest request);

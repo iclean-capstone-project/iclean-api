@@ -3,12 +3,12 @@ package iclean.code.function.helperregistration.controller;
 import iclean.code.config.JwtUtils;
 import iclean.code.data.dto.common.PageRequestBuilder;
 import iclean.code.data.dto.common.ResponseObject;
-import iclean.code.data.dto.request.helperinformation.AcceptHelperRequest;
 import iclean.code.data.dto.request.helperinformation.ConfirmHelperRequest;
 import iclean.code.data.dto.request.helperinformation.HelperRegistrationRequest;
 import iclean.code.data.dto.request.helperinformation.CancelHelperRequest;
 import iclean.code.data.dto.response.helperinformation.GetHelperInformationRequestResponse;
 import iclean.code.function.helperregistration.service.HelperRegistrationService;
+import iclean.code.utils.validator.ValidInputList;
 import iclean.code.utils.validator.ValidSortFields;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -43,6 +43,12 @@ public class HelperRegistrationController {
     public ResponseEntity<ResponseObject> getAllRequestToBecomeHelper(@RequestParam(defaultValue = "true") Boolean isAllRequest,
                                                                       @RequestParam(name = "page", defaultValue = "1") int page,
                                                                       @RequestParam(name = "size", defaultValue = "10") int size,
+                                                                      @RequestParam(name = "startDate", required = false) String startDate,
+                                                                      @RequestParam(name = "endDate", required = false) String endDate,
+                                                                      @RequestParam(name = "statuses", required = false)
+                                                                          @ValidInputList(value = "(?i)(offline|online|disabled" +
+                                                                                  "|waiting_for_approve|waiting_for_confirm|request_more_service)", message = "Booking Status is not valid")
+                                                                          List<String> statuses,
                                                                       @RequestParam(name = "sort", required = false) @ValidSortFields(value = GetHelperInformationRequestResponse.class) List<String> sortFields,
                                                                       Authentication authentication) {
         Pageable pageable = PageRequestBuilder.buildPageRequest(page, size);
@@ -50,7 +56,7 @@ public class HelperRegistrationController {
         if (sortFields != null && !sortFields.isEmpty()) {
             pageable = PageRequestBuilder.buildPageRequest(page, size, sortFields, GetHelperInformationRequestResponse.class);
         }
-        return helperRegistrationService.getAllRequestToBecomeHelper(JwtUtils.decodeToAccountId(authentication), isAllRequest, pageable);
+        return helperRegistrationService.getAllRequestToBecomeHelper(JwtUtils.decodeToAccountId(authentication), isAllRequest, startDate, endDate, statuses, pageable);
     }
 
     @GetMapping("all")
@@ -100,7 +106,7 @@ public class HelperRegistrationController {
                                                               @RequestPart("backIdCard") MultipartFile backIdCard,
                                                               @RequestPart("avatar") MultipartFile avatar,
                                                               @RequestPart(value = "others", required = false) List<MultipartFile> others,
-                                                              @RequestPart(value = "service") List<Integer> services,
+                                                              @RequestParam(value = "service") List<Integer> services,
                                                               Authentication authentication) {
         return helperRegistrationService.createHelperRegistration(
                 new HelperRegistrationRequest(email, frontIdCard, backIdCard, avatar, others, services),

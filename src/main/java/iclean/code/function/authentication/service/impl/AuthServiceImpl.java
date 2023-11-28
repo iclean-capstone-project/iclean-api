@@ -249,6 +249,7 @@ public class AuthServiceImpl implements AuthService {
 
             if (user == null) {
                 user = new User();
+                user.setRoleId(roleRepository.findByTitle(RoleEnum.RENTER.name().toLowerCase()).getRoleId());
                 LocalDateTime localDateTime = Utils.getLocalDateTimeNow();
                 user.setExpiredToken(localDateTime.plusMinutes(10L));
                 String otpHashToken = twilioOTPService.sendAndGetOTPToken(phoneNumber);
@@ -374,17 +375,7 @@ public class AuthServiceImpl implements AuthService {
     public ResponseEntity<ResponseObject> updateInformationFirstLogin(Integer userId, RegisterUserForm form) {
         try {
             User user = findUser(userId);
-            if (Objects.nonNull(user.getRole())) {
-                throw new UserNotHavePermissionException();
-            }
-            form.setFullName(Utils.convertToTitleCase(form.getFullName()));
-            if (form.getRole().equalsIgnoreCase(RoleEnum.RENTER.name())) {
-                modelMapper.map(form, user);
-                user.setRoleId(roleRepository.findByTitle(RoleEnum.RENTER.name().toLowerCase()).getRoleId());
-            } else if (form.getRole().equalsIgnoreCase(RoleEnum.EMPLOYEE.name())) {
-                modelMapper.map(form, user);
-                user.setRoleId(roleRepository.findByTitle(RoleEnum.EMPLOYEE.name().toLowerCase()).getRoleId());
-            }
+            user.setFullName(Utils.convertToTitleCase(form.getFullName()));
             user.setDateOfBirth(Utils.convertStringToLocalDate(form.getDateOfBirth()));
             if (Objects.nonNull(form.getFileImage())) {
                 String avatar = storageService.uploadFile(form.getFileImage());
@@ -398,11 +389,6 @@ public class AuthServiceImpl implements AuthService {
             if (e instanceof NotFoundException) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body(new ResponseObject(HttpStatus.NOT_FOUND.toString(),
-                                e.getMessage(), null));
-            }
-            if (e instanceof UserNotHavePermissionException) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                        .body(new ResponseObject(HttpStatus.FORBIDDEN.toString(),
                                 e.getMessage(), null));
             }
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)

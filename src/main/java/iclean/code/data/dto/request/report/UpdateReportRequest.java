@@ -5,9 +5,7 @@ import lombok.*;
 import org.hibernate.validator.constraints.Length;
 import org.hibernate.validator.constraints.Range;
 
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Pattern;
+import javax.validation.constraints.*;
 
 @Data
 @NoArgsConstructor
@@ -15,19 +13,9 @@ import javax.validation.constraints.Pattern;
 public class UpdateReportRequest {
 
     @Length(max = 200, message = "Tối đa 200 từ")
-    @NotNull(message = "Giải pháp không được để trống")
-    @NotBlank(message = "Giải pháp không được để trống")
-    private String solution;
+    private String reason;
 
-    @Schema(example = "Money|Point")
-    @Pattern(regexp = "(?i)(Money|Point)", message = "Option is not valid")
-    private String option;
-
-    @Length(max = 200, message = "Tối đa 200 từ")
-    @NotNull(message = "reportStatus không được để trống")
-    @NotBlank(message = "reportStatus không được để trống")
-    private String reportStatus;
-
-    @Range(min = 1000, message = "Giá tiền phải lớn hơn 1000 VNĐ")
-    private Double refund;
+    @Min(value = 0, message = "Refund percent must be greater than 0")
+    @Max(value = 100, message = "Refund percent must be smaller than 100")
+    private Double refundPercent;
 }

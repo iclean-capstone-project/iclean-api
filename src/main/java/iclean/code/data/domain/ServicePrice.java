@@ -2,6 +2,8 @@ package iclean.code.data.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import iclean.code.data.enumjava.ServicePriceEnum;
+import iclean.code.utils.Utils;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -19,6 +21,9 @@ public class ServicePrice {
     @Column(name = "service_price_id")
     private Integer servicePriceId;
 
+    @Column(name = "time_id")
+    private ServicePriceEnum servicePriceEnum;
+
     @Column(name = "start_time")
     private LocalTime startTime;
 
@@ -32,13 +37,10 @@ public class ServicePrice {
     private Double employeeCommission;
 
     @Column(name = "is_delete")
-    private Boolean isDelete;
+    private Boolean isDelete = false;
 
     @Column(name = "create_at")
-    private LocalDateTime createAt;
-
-    @Column(name = "update_at")
-    private LocalDateTime updateAt;
+    private LocalDateTime createAt = Utils.getLocalDateTimeNow();
 
     @ManyToOne
     @JsonIgnore

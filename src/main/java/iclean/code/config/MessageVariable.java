@@ -4,7 +4,7 @@ public class MessageVariable {
     public static final String TITLE_APP = "iClean - Helping Hand Hub Platform";
     public static final String ORDER_SUCCESSFUL = "Đơn hàng #%s của bạn đã được đặt thành công!";
     public static final String ORDER_HAVE_HELPER = "Dịch vụ %s với mã đặt dịch vụ #%s của bạn đã được nhân viên chấp nhận, bạn có thể chọn nhân viên ngay bây giờ!";
-    public static final String TOO_LATE_TO_START = "Dịch vụ đã bắt đầu quá muộn!";
+    public static final String NOT_ON_TIME_TO_START = "Dịch vụ đã bắt đầu không đúng giờ theo yêu cầu!";
     public static final String TOO_SOON_TO_START = "Quá sớm để thực hiện dịch vụ!";
     public static final String RENTER_CHANGE_BOOKING = "Dịch vụ #%s đã được người dùng cập nhật, vui lòng kiểm tra lại thông tin!";
     public static final String TOO_LATE_TO_UPDATE = "Dịch vụ %s đã gần tới giờ làm, bạn không thể cập nhật!";
@@ -33,8 +33,15 @@ public class MessageVariable {
     public static final String HELPER_ALREADY_HAVE_BOOKING = "Người giúp việc đã có lịch làm việc vào thời gian này!";
     public static final String CANNOT_RESEND_THIS_BOOKING = "Dịch vụ đã quá số lần gửi lại!";
     public static final String PAYMENT_FOR_HELPER = "Nhận tiền cho dịch vụ số #%s - %s";
-    public static final String DEPOSIT_SUCCESSFUL = "Nạp tiền vào ví thành công";
-    public static final String TRANSFER_SUCCESSFUL = "Thanh toán cho Helper#%s thành công";
+    public static final String DEPOSIT_SUCCESSFUL = "Nạp tiền vào ví thành công!";
     public static final String PAYMENT_FAIL = "Số dư hiện tại không đủ để thực hiện giao dịch!";
     public static final String NOT_FOUND_HELPER_FOR_THIS_SERVICE = "Hiện tại không tìm thấy người làm cho dịch vụ %s, vui lòng thử lại!";
+    public static final String REJECT_REPORT = "Hủy báo cáo với lý do: %s";
+    public static final String RENTER_CHOOSE_YOU = "Bạn được chọn để làm dịch vụ số #%s!";
+    public static final String WITHDRAW_SUCCESSFUL = "Rút tiền thành công tại điểm giao dịch!";
+    public static final String CANNOT_BOOKING_THE_PAST = "Không thể đặt lịch dịch vụ trong quá khứ hoặc quá gần giờ làm!";
+    public static final String CANNOT_REGISTER_HELPER_NOT_ENOUGH_AGE = "Không thể đăng ký trở thành nhân viên khi chưa đủ tuổi lao động!";
+    public static final String CANNOT_ACCEPT_BOOKING_NOT_APPROVED = "Không thể nhận đăng ký nhận dịch vụ này!";
+    public static final String NOT_ON_TIME_TO_END_WORK = "Bạn chưa đủ điều kiện hoàn thành công việc hiện tại!";
+    public static final String CANCEL_BOOKING_BY_SYSTEM = "Dịch vụ số #%s - %s đã bị hủy bởi hệ thống do người làm không check in, chúng tôi rất xin lỗi về sự cố này!";
 }

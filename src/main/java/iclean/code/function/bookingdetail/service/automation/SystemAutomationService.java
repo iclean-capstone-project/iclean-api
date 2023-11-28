@@ -1,6 +1,7 @@
-package iclean.code.function.bookingdetail.automation;
+package iclean.code.function.bookingdetail.service.automation;
 
 import iclean.code.config.MessageVariable;
+import iclean.code.config.SystemParameterField;
 import iclean.code.data.domain.*;
 import iclean.code.data.dto.request.authen.NotificationRequestDto;
 import iclean.code.data.dto.request.transaction.TransactionRequest;
@@ -14,6 +15,7 @@ import iclean.code.utils.Utils;
 import lombok.extern.log4j.Log4j2;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -25,7 +27,7 @@ import java.util.stream.Collectors;
 
 @Log4j2
 @Service
-public class AutoAssignIfNoChoose {
+public class SystemAutomationService {
     @Autowired
     private BookingDetailRepository bookingDetailRepository;
     @Autowired
@@ -34,6 +36,14 @@ public class AutoAssignIfNoChoose {
     private ServiceRegistrationRepository serviceRegistrationRepository;
     @Autowired
     private HelperInformationRepository helperInformationRepository;
+    @Autowired
+    private NotificationRepository notificationRepository;
+    @Autowired
+    private BookingDetailStatusHistoryRepository bookingDetailStatusHistoryRepository;
+    @Autowired
+    private SystemParameterRepository systemParameterRepository;
+    @Autowired
+    private DeviceTokenRepository deviceTokenRepository;
     @Autowired
     private FCMService fcmService;
     @Autowired
@@ -46,6 +56,10 @@ public class AutoAssignIfNoChoose {
     private WalletRepository walletRepository;
     @Autowired
     GoogleMapService googleMapService;
+    @Value("${iclean.app.max.minutes.send.money}")
+    private long maxMinutesSendMoney;
+    @Value("${iclean.app.max.minutes.cancel.booking}")
+    private long maxMinutesCancelBooking;
     @Autowired
     private ModelMapper modelMapper;
 
@@ -94,13 +108,19 @@ public class AutoAssignIfNoChoose {
     @Scheduled(fixedRate = 3600000L)
     public void autoSendMoney() {
         try {
-            List<BookingDetail> bookingDetails = bookingDetailRepository.findAllByBookingDetailStatus(BookingDetailStatusEnum.FINISHED);
+            List<BookingDetail> bookingDetails = bookingDetailRepository.findAllByBookingDetailStatusAndPriceHelperGreaterThanZero(BookingDetailStatusEnum.FINISHED);
             for (BookingDetail bookingDetail :
                     bookingDetails) {
                 BookingDetailHelper bookingDetailHelper = bookingDetailHelperRepository.findByBookingDetailIdAndActiveLimit(bookingDetail.getBookingDetailId(),
                         BookingDetailHelperStatusEnum.ACTIVE);
                 if (bookingDetailHelper == null) {
                     continue;
+                }
+                if (bookingDetail.getWorkDate() != null && bookingDetail.getWorkEnd() != null) {
+                    LocalDateTime endDateTime = LocalDateTime.of(bookingDetail.getWorkDate(), bookingDetail.getWorkEnd());
+                    if (!checkInTimeToSendMoney(endDateTime)) {
+                        continue;
+                    }
                 }
                 createTransaction(new TransactionRequest(
                         bookingDetail.getPriceHelper(),
@@ -117,6 +137,50 @@ public class AutoAssignIfNoChoose {
             log.info(Utils.getDateTimeNowAsString() + " ----> Auto Send Money Successful!");
         } catch (Exception e) {
             log.error(e.getMessage());
+        }
+    }
+
+    @Scheduled(fixedRate = 3600000L)
+    public void cancelBookingDetails() {
+        try {
+            List<BookingDetail> bookingDetails = bookingDetailRepository.findAllByBookingDetailStatuses(List.of(BookingDetailStatusEnum.WAITING,
+                    BookingDetailStatusEnum.APPROVED, BookingDetailStatusEnum.NOT_YET));
+            List<BookingDetailStatusHistory> bookingDetailStatusHistories = new ArrayList<>();
+            List<Notification> notifications = new ArrayList<>();
+            for (BookingDetail bookingDetail :
+                    bookingDetails) {
+                if (bookingDetail.getWorkDate() != null && bookingDetail.getWorkStart() != null) {
+                    LocalDateTime endDateTime = LocalDateTime.of(bookingDetail.getWorkDate(), bookingDetail.getWorkStart()).plusMinutes(getMaxCancelBooking());
+                    if (!checkInTimeToCancel(endDateTime)) {
+                        continue;
+                    }
+                    bookingDetail.setBookingDetailStatus(BookingDetailStatusEnum.CANCEL_BY_SYSTEM);
+                    BookingDetailStatusHistory bookingDetailStatusHistory = new BookingDetailStatusHistory();
+                    bookingDetailStatusHistory.setBookingDetail(bookingDetail);
+                    bookingDetailStatusHistory.setBookingDetailStatus(BookingDetailStatusEnum.CANCEL_BY_SYSTEM);
+                    bookingDetailStatusHistories.add(bookingDetailStatusHistory);
+                }
+                NotificationRequestDto notificationRequestDto = new NotificationRequestDto();
+                Notification notification = new Notification();
+                User renter = bookingDetail.getBooking().getRenter();
+                notificationRequestDto.setTitle(MessageVariable.TITLE_APP);
+                notification.setTitle(MessageVariable.TITLE_APP);
+                notificationRequestDto.setBody(String.format(MessageVariable.CANCEL_BOOKING_BY_SYSTEM,
+                        bookingDetail.getBooking().getBookingCode(),
+                        bookingDetail.getServiceUnit().getService().getServiceName()));
+                notification.setContent(String.format(MessageVariable.CANCEL_BOOKING_BY_SYSTEM,
+                        bookingDetail.getBooking().getBookingCode(),
+                        bookingDetail.getServiceUnit().getService().getServiceName()));
+                notification.setUser(renter);
+                notifications.add(notification);
+                sendMessage(notificationRequestDto, renter);
+            }
+            notificationRepository.saveAll(notifications);
+            bookingDetailStatusHistoryRepository.saveAll(bookingDetailStatusHistories);
+            bookingDetailRepository.saveAll(bookingDetails);
+            log.info(Utils.getDateTimeNowAsString() + " ----> Auto Send Money Successful!");
+        } catch (Exception e) {
+            log.error(Utils.getDateTimeNowAsString() +"Cancel Booking errors: " + e);
         }
     }
 
@@ -144,6 +208,39 @@ public class AutoAssignIfNoChoose {
         } catch (Exception e) {
             return null;
         }
+    }
+
+    private long getMaxMinutesSendMoney() {
+        SystemParameter systemParameter = systemParameterRepository.findSystemParameterByParameterField(SystemParameterField.MAX_MINUTES_SEND_MONEY);
+        try {
+            return Long.parseLong(systemParameter.getParameterValue());
+        } catch (Exception e) {
+            return maxMinutesSendMoney;
+        }
+    }
+
+    private long getMaxCancelBooking() {
+        SystemParameter systemParameter = systemParameterRepository.findSystemParameterByParameterField(SystemParameterField.MAX_MINUTES_CANCEL_BOOKING);
+        try {
+            return Long.parseLong(systemParameter.getParameterValue());
+        } catch (Exception e) {
+            return maxMinutesCancelBooking;
+        }
+    }
+
+    private boolean checkInTimeToSendMoney(LocalDateTime time) {
+        LocalDateTime current = Utils.getLocalDateTimeNow();
+        long difference = Utils.minusLocalDateTime(current,
+                time);
+        return difference >= 0 && Utils.isLateMinutes(difference, getMaxMinutesSendMoney());
+    }
+
+    private boolean checkInTimeToCancel(LocalDateTime lateTime) {
+        LocalDateTime current = Utils.getLocalDateTimeNow();
+        long difference = Utils.minusLocalDateTime(lateTime,
+                current);
+        // true => late 91p
+        return difference >= 0 && Utils.isLateMinutes(difference, 1);
     }
 
     private User findAccount(int userId) {
@@ -212,7 +309,7 @@ public class AutoAssignIfNoChoose {
     }
 
     private void sendMessage(NotificationRequestDto notificationRequestDto, User user) {
-        List<DeviceToken> deviceTokens = user.getDeviceTokens();
+        List<DeviceToken> deviceTokens = deviceTokenRepository.findByUserId(user.getUserId());
         if (!deviceTokens.isEmpty()) {
             notificationRequestDto.setTarget(convertToListFcmToken(deviceTokens));
             fcmService.sendPnsToTopic(notificationRequestDto);

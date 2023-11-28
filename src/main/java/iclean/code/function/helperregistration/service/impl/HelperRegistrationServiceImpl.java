@@ -1,10 +1,8 @@
 package iclean.code.function.helperregistration.service.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import iclean.code.data.domain.Attachment;
-import iclean.code.data.domain.HelperInformation;
-import iclean.code.data.domain.ServiceRegistration;
-import iclean.code.data.domain.User;
+import iclean.code.config.MessageVariable;
+import iclean.code.data.domain.*;
 import iclean.code.data.dto.common.ResponseObject;
 import iclean.code.data.dto.request.helperinformation.*;
 import iclean.code.data.dto.response.PageResponseObject;
@@ -14,10 +12,7 @@ import iclean.code.data.dto.response.others.BackCCCD;
 import iclean.code.data.dto.response.others.CMTBackResponse;
 import iclean.code.data.dto.response.others.CMTFrontResponse;
 import iclean.code.data.dto.response.others.FrontCCCD;
-import iclean.code.data.enumjava.GenderEnum;
-import iclean.code.data.enumjava.HelperStatusEnum;
-import iclean.code.data.enumjava.SendMailOptionEnum;
-import iclean.code.data.enumjava.ServiceHelperStatusEnum;
+import iclean.code.data.enumjava.*;
 import iclean.code.data.repository.*;
 import iclean.code.exception.BadRequestException;
 import iclean.code.exception.NotFoundException;
@@ -58,6 +53,8 @@ public class HelperRegistrationServiceImpl implements HelperRegistrationService 
     @Autowired
     private ServiceRegistrationRepository serviceRegistrationRepository;
     @Autowired
+    private RoleRepository roleRepository;
+    @Autowired
     private EmailSenderService emailSenderService;
     @Autowired
     private ExternalApiService externalApiService;
@@ -67,13 +64,24 @@ public class HelperRegistrationServiceImpl implements HelperRegistrationService 
     private ModelMapper modelMapper;
 
     @Override
-    public ResponseEntity<ResponseObject> getAllRequestToBecomeHelper(Integer managerId, Boolean isAllRequest, Pageable pageable) {
+    public ResponseEntity<ResponseObject> getAllRequestToBecomeHelper(Integer managerId, Boolean isAllRequest, String startDate, String endDate, List<String> statuses, Pageable pageable) {
         try {
             Page<HelperInformation> helpersInformation;
+            List<HelperStatusEnum> helperStatusEnums = null;
+            if (!(statuses == null || statuses.isEmpty())) {
+                helperStatusEnums = statuses
+                        .stream()
+                        .map(element -> HelperStatusEnum.valueOf(element.toUpperCase()))
+                        .collect(Collectors.toList());
+            }
             if (isAllRequest) {
-                helpersInformation = helperInformationRepository.findAllByStatus(HelperStatusEnum.WAITING_FOR_APPROVE, pageable);
+                helpersInformation = !(statuses == null || statuses.isEmpty())
+                        ? helperInformationRepository.findAllByStatus(helperStatusEnums, pageable)
+                        : helperInformationRepository.findAll(pageable);
             } else {
-                helpersInformation = helperInformationRepository.findAllByStatus(managerId, HelperStatusEnum.WAITING_FOR_APPROVE, pageable);
+                helpersInformation = !(statuses == null || statuses.isEmpty())
+                        ? helperInformationRepository.findAllByStatus(managerId, helperStatusEnums, pageable)
+                        : helperInformationRepository.findAllByManagerId(managerId, pageable);
             }
             List<GetHelperInformationRequestResponse> responses = helpersInformation
                     .stream()
@@ -227,9 +235,9 @@ public class HelperRegistrationServiceImpl implements HelperRegistrationService 
         helperInformation.setNationId(frontCCCD.getId());
         helperInformation.setGender(frontCCCD.getSex().equalsIgnoreCase("NAM")
                 ? GenderEnum.MALE : GenderEnum.FEMALE);
-        helperInformation.setDateOfBirth(Utils.convertStringToLocalDate(frontCCCD.getDob()));
-        helperInformation.setDateOfIssue(Utils.convertStringToLocalDate(backCCCD.getIssueDate()));
-        helperInformation.setDateOfExpired(Utils.convertStringToLocalDate(frontCCCD.getDoe()));
+        helperInformation.setDateOfBirth(Utils.convertStringToLocalDateCMT(frontCCCD.getDob()));
+        helperInformation.setDateOfIssue(Utils.convertStringToLocalDateCMT(backCCCD.getIssueDate()));
+        helperInformation.setDateOfExpired(Utils.convertStringToLocalDateCMT(frontCCCD.getDoe()));
         helperInformation.setPlaceOfIssue(backCCCD.getIssueLoc());
         helperInformation.setPlaceOfResidence(frontCCCD.getAddress());
         helperInformation.setHomeTown(frontCCCD.getHome());
@@ -268,9 +276,13 @@ public class HelperRegistrationServiceImpl implements HelperRegistrationService 
             HelperInformation helperInformation = mappingCMTToHelperInformation(cmtFrontResponse.getData().get(0),
                     cmtBackResponse.getData().get(0),
                     imgAvatarLink);
+            if (Utils.getLocalDateTimeNow().toLocalDate().minusYears(18).isAfter(helperInformation.getDateOfBirth())) {
+                throw new BadRequestException(MessageVariable.CANNOT_REGISTER_HELPER_NOT_ENOUGH_AGE);
+            };
             User user = findUserById(renterId);
             helperInformation.setUser(user);
-            helperInformation.setEmail(helperInformation.getEmail());
+            helperInformation.setPhoneNumber(user.getPhoneNumber());
+            helperInformation.setEmail(helperRegistrationRequest.getEmail());
             helperInformationRepository.save(helperInformation);
 
             List<ServiceRegistration> serviceRegistrations = new ArrayList<>();
@@ -287,15 +299,38 @@ public class HelperRegistrationServiceImpl implements HelperRegistrationService 
             serviceRegistrationRepository.saveAll(serviceRegistrations);
 
             List<MultipartFile> attachmentRequest = helperRegistrationRequest.getOthers();
-            attachmentRequest.addAll(List.of(helperRegistrationRequest.getFrontIdCard(),
-                    helperRegistrationRequest.getBackIdCard()));
+            Attachment avatar = new Attachment();
+            String avatarLink = storageService.uploadFile(helperRegistrationRequest.getAvatar());
+            if (Utils.isNullOrEmpty(avatarLink)) {
+                avatar.setAttachmentLink(avatarLink);
+                avatar.setHelperInformation(helperInformation);
+                attachments.add(avatar);
+            }
+
+            Attachment frontCMT = new Attachment();
+            String frontCMTLink = storageService.uploadFile(helperRegistrationRequest.getFrontIdCard());
+            if (Utils.isNullOrEmpty(frontCMTLink)) {
+                frontCMT.setAttachmentLink(frontCMTLink);
+                frontCMT.setHelperInformation(helperInformation);
+                attachments.add(frontCMT);
+            }
+
+            Attachment backCMT = new Attachment();
+            String backCMTLink = storageService.uploadFile(helperRegistrationRequest.getBackIdCard());
+            if (Utils.isNullOrEmpty(backCMTLink)) {
+                frontCMT.setAttachmentLink(backCMTLink);
+                frontCMT.setHelperInformation(helperInformation);
+                attachments.add(backCMT);
+            }
             for (MultipartFile element :
                     attachmentRequest) {
                 Attachment attachment = new Attachment();
                 String fileLink = storageService.uploadFile(element);
-                attachment.setAttachmentLink(fileLink);
-                attachment.setHelperInformation(helperInformation);
-                attachments.add(attachment);
+                if (!fileLink.isEmpty()) {
+                    attachment.setAttachmentLink(fileLink);
+                    attachment.setHelperInformation(helperInformation);
+                    attachments.add(attachment);
+                }
             }
             attachmentRepository.saveAll(attachments);
 
@@ -352,7 +387,7 @@ public class HelperRegistrationServiceImpl implements HelperRegistrationService 
             HelperInformation helperInformation = findHelperInformationById(id);
             helperInformation.setHelperStatus(HelperStatusEnum.WAITING_FOR_CONFIRM);
             User manager = findUserById(managerId);
-            isPermission(manager, helperInformation);
+            helperInformation.setManagerId(managerId);
             LocalDateTime current = Utils.getLocalDateTimeNow();
             LocalDateTime meetingDateTime = current.plusDays(7);
             List<HelperInformation> helperInformationOptional = helperInformationRepository
@@ -401,41 +436,61 @@ public class HelperRegistrationServiceImpl implements HelperRegistrationService 
         return 10;
     }
 
+    private Role getRoleHelper() {
+        return roleRepository.findByTitle(RoleEnum.EMPLOYEE.name().toLowerCase());
+    }
+
     @Override
     public ResponseEntity<ResponseObject> confirmHelperInformation(Integer managerId, Integer id, ConfirmHelperRequest request) {
         try {
-            try {
-                HelperInformation helperInformation = findHelperInformationById(id);
-                User manager = findUserById(managerId);
-                isPermission(manager, helperInformation);
-                helperInformation.setHelperStatus(HelperStatusEnum.ONLINE);
-                List<ServiceRegistration> serviceRegistrations = new ArrayList<>();
-                List<String> serviceNames = new ArrayList<>();
-                for (Integer requestService :
-                        request.getServiceRegistrationIds()) {
-                    ServiceRegistration serviceRegistration = findById(requestService);
-                    serviceRegistration.setServiceHelperStatus(ServiceHelperStatusEnum.ACTIVE);
-                    serviceRegistrations.add(serviceRegistration);
-                    serviceNames.add(serviceRegistration.getService().getServiceName());
-                }
-                ConfirmHelperRequestSendMail requestSendMail = new ConfirmHelperRequestSendMail(helperInformation.getEmail(),
-                        serviceNames, helperInformation.getFullName(),
-                        manager.getFullName());
-                serviceRegistrationRepository.saveAll(serviceRegistrations);
-                emailSenderService.sendEmailTemplate(SendMailOptionEnum.CONFIRM_HELPER, requestSendMail);
-
-                helperInformationRepository.save(helperInformation);
-                return ResponseEntity.status(HttpStatus.OK)
-                        .body(new ResponseObject(HttpStatus.OK.toString(),
-                                "Confirm Helper Information Successful!",
-                                null));
-            } catch (Exception e) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString(),
-                                "Something wrong occur!",
+            HelperInformation helperInformation = findHelperInformationById(id);
+            User manager = findUserById(managerId);
+            isPermission(manager, helperInformation);
+            helperInformation.setHelperStatus(HelperStatusEnum.ONLINE);
+            List<ServiceRegistration> serviceRegistrations = new ArrayList<>();
+            List<String> serviceNames = new ArrayList<>();
+            for (Integer requestService :
+                    request.getServiceRegistrationIds()) {
+                ServiceRegistration serviceRegistration = findById(requestService);
+                serviceRegistration.setServiceHelperStatus(ServiceHelperStatusEnum.ACTIVE);
+                serviceRegistrations.add(serviceRegistration);
+                serviceNames.add(serviceRegistration.getService().getServiceName());
+            }
+            List<ServiceRegistration> serviceRegistrationRequests = serviceRegistrationRepository.findAllByHelperId(id);
+            List<ServiceRegistration> filterServiceRequests = serviceRegistrationRequests.stream()
+                    .filter(serviceRegistration -> !request.getServiceRegistrationIds().contains(serviceRegistration.getServiceRegistrationId()))
+                    .collect(Collectors.toList());
+            for (ServiceRegistration serviceRegistration :
+                    filterServiceRequests) {
+                serviceRegistration.setServiceHelperStatus(ServiceHelperStatusEnum.DISABLED);
+            }
+            User user = helperInformation.getUser();
+            user.setRoleId(getRoleHelper().getRoleId());
+            ConfirmHelperRequestSendMail requestSendMail = new ConfirmHelperRequestSendMail(helperInformation.getEmail(),
+                    serviceNames, helperInformation.getFullName(),
+                    manager.getFullName());
+            serviceRegistrationRepository.saveAll(filterServiceRequests);
+            serviceRegistrationRepository.saveAll(serviceRegistrations);
+            emailSenderService.sendEmailTemplate(SendMailOptionEnum.CONFIRM_HELPER, requestSendMail);
+            helperInformationRepository.save(helperInformation);
+            userRepository.save(user);
+            return ResponseEntity.status(HttpStatus.OK)
+                    .body(new ResponseObject(HttpStatus.OK.toString(),
+                            "Confirm Helper Information Successful!",
+                            null));
+        } catch (Exception e) {
+            if (e instanceof NotFoundException) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new ResponseObject(HttpStatus.NOT_FOUND.toString(),
+                                e.getMessage(),
                                 null));
             }
-        } catch (Exception e) {
+            if (e instanceof UserNotHavePermissionException) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(new ResponseObject(HttpStatus.FORBIDDEN.toString(),
+                                e.getMessage(),
+                                null));
+            }
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString(),
                             "Something wrong occur!",

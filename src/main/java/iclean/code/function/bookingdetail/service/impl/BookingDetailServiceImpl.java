@@ -40,7 +40,9 @@ import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -65,7 +67,13 @@ public class BookingDetailServiceImpl implements BookingDetailService {
     private long maxSoonMinutes;
 
     @Value("${iclean.app.max.update.and.cancel.minutes}")
-    private long maxUpdateHour;
+    private long maxUpdateMinutes;
+
+    @Value("${iclean.app.max.end.time.minutes}")
+    private long maxEndTimeMinutes;
+
+    @Autowired
+    private HelperInformationRepository helperInformationRepository;
 
     @Autowired
     private QRCodeService qrCodeService;
@@ -103,6 +111,9 @@ public class BookingDetailServiceImpl implements BookingDetailService {
 
     @Autowired
     private DeviceTokenRepository deviceTokenRepository;
+
+    @Autowired
+    private NotificationRepository notificationRepository;
 
     @Autowired
     private BookingDetailHelperRepository bookingDetailHelperRepository;
@@ -162,8 +173,13 @@ public class BookingDetailServiceImpl implements BookingDetailService {
                         .body(new ResponseObject(HttpStatus.NOT_FOUND.toString(),
                                 e.getMessage(), null));
             }
+            if (e instanceof BadRequestException) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString(),
+                                e.getMessage(), null));
+            }
             if (e instanceof UserNotHavePermissionException) {
-                ResponseEntity.status(HttpStatus.FORBIDDEN)
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
                         .body(new ResponseObject(HttpStatus.FORBIDDEN.toString(),
                                 e.getMessage(), null));
             }
@@ -204,17 +220,22 @@ public class BookingDetailServiceImpl implements BookingDetailService {
                     .body(new ResponseObject(HttpStatus.OK.toString(),
                             "Cancel a service of a booking successful!", null));
         } catch (Exception e) {
+            log.error(e.getMessage());
             if (e instanceof NotFoundException) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body(new ResponseObject(HttpStatus.NOT_FOUND.toString(),
                                 e.getMessage(), null));
             }
+            if (e instanceof BadRequestException) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString(),
+                                e.getMessage(), null));
+            }
             if (e instanceof UserNotHavePermissionException) {
-                ResponseEntity.status(HttpStatus.FORBIDDEN)
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
                         .body(new ResponseObject(HttpStatus.FORBIDDEN.toString(),
                                 e.getMessage(), null));
             }
-            log.error(e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString(),
                             "Something wrong occur!", null));
@@ -236,7 +257,7 @@ public class BookingDetailServiceImpl implements BookingDetailService {
                 case WAITING:
                     long difference = Utils.minusLocalDateTime(Utils.getLocalDateTimeNow(),
                             LocalDateTime.of(bookingDetail.getWorkDate(), bookingDetail.getWorkStart()));
-                    if (Utils.isSoonMinutes(difference, getMaxUpdateHour())) {
+                    if (Utils.isSoonMinutes(difference, getMaxUpdateMinutes())) {
                         throw new BadRequestException("Its too late to update the booking!");
                     }
                     BookingDetailHelper bookingDetailHelper = findBookingDetailHelperByBookingDetailId(
@@ -279,6 +300,11 @@ public class BookingDetailServiceImpl implements BookingDetailService {
                         .body(new ResponseObject(HttpStatus.NOT_FOUND.toString(),
                                 e.getMessage(), null));
             }
+            if (e instanceof BadRequestException) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString(),
+                                e.getMessage(), null));
+            }
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString(),
                             "Something wrong occur!", null));
@@ -292,17 +318,17 @@ public class BookingDetailServiceImpl implements BookingDetailService {
             isPermissionForHelper(userId, bookingDetail);
             ValidateOTPRequest validateOTPRequest = new ValidateOTPRequest(request.getQrCode(), bookingDetail.getQrCode());
             boolean check = qrCodeService.validateQRCode(validateOTPRequest);
-            String onTimeToWork = checkInTime(LocalDateTime.of(bookingDetail.getWorkDate(), bookingDetail.getWorkStart()));
-            if (!Utils.isNullOrEmpty(onTimeToWork) &&
-                    MessageVariable.TOO_LATE_TO_START.equals(onTimeToWork)) {
-                bookingDetail.setBookingDetailStatus(BookingDetailStatusEnum.CANCEL_BY_SYSTEM);
-            }
+            String onTimeToWork = checkInTimeToWork(LocalDateTime.of(bookingDetail.getWorkDate(), bookingDetail.getWorkStart()));
             if (!Utils.isNullOrEmpty(onTimeToWork)) {
                 throw new BadRequestException(onTimeToWork);
             }
             if (check) {
                 bookingDetail.setBookingDetailStatus(BookingDetailStatusEnum.IN_PROCESS);
                 bookingDetail.setQrCode(null);
+                BookingDetailStatusHistory bookingDetailStatusHistory = new BookingDetailStatusHistory();
+                bookingDetailStatusHistory.setBookingDetailStatus(BookingDetailStatusEnum.IN_PROCESS);
+                bookingDetailStatusHistory.setBookingDetail(bookingDetail);
+                bookingDetailStatusHistoryRepository.save(bookingDetailStatusHistory);
                 bookingDetailRepository.save(bookingDetail);
                 updateBookingIfSameStatusBookingDetail(bookingDetail.getBooking());
                 return ResponseEntity.status(HttpStatus.OK)
@@ -315,14 +341,19 @@ public class BookingDetailServiceImpl implements BookingDetailService {
             }
         } catch (Exception e) {
             log.error(e.getMessage());
-            if (e instanceof UserNotHavePermissionException) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                        .body(new ResponseObject(HttpStatus.FORBIDDEN.toString(),
+            if (e instanceof NotFoundException) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new ResponseObject(HttpStatus.NOT_FOUND.toString(),
                                 e.getMessage(), null));
             }
             if (e instanceof BadRequestException) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString(),
+                                e.getMessage(), null));
+            }
+            if (e instanceof UserNotHavePermissionException) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(new ResponseObject(HttpStatus.FORBIDDEN.toString(),
                                 e.getMessage(), null));
             }
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
@@ -336,11 +367,8 @@ public class BookingDetailServiceImpl implements BookingDetailService {
         try {
             BookingDetail bookingDetail = findBookingDetailByStatus(detailId, BookingDetailStatusEnum.WAITING);
             isPermission(renterId, bookingDetail);
-            String onTimeToWork = checkInTime(LocalDateTime.of(bookingDetail.getWorkDate(), bookingDetail.getWorkStart()));
-            if (!Utils.isNullOrEmpty(onTimeToWork) &&
-                    MessageVariable.TOO_LATE_TO_START.equals(onTimeToWork)) {
-                bookingDetail.setBookingDetailStatus(BookingDetailStatusEnum.CANCEL_BY_SYSTEM);
-            }
+            String onTimeToWork = checkInTimeToWork(LocalDateTime.of(bookingDetail.getWorkDate(), bookingDetail.getWorkStart()));
+
             if (!Utils.isNullOrEmpty(onTimeToWork)) {
                 throw new BadRequestException(onTimeToWork);
             }
@@ -444,8 +472,23 @@ public class BookingDetailServiceImpl implements BookingDetailService {
                             "Get Helpers For Booking", response));
         } catch (Exception e) {
             log.error(e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new ResponseObject(HttpStatus.INTERNAL_SERVER_ERROR.toString(),
+            if (e instanceof NotFoundException) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new ResponseObject(HttpStatus.NOT_FOUND.toString(),
+                                e.getMessage(), null));
+            }
+            if (e instanceof BadRequestException) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString(),
+                                e.getMessage(), null));
+            }
+            if (e instanceof UserNotHavePermissionException) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(new ResponseObject(HttpStatus.FORBIDDEN.toString(),
+                                e.getMessage(), null));
+            }
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString(),
                             "Something wrong occur!", null));
         }
     }
@@ -453,7 +496,14 @@ public class BookingDetailServiceImpl implements BookingDetailService {
     @Override
     public ResponseEntity<ResponseObject> getBookingsAround(Integer userId) {
         try {
+            LocalDateTime currentDate = Utils.getLocalDateTimeNow();
             Address address;
+            HelperInformation helperInformation = helperInformationRepository.findByUserId(userId);
+            if (helperInformation.getLockDateExpired() != null && helperInformation.getLockDateExpired().isAfter(currentDate.toLocalDate())) {
+                ResponseEntity.status(HttpStatus.OK)
+                        .body(new ResponseObject(HttpStatus.OK.toString(),
+                                "Your account already lock because too many report!", List.of()));
+            }
             List<Address> addresses = addressRepository.findByUserIdAnAndIsDefault(userId);
             if (!addresses.isEmpty()) {
                 address = addresses.get(0);
@@ -464,8 +514,9 @@ public class BookingDetailServiceImpl implements BookingDetailService {
             }
             List<BookingDetail> bookings;
 
-            // Tìm tất cả những booking ko có thằng nhận cũng như đặt
-            bookings = bookingDetailRepository.findBookingDetailByStatusAndNoUserIdNoEmployee(BookingDetailStatusEnum.APPROVED, userId);
+            // Tìm tất cả những booking ko có thằng này nhận cũng như đặt và đã đăng ki
+            bookings = bookingDetailRepository.findBookingDetailByStatusAndNoUserIdNoEmployee(BookingDetailStatusEnum.APPROVED, userId,
+                    ServiceHelperStatusEnum.ACTIVE);
 
             // Loại bỏ những booking quá xa
             List<BookingDetail> detailsWithoutTooFar = null;
@@ -491,6 +542,12 @@ public class BookingDetailServiceImpl implements BookingDetailService {
                         .stream()
                         .map(booking -> {
                                     GetBookingResponseForHelper responseForHelper = modelMapper.map(booking, GetBookingResponseForHelper.class);
+                                    responseForHelper.setServiceUnitId(booking.getServiceUnit().getServiceUnitId());
+                                    if (booking.getWorkStart() != null) {
+                                        responseForHelper.setWorkStart(booking.getWorkStart().format(DateTimeFormatter.ofPattern("HH:mm")));
+                                    }
+                                    responseForHelper.setValue(booking.getServiceUnit().getUnit().getUnitDetail());
+                                    responseForHelper.setEquivalent(booking.getServiceUnit().getUnit().getUnitValue());
                                     responseForHelper.setLatitude(booking.getBooking().getLatitude());
                                     responseForHelper.setLongitude(booking.getBooking().getLongitude());
                                     responseForHelper.setRenterName(booking.getBooking().getRenter().getFullName());
@@ -511,14 +568,24 @@ public class BookingDetailServiceImpl implements BookingDetailService {
                     .body(new ResponseObject(HttpStatus.OK.toString(),
                             "Booking History Response!", dtoList));
         } catch (Exception e) {
-            log.error(e.toString());
+            log.error(e.getMessage());
             if (e instanceof NotFoundException) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body(new ResponseObject(HttpStatus.NOT_FOUND.toString(),
                                 e.getMessage(), null));
             }
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new ResponseObject(HttpStatus.INTERNAL_SERVER_ERROR.toString(),
+            if (e instanceof BadRequestException) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString(),
+                                e.getMessage(), null));
+            }
+            if (e instanceof UserNotHavePermissionException) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(new ResponseObject(HttpStatus.FORBIDDEN.toString(),
+                                e.getMessage(), null));
+            }
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString(),
                             "Something wrong occur!", null));
         }
     }
@@ -527,6 +594,9 @@ public class BookingDetailServiceImpl implements BookingDetailService {
     public ResponseEntity<ResponseObject> acceptBookingForHelper(CreateBookingHelperRequest request, Integer userId) {
         try {
             BookingDetail bookingDetail = findBookingDetail(request.getBookingDetailId());
+            if (!bookingDetail.getBookingDetailStatus().equals(BookingDetailStatusEnum.APPROVED)) {
+                throw new BadRequestException(MessageVariable.CANNOT_ACCEPT_BOOKING_NOT_APPROVED);
+            }
             Booking booking = bookingDetail.getBooking();
             if (Objects.equals(bookingDetail.getBooking().getRenter().getUserId(), userId)) {
                 throw new UserNotHavePermissionException(MessageVariable.HELPER_CANNOT_ACCEPT_THERE_BOOKING);
@@ -602,6 +672,8 @@ public class BookingDetailServiceImpl implements BookingDetailService {
                                                             Pageable pageable) {
         try {
             Page<BookingDetail> bookingDetails;
+            Sort order = Sort.by(Sort.Order.desc("booking.orderDate"));
+            pageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), order);
             List<BookingDetailStatusEnum> bookingDetailStatusEnums = null;
             if (!(statuses == null || statuses.isEmpty())) {
                 bookingDetailStatusEnums = statuses
@@ -617,7 +689,8 @@ public class BookingDetailServiceImpl implements BookingDetailService {
                 case EMPLOYEE:
                     if (isHelper) {
                         bookingDetails = !(statuses == null || statuses.isEmpty())
-                                ? bookingDetailRepository.findByHelperId(userId, bookingDetailStatusEnums, BookingDetailStatusEnum.ON_CART, pageable)
+                                ? bookingDetailRepository.findByHelperId(userId, bookingDetailStatusEnums, BookingDetailStatusEnum.ON_CART,
+                                List.of(BookingDetailHelperStatusEnum.ACTIVE), pageable)
                                 : bookingDetailRepository.findByHelperId(userId, BookingDetailStatusEnum.ON_CART, pageable);
                     } else {
                         bookingDetails = !(statuses == null || statuses.isEmpty())
@@ -674,7 +747,7 @@ public class BookingDetailServiceImpl implements BookingDetailService {
                 response.setBookingCode(bookingDetail.getBooking().getBookingCode());
             if (bookingDetail.getBooking().getRejectionReason() != null && bookingDetail.getBooking().getRjReasonDescription() != null) {
                 response.setRejectionReasonContent(bookingDetail.getBooking().getRejectionReason().getRejectionContent());
-                response.setRejectionReasonContent(bookingDetail.getBooking().getRjReasonDescription());
+                response.setRejectionReasonDescription(bookingDetail.getBooking().getRjReasonDescription());
             }
             response.setServiceId(bookingDetail.getServiceUnit().getService().getServiceId());
             response.setServiceUnitId(bookingDetail.getServiceUnit().getServiceUnitId());
@@ -752,6 +825,22 @@ public class BookingDetailServiceImpl implements BookingDetailService {
                     .body(new ResponseObject(HttpStatus.OK.toString(),
                             "Booking Detail Detail!", response));
         } catch (Exception e) {
+            log.error(e.getMessage());
+            if (e instanceof NotFoundException) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new ResponseObject(HttpStatus.NOT_FOUND.toString(),
+                                e.getMessage(), null));
+            }
+            if (e instanceof BadRequestException) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString(),
+                                e.getMessage(), null));
+            }
+            if (e instanceof UserNotHavePermissionException) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(new ResponseObject(HttpStatus.FORBIDDEN.toString(),
+                                e.getMessage(), null));
+            }
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString(),
                             "Something wrong occur!", null));
@@ -778,9 +867,22 @@ public class BookingDetailServiceImpl implements BookingDetailService {
                 BookingDetailHelper bookingDetailHelperUpdate = bookingDetailHelper.get();
                 bookingDetailHelperUpdate.setBookingDetailHelperStatus(BookingDetailHelperStatusEnum.ACTIVE);
                 bookingDetail.setBookingDetailStatus(BookingDetailStatusEnum.WAITING);
+                NotificationRequestDto notificationRequestDto = new NotificationRequestDto();
+                notificationRequestDto.setTitle(MessageVariable.TITLE_APP);
+                notificationRequestDto.setBody(String.format(MessageVariable.RENTER_CHOOSE_YOU,
+                        bookingDetail.getBooking().getBookingCode()));
+                sendNotificationForUser(notificationRequestDto,
+                        bookingDetailHelperUpdate.getServiceRegistration().getHelperInformation().getUser().getUserId());
+                Notification notification = new Notification();
+                notification.setIsHelper(true);
+                notification.setTitle(notificationRequestDto.getTitle());
+                notification.setContent(notificationRequestDto.getBody());
+                notification.setUser(bookingDetailHelperUpdate.getServiceRegistration()
+                        .getHelperInformation().getUser());
                 BookingDetailStatusHistory bookingDetailStatusHistory = new BookingDetailStatusHistory();
                 bookingDetailStatusHistory.setBookingDetail(bookingDetail);
                 bookingDetailStatusHistory.setBookingDetailStatus(BookingDetailStatusEnum.WAITING);
+                notificationRepository.save(notification);
                 bookingDetailStatusHistoryRepository.save(bookingDetailStatusHistory);
                 bookingDetailHelperRepository.save(bookingDetailHelperUpdate);
                 bookingDetailRepository.save(bookingDetail);
@@ -798,8 +900,13 @@ public class BookingDetailServiceImpl implements BookingDetailService {
                         .body(new ResponseObject(HttpStatus.NOT_FOUND.toString(),
                                 e.getMessage(), null));
             }
+            if (e instanceof BadRequestException) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString(),
+                                e.getMessage(), null));
+            }
             if (e instanceof UserNotHavePermissionException) {
-                ResponseEntity.status(HttpStatus.FORBIDDEN)
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
                         .body(new ResponseObject(HttpStatus.FORBIDDEN.toString(),
                                 e.getMessage(), null));
             }
@@ -867,12 +974,111 @@ public class BookingDetailServiceImpl implements BookingDetailService {
             log.error(e.getMessage());
             if (e instanceof NotFoundException) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(new ResponseObject(HttpStatus.NOT_FOUND.toString()
-                                , e.getMessage(), null));
+                        .body(new ResponseObject(HttpStatus.NOT_FOUND.toString(),
+                                e.getMessage(), null));
             }
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString()
-                            , "Something wrong occur!", null));
+                    .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString(),
+                            "Something wrong occur!", null));
+        }
+    }
+
+    @Override
+    public ResponseEntity<ResponseObject> checkoutBookingDetail(Integer id, Integer helperId) {
+        try {
+            BookingDetail bookingDetail = findBookingDetail(id);
+            isPermissionForHelper(helperId, bookingDetail);
+            LocalDateTime startDateTime = LocalDateTime.of(bookingDetail.getWorkDate(), bookingDetail.getWorkStart());
+            String checkValue = checkInTimeToEndWork(startDateTime);
+            if (!Utils.isNullOrEmpty(checkValue)) {
+                throw new BadRequestException(checkValue);
+            }
+            bookingDetail.setBookingDetailStatus(BookingDetailStatusEnum.FINISHED);
+            bookingDetail.setWorkEnd(Utils.getLocalDateTimeNow().toLocalTime());
+            BookingDetailStatusHistory bookingDetailStatusHistory = new BookingDetailStatusHistory();
+            bookingDetailStatusHistory.setBookingDetailStatus(BookingDetailStatusEnum.FINISHED);
+            bookingDetailStatusHistory.setBookingDetail(bookingDetail);
+            bookingDetailStatusHistoryRepository.save(bookingDetailStatusHistory);
+            bookingDetailRepository.save(bookingDetail);
+            updateBookingIfSameStatusBookingDetail(bookingDetail.getBooking());
+            return ResponseEntity.status(HttpStatus.OK)
+                    .body(new ResponseObject(HttpStatus.OK.toString(),
+                            "Checkout booking successful!", null));
+        } catch (Exception e) {
+            log.error(e.getMessage());
+            if (e instanceof NotFoundException) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new ResponseObject(HttpStatus.NOT_FOUND.toString(),
+                                e.getMessage(), null));
+            }
+            if (e instanceof UserNotHavePermissionException) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(new ResponseObject(HttpStatus.FORBIDDEN.toString(),
+                                e.getMessage(), null));
+            }
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString(),
+                            "Something wrong occur!", null));
+        }
+    }
+
+    @Override
+    public ResponseEntity<ResponseObject> getBookingDetailByHelper(Integer helperId, Integer bookingDetailId) {
+        try {
+            BookingDetail bookingDetail = findBookingDetail(bookingDetailId);
+            isPermissionForHelper(helperId, bookingDetail);
+            GetBookingDetailDetailForHelperResponse response = modelMapper.map(bookingDetail, GetBookingDetailDetailForHelperResponse.class);
+            if (bookingDetail.getBooking().getBookingCode() != null)
+                response.setBookingCode(bookingDetail.getBooking().getBookingCode());
+            if (bookingDetail.getBooking().getRejectionReason() != null && bookingDetail.getBooking().getRjReasonDescription() != null) {
+                response.setRejectionReasonContent(bookingDetail.getBooking().getRejectionReason().getRejectionContent());
+                response.setRejectionReasonDescription(bookingDetail.getBooking().getRjReasonDescription());
+            }
+            response.setWorkStart(bookingDetail.getWorkStart().format(DateTimeFormatter.ofPattern("HH:mm")));
+            response.setServiceId(bookingDetail.getServiceUnit().getService().getServiceId());
+            response.setServiceUnitId(bookingDetail.getServiceUnit().getServiceUnitId());
+            response.setServiceIcon(bookingDetail.getServiceUnit().getService().getServiceImage());
+            response.setServiceName(bookingDetail.getServiceUnit().getService().getServiceName());
+            response.setValue(bookingDetail.getServiceUnit().getUnit().getUnitDetail());
+            response.setEquivalent(bookingDetail.getServiceUnit().getUnit().getUnitValue());
+            response.setPrice(bookingDetail.getPriceHelper());
+            response.setCurrentStatus(bookingDetail.getBookingDetailStatus().name());
+            GetAddressResponseBooking addressResponseBooking = modelMapper.map(bookingDetail.getBooking(), GetAddressResponseBooking.class);
+            GetRenterResponse getRenterResponse = null;
+            User renter = bookingDetail.getBooking().getRenter();
+            if (renter != null) {
+                getRenterResponse = new GetRenterResponse();
+                getRenterResponse.setRenterId(renter.getUserId());
+                getRenterResponse.setRenterName(renter.getFullName());
+                getRenterResponse.setRenterAvatar(renter.getAvatar());
+                getRenterResponse.setPhoneNumber(renter.getPhoneNumber());
+            }
+            GetFeedbackResponse feedback = null;
+            if (bookingDetail.getFeedback() != null && !bookingDetail.getFeedback().isEmpty()) {
+                feedback = modelMapper.map(bookingDetail, GetFeedbackResponse.class);
+            }
+
+            response.setAddress(addressResponseBooking);
+            response.setRenter(getRenterResponse);
+            response.setFeedback(feedback);
+            return ResponseEntity.status(HttpStatus.OK)
+                    .body(new ResponseObject(HttpStatus.OK.toString(),
+                            "Booking Detail Detail!", response));
+        } catch (Exception e) {
+            log.error(e.getMessage());
+            if (e instanceof NotFoundException) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new ResponseObject(HttpStatus.NOT_FOUND.toString(),
+                                e.getMessage(), null));
+            }
+            if (e instanceof UserNotHavePermissionException) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(new ResponseObject(HttpStatus.FORBIDDEN.toString(),
+                                e.getMessage(), null));
+            }
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString(),
+                            "Something wrong occur!", null));
         }
     }
 
@@ -952,8 +1158,8 @@ public class BookingDetailServiceImpl implements BookingDetailService {
     }
 
     private void sendNotificationForUser(NotificationRequestDto request, Integer userId) {
-        User user = findAccount(userId);
-        request.setTarget(user.getDeviceTokens()
+        List<DeviceToken> deviceTokens = deviceTokenRepository.findByUserId(userId);
+        request.setTarget(deviceTokens
                 .stream()
                 .map(DeviceToken::getFcmToken)
                 .collect(Collectors.toList()));
@@ -973,8 +1179,8 @@ public class BookingDetailServiceImpl implements BookingDetailService {
     private void sendNotificationForUser(NotificationRequestDto request, List<Integer> userIds) {
         for (Integer userId :
                 userIds) {
-            User user = findAccount(userId);
-            request.setTarget(user.getDeviceTokens()
+            List<DeviceToken> deviceTokens = deviceTokenRepository.findByUserId(userId);
+            request.setTarget(deviceTokens
                     .stream()
                     .map(DeviceToken::getFcmToken)
                     .collect(Collectors.toList()));
@@ -1015,6 +1221,8 @@ public class BookingDetailServiceImpl implements BookingDetailService {
                 .map(detail -> {
                             GetBookingDetailResponse response = modelMapper.map(detail, GetBookingDetailResponse.class);
                             response.setStatus(detail.getBookingDetailStatus().name());
+                            response.setLongitude(detail.getBooking().getLongitude());
+                            response.setLatitude(detail.getBooking().getLatitude());
                             return response;
                         }
                 )
@@ -1026,8 +1234,28 @@ public class BookingDetailServiceImpl implements BookingDetailService {
         LocalDateTime current = Utils.getLocalDateTimeNow();
         long difference = Utils.minusLocalDateTime(startDateTime,
                 current);
-        if (difference >= 0 && Utils.isLateMinutes(difference, getMaxUpdateHour())) {
+        if (difference >= 0 && Utils.isLateMinutes(difference, getMaxUpdateMinutes())) {
             return MessageVariable.TOO_LATE_TO_UPDATE;
+        }
+        return null;
+    }
+
+    private String checkInTimeToWork(LocalDateTime startDateTime) {
+        LocalDateTime current = Utils.getLocalDateTimeNow();
+        long difference = Utils.minusLocalDateTime(startDateTime,
+                current);
+        if (Math.abs(difference) >= 0 && Utils.isLateMinutes(difference, getMaxUpdateMinutes())) {
+            return MessageVariable.NOT_ON_TIME_TO_START;
+        }
+        return null;
+    }
+
+    private String checkInTimeToEndWork(LocalDateTime startDateTime) {
+        LocalDateTime current = Utils.getLocalDateTimeNow();
+        long difference = Utils.minusLocalDateTime(startDateTime,
+                current);
+        if (Math.abs(difference) >= 0 && Utils.isLateMinutes(difference, getDifferEndMinutes())) {
+            return MessageVariable.NOT_ON_TIME_TO_END_WORK;
         }
         return null;
     }
@@ -1061,15 +1289,24 @@ public class BookingDetailServiceImpl implements BookingDetailService {
 
     private BookingDetail findBookingDetailByStatus(Integer detailId, BookingDetailStatusEnum statusEnum) {
         return bookingDetailRepository.findByBookingDetailIdAndBookingStatus(detailId, statusEnum)
-                .orElseThrow(() -> new NotFoundException("Booking Detail is not found"));
+                .orElseThrow(() -> new NotFoundException("Booking Detail with status waiting is not found"));
     }
 
-    private long getMaxUpdateHour() {
-        SystemParameter systemParameter = systemParameterRepository.findSystemParameterByParameterField(SystemParameterField.MAX_UPDATE_HOUR);
+    private long getMaxUpdateMinutes() {
+        SystemParameter systemParameter = systemParameterRepository.findSystemParameterByParameterField(SystemParameterField.MAX_UPDATE_MINUTES);
         try {
             return Long.parseLong(systemParameter.getParameterValue());
         } catch (Exception e) {
-            return maxUpdateHour;
+            return maxUpdateMinutes;
+        }
+    }
+
+    private long getDifferEndMinutes() {
+        SystemParameter systemParameter = systemParameterRepository.findSystemParameterByParameterField(SystemParameterField.MAX_END_TIME_MINUTES);
+        try {
+            return Long.parseLong(systemParameter.getParameterValue());
+        } catch (Exception e) {
+            return maxEndTimeMinutes;
         }
     }
 

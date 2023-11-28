@@ -13,12 +13,17 @@ public class BookingDetailToDtoResponseConverter implements Converter<BookingDet
         BookingDetail source = context.getSource();
         GetBookingDetailResponse response = new GetBookingDetailResponse();
         response.setBookingDetailId(source.getBookingDetailId());
+        response.setBookingCode(source.getBooking().getBookingCode());
+        if (source.getBooking().getOrderDate() != null) {
+            response.setOrderDate(source.getBooking().getOrderDate());
+        }
         response.setServiceName(source.getServiceUnit().getService().getServiceName());
         response.setServiceIcon(source.getServiceUnit().getService().getServiceImage());
         if (source.getWorkStart() != null && source.getWorkDate() != null) {
             response.setWorkDate(source.getWorkDate().format(DateTimeFormatter.ofPattern("dd-MM-yyyy")));
             response.setWorkTime(source.getWorkStart().format(DateTimeFormatter.ofPattern("HH:mm")));
         }
+        response.setNote(source.getNote());
         response.setServiceId(source.getServiceUnit().getService().getServiceId());
         response.setServiceUnitId(source.getServiceUnit().getServiceUnitId());
         response.setValue(source.getServiceUnit().getUnit().getUnitDetail());

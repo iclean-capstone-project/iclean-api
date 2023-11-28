@@ -66,7 +66,7 @@ public class ProfileServiceImpl implements ProfileService {
     public ResponseEntity<ResponseObject> updateProfile(Integer userId, UpdateProfileDto updateProfileDto) {
         try {
             User user = findUser(userId);
-            if (Objects.nonNull(user.getRole())) {
+            if (Objects.isNull(user.getRole())) {
                 throw new UserNotHavePermissionException();
             }
             updateProfileDto.setFullName(Utils.convertToTitleCase(updateProfileDto.getFullName()));

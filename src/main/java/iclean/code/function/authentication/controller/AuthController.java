@@ -105,13 +105,10 @@ public class AuthController {
                                                             @Pattern(regexp = "^([0]?[1-9]|[1|2][0-9]|[3][0|1])[./-]([0]?[1-9]|[1][0-2])[./-]([0-9]{4}|[0-9]{2})$", message = "Invalid date Of Birth")
                                                             @NotNull(message = "Date Of Birth are required")
                                                             String dateOfBirth,
-                                                            @RequestPart(value = "role")
-                                                            @Pattern(regexp = "(?i)(renter|employee)", message = "Role are invalid")
-                                                            String role,
                                                             @RequestPart(value = "fileImage", required = false) MultipartFile file,
                                                             Authentication authentication) {
         return authService.updateInformationFirstLogin(JwtUtils.decodeToAccountId(authentication),
-                new RegisterUserForm(fullName, role, dateOfBirth, file));
+                new RegisterUserForm(fullName, dateOfBirth, file));
     }
 
     @PostMapping("/fcm-token")
