@@ -1224,6 +1224,7 @@ public class BookingDetailServiceImpl implements BookingDetailService {
                 .map(detail -> {
                             GetBookingDetailResponse response = modelMapper.map(detail, GetBookingDetailResponse.class);
                             response.setStatus(detail.getBookingDetailStatus().name());
+                            response.setRenterName(detail.getBooking().getRenter().getFullName());
                             response.setLongitude(detail.getBooking().getLongitude());
                             response.setLatitude(detail.getBooking().getLatitude());
                             return response;
