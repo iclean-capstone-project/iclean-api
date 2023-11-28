@@ -124,6 +124,12 @@ public class Utils {
         return LocalDateTime.now(gmtPlus7Zone).format(formatter);
     }
 
+    public static LocalTime convertToLocalTime(String value) {
+        ZoneId gmtPlus7Zone = ZoneId.of("GMT+7");
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm:ss");
+        return LocalTime.parse(value, formatter);
+    }
+
     public static Double roundingNumber(Double number, Double divisor, RoundingMode roundingMode) {
         int result = 0;
         switch (roundingMode) {
@@ -155,6 +161,11 @@ public class Utils {
 
     public static LocalDate convertStringToLocalDate(String dataString) {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+        return LocalDate.parse(dataString, formatter);
+    }
+
+    public static LocalDate convertStringToLocalDateCMT(String dataString) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
         return LocalDate.parse(dataString, formatter);
     }
 

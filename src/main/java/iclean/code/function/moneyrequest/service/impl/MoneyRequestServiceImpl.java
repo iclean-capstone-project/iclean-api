@@ -1,5 +1,6 @@
 package iclean.code.function.moneyrequest.service.impl;
 
+import iclean.code.config.MessageVariable;
 import iclean.code.data.domain.MoneyRequest;
 import iclean.code.data.domain.User;
 import iclean.code.data.dto.common.ResponseObject;
@@ -87,31 +88,6 @@ public class MoneyRequestServiceImpl implements MoneyRequestService {
     }
 
     @Override
-    public ResponseEntity<ResponseObject> getMoneyRequest(Integer id) {
-        try {
-            MoneyRequest moneyRequest = findMoneyRequestById(id);
-            GetMoneyRequestResponse responses = modelMapper.map(moneyRequest, GetMoneyRequestResponse.class);
-
-            return ResponseEntity.status(HttpStatus.OK)
-                    .body(new ResponseObject(HttpStatus.OK.toString(),
-                            "Money Request Information",
-                            responses));
-        } catch (Exception e) {
-            log.error(e.getMessage());
-            if (e instanceof NotFoundException) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(new ResponseObject(HttpStatus.NOT_FOUND.toString(),
-                                e.toString(),
-                                null));
-            }
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new ResponseObject(HttpStatus.INTERNAL_SERVER_ERROR.toString(),
-                            "Internal System Error",
-                            null));
-        }
-    }
-
-    @Override
     public ResponseEntity<ResponseObject> createMoneyRequest(CreateMoneyRequestRequest request) {
         try {
             User user = findUserByPhoneNumber(request.getUserPhoneNumber());
@@ -146,7 +122,7 @@ public class MoneyRequestServiceImpl implements MoneyRequestService {
     @Override
     public ResponseEntity<ResponseObject> validateMoneyRequest(ValidateMoneyRequest request) {
         try {
-            MoneyRequest moneyRequest = findMoneyRequestById(request.getRequestId());
+            MoneyRequest moneyRequest = findMoneyRequestByPhoneNumber(request.getPhoneNumber());
             if (!moneyRequest.getRequestStatus().equals(MoneyRequestStatusEnum.PENDING)) {
                 throw new BadRequestException("The request are expired");
             }
@@ -160,8 +136,8 @@ public class MoneyRequestServiceImpl implements MoneyRequestService {
                 throw new BadRequestException("Wrong OTP");
             }
             String note = moneyRequest.getRequestType().equals(MoneyRequestEnum.DEPOSIT) ?
-                    String.format(depositMessage, " + " + moneyRequest.getBalance().longValue())
-                    : String.format(withdrawMessage, " - " + moneyRequest.getBalance().longValue());
+                    MessageVariable.DEPOSIT_SUCCESSFUL
+                    : MessageVariable.WITHDRAW_SUCCESSFUL;
 
             transactionService.createTransactionService(new TransactionRequest(moneyRequest.getBalance(), note,
                     moneyRequest.getUser().getUserId(), moneyRequest.getRequestType().name(), WalletTypeEnum.MONEY.name()));
@@ -192,9 +168,9 @@ public class MoneyRequestServiceImpl implements MoneyRequestService {
     }
 
     @Override
-    public ResponseEntity<ResponseObject> resendOtp(Integer id) {
+    public ResponseEntity<ResponseObject> resendOtp(String phoneNumber) {
         try {
-            MoneyRequest moneyRequest = findMoneyRequestById(id);
+            MoneyRequest moneyRequest = findMoneyRequestByPhoneNumber(phoneNumber);
             if (!moneyRequest.getRequestStatus().equals(MoneyRequestStatusEnum.PENDING)) {
                 throw new BadRequestException("The request are expired");
             }
@@ -226,10 +202,10 @@ public class MoneyRequestServiceImpl implements MoneyRequestService {
         }
     }
 
-    private MoneyRequest findMoneyRequestById(Integer id) {
+    private MoneyRequest findMoneyRequestByPhoneNumber(String phone) {
         return moneyRequestRepository
-                .findById(id)
-                .orElseThrow(() -> new NotFoundException(String.format("Money Request ID: %s is not exist", id)));
+                .findByPhoneNumber(phone, MoneyRequestStatusEnum.PENDING)
+                .orElseThrow(() -> new NotFoundException("Money Request is not exist"));
     }
 
     private User findUserByPhoneNumber(String phoneNumber) {

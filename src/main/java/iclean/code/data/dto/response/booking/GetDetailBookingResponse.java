@@ -21,6 +21,7 @@ public class GetDetailBookingResponse {
     private String rejectionReasonDescription;
     private String bookingCode;
     private String renterName;
+    private String renterAvatar;
     private String currentStatus;
     private List<GetBookingDetailResponse> details;
 }

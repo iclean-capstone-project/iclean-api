@@ -1,11 +1,13 @@
 package iclean.code.function.transaction.service.impl;
 
+import iclean.code.data.domain.Booking;
 import iclean.code.data.domain.User;
 import iclean.code.data.domain.Transaction;
 import iclean.code.data.domain.Wallet;
 import iclean.code.data.dto.common.ResponseObject;
 import iclean.code.data.dto.request.transaction.TransactionRequest;
 import iclean.code.data.dto.response.PageResponseObject;
+import iclean.code.data.dto.response.service.PriceService;
 import iclean.code.data.dto.response.transaction.GetTransactionDetailResponse;
 import iclean.code.data.dto.response.transaction.GetTransactionResponse;
 import iclean.code.data.enumjava.RoleEnum;
@@ -30,6 +32,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -76,12 +79,24 @@ public class TransactionServiceImpl implements TransactionService {
                                                          Integer userId) {
         try {
             Transaction transaction = findWalletHistoryById(id);
-
             GetTransactionDetailResponse responses = modelMapper.map(transaction, GetTransactionDetailResponse.class);
-
+            List<PriceService> priceServices = new ArrayList<>();
+            if (transaction.getBooking() != null) {
+                Booking booking = transaction.getBooking();
+                priceServices = booking.getBookingDetails()
+                        .stream()
+                        .map(element -> {
+                            PriceService priceService = new PriceService();
+                            priceService.setServiceName(element.getServiceUnit().getService().getServiceName());
+                            priceService.setPrice(element.getPriceDetail());
+                            return priceService;
+                        })
+                        .collect(Collectors.toList());
+            }
+            responses.setPriceServices(priceServices);
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseObject(HttpStatus.OK.toString(),
-                            "Wallet History Information",
+                            "Transaction Detail Information",
                             responses));
         } catch (Exception e) {
             log.error(e.getMessage());

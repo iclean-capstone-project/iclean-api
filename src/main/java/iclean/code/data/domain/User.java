@@ -2,6 +2,7 @@ package iclean.code.data.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import iclean.code.utils.Utils;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -46,7 +47,7 @@ public class User {
     private LocalDateTime expiredToken;
 
     @Column(name = "create_at")
-    private LocalDateTime createAt;
+    private LocalDateTime createAt = Utils.getLocalDateTimeNow();
 
     @Column(name = "is_locked")
     private Boolean isLocked = false;

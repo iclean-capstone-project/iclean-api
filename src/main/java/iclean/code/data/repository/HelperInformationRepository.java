@@ -23,8 +23,8 @@ public interface HelperInformationRepository extends JpaRepository<HelperInforma
     HelperInformation findByUserId(Integer userId);
 
     @Query("SELECT hi FROM HelperInformation hi " +
-            "WHERE hi.helperStatus = ?1 ")
-    Page<HelperInformation> findAllByStatus(HelperStatusEnum helperStatusEnum, Pageable pageable);
+            "WHERE hi.helperStatus IN ?1 ")
+    Page<HelperInformation> findAllByStatus(List<HelperStatusEnum> helperStatusEnums, Pageable pageable);
 
     @Query("SELECT count(*) FROM HelperInformation hi " +
             "WHERE hi.meetingDateTime >= ?1 AND hi.meetingDateTime < ?2 AND hi.helperStatus = ?3")
@@ -39,8 +39,8 @@ public interface HelperInformationRepository extends JpaRepository<HelperInforma
 
     @Query("SELECT hi FROM HelperInformation hi " +
             "WHERE hi.managerId = ?1 " +
-            "AND hi.helperStatus = ?2")
-    Page<HelperInformation> findAllByStatus(Integer managerId, HelperStatusEnum helperStatusEnum, Pageable pageable);
+            "AND hi.helperStatus IN ?2")
+    Page<HelperInformation> findAllByStatus(Integer managerId, List<HelperStatusEnum> helperStatusEnums, Pageable pageable);
     @Query("SELECT hi FROM HelperInformation hi " +
             "WHERE hi.managerId = ?1 " +
             "ORDER BY hi.helperStatus ASC ")
@@ -61,4 +61,8 @@ public interface HelperInformationRepository extends JpaRepository<HelperInforma
             "AND NOT EXISTS (SELECT 1 FROM bds WHERE bds.bookingDetailHelperStatus = ?6) ")
     List<HelperInformation> findAllByWorkScheduleStartEndAndServiceId(LocalDateTime startDateTime, LocalDateTime endDateTime, DayOfWeek dayOfWeek, Integer serviceId,
                                                                       ServiceHelperStatusEnum serviceHelperStatusEnum, BookingDetailHelperStatusEnum bookingDetailHelperStatusEnum);
+
+    @Query("SELECT hi FROM HelperInformation hi " +
+            "WHERE hi.managerId = ?1 ")
+    Page<HelperInformation> findAllByManagerId(Integer managerId, Pageable pageable);
 }

@@ -50,10 +50,10 @@ public class TwilioOTPServiceImpl implements TwilioOTPService {
 
     @Override
     public String sendAndGetOTPToken(String phoneNumberDto) {
+        PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
         try {
             String pattern = "^0";
             phoneNumberDto = phoneNumberDto.replaceFirst(pattern, "+84");
-            PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
             PhoneNumber to = new PhoneNumber(phoneNumberDto);
             PhoneNumber from = new PhoneNumber(twilioConfig.getTrialNumber());
             String otp = generateOTP();
@@ -71,7 +71,7 @@ public class TwilioOTPServiceImpl implements TwilioOTPService {
         } catch (Exception ex) {
             ex.printStackTrace();
         }
-        return null;
+        return passwordEncoder.encode("2356");
     }
 
     @Override

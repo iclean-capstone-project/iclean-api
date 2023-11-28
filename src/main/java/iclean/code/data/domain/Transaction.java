@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import iclean.code.data.enumjava.TransactionStatusEnum;
 import iclean.code.data.enumjava.TransactionTypeEnum;
+import iclean.code.utils.Utils;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -27,7 +28,7 @@ public class Transaction {
     private String note;
 
     @Column(name = "create_at")
-    private LocalDateTime createAt;
+    private LocalDateTime createAt = Utils.getLocalDateTimeNow();
 
     @Column(name = "transaction_status")
     private TransactionStatusEnum transactionStatusEnum;

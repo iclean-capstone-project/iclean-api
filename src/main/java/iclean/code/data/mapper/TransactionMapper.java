@@ -16,6 +16,7 @@ public class TransactionMapper {
         modelMapper.addMappings(new PropertyMap<Transaction, GetTransactionResponse>() {
             @Override
             protected void configure() {
+                map().setTransactionCode(source.getTransactionCode());
                 map().setTransactionType(String.valueOf(source.getTransactionTypeEnum()));
                 map().setTransactionStatus(String.valueOf(source.getTransactionStatusEnum()));
                 map().setAmount(source.getAmount());
@@ -26,6 +27,7 @@ public class TransactionMapper {
             @Override
             protected void configure() {
                 map().setTransactionStatus(String.valueOf(source.getTransactionStatusEnum()));
+                map().setTransactionType(String.valueOf(source.getTransactionTypeEnum()));
                 map().setAmount(source.getAmount());
             }
         });

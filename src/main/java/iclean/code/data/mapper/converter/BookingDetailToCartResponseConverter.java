@@ -13,6 +13,7 @@ public class BookingDetailToCartResponseConverter implements Converter<BookingDe
         BookingDetail source = context.getSource();
         GetCartBookingDetailResponse response = new GetCartBookingDetailResponse();
         response.setCartItemId(source.getBookingDetailId());
+        response.setNote(source.getNote());
         response.setServiceName(source.getServiceUnit().getService().getServiceName());
         response.setServiceIcon(source.getServiceUnit().getService().getServiceImage());
         response.setWorkDate(source.getWorkDate().format(DateTimeFormatter.ofPattern("dd-MM-yyyy")));

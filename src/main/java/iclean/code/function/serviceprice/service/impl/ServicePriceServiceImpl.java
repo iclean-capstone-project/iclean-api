@@ -5,9 +5,15 @@ import iclean.code.data.domain.ServicePrice;
 import iclean.code.data.dto.common.ResponseObject;
 import iclean.code.data.dto.request.serviceprice.GetServicePriceRequest;
 import iclean.code.data.dto.request.serviceprice.GetServicePriceRequestDto;
+import iclean.code.data.dto.request.serviceprice.ServicePriceRequest;
+import iclean.code.data.dto.response.serviceprice.GetServicePriceResponse;
+import iclean.code.data.dto.response.serviceprice.ServicePriceResponse;
+import iclean.code.data.enumjava.ServicePriceEnum;
 import iclean.code.data.repository.ServiceUnitRepository;
 import iclean.code.data.repository.ServicePriceRepository;
+import iclean.code.exception.BadRequestException;
 import iclean.code.exception.NotFoundException;
+import iclean.code.exception.UserNotHavePermissionException;
 import iclean.code.function.serviceprice.service.ServicePriceService;
 import iclean.code.utils.Utils;
 import lombok.extern.log4j.Log4j2;
@@ -18,7 +24,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @Log4j2
@@ -82,7 +93,7 @@ public class ServicePriceServiceImpl implements ServicePriceService {
                     totalPrice += serviceUnit.getDefaultPrice() * numberHour;
                     startTime = Utils.plusLocalTime(startTime, numberHour);
 
-                } while (startTime.isBefore(endTime));
+                } while (startTime.isBefore(endTime) && startTime.plusSeconds(20).isBefore(endTime));
             } else {
                 totalPrice = serviceUnit.getDefaultPrice() * serviceUnit.getUnit().getUnitValue();
             }
@@ -128,7 +139,7 @@ public class ServicePriceServiceImpl implements ServicePriceService {
                     totalPriceHelper += serviceUnit.getDefaultPrice() * numberHour * serviceUnit.getHelperCommission() / 100;
                     startTime = Utils.plusLocalTime(startTime, numberHour);
 
-                } while (startTime.isBefore(endTime));
+                } while (startTime.isBefore(endTime) && startTime.plusSeconds(20).isBefore(endTime));
             } else {
                 totalPriceHelper = serviceUnit.getDefaultPrice() * serviceUnit.getUnit().getUnitValue() * serviceUnit.getHelperCommission() / 100;;
             }
@@ -136,6 +147,94 @@ public class ServicePriceServiceImpl implements ServicePriceService {
         } catch (Exception e) {
             log.error(e.getMessage());
             throw e;
+        }
+    }
+
+    @Override
+    public ResponseEntity<ResponseObject> createServicePrice(List<ServicePriceRequest> requests, Integer serviceUnitId) {
+        try {
+            ServiceUnit serviceUnit = findServiceUnitById(serviceUnitId);
+            List<ServicePrice> servicePrices = serviceUnit.getServicePrices();
+            for (ServicePrice servicePrice :
+                    servicePrices) {
+                servicePrice.setIsDelete(true);
+            }
+            List<ServicePrice> createServicePrices = new ArrayList<>();
+            for (ServicePriceRequest request :
+                    requests) {
+                ServicePriceEnum servicePriceEnum = ServicePriceEnum.getById(request.getId());
+                ServicePrice servicePrice = new ServicePrice();
+                servicePrice.setPrice(request.getPrice());
+                servicePrice.setServicePriceEnum(servicePriceEnum);
+                servicePrice.setEmployeeCommission(request.getEmployeeCommission());
+                servicePrice.setStartTime(Utils.convertToLocalTime(servicePriceEnum.getStartDate()));
+                servicePrice.setEndTime(Utils.convertToLocalTime(servicePriceEnum.getEndDate()));
+                servicePrice.setServiceUnit(serviceUnit);
+                createServicePrices.add(servicePrice);
+            }
+            servicePriceRepository.saveAll(servicePrices);
+            servicePriceRepository.saveAll(createServicePrices);
+            return ResponseEntity.status(HttpStatus.OK)
+                    .body(new ResponseObject(HttpStatus.OK.toString(),
+                            "Update service price successful!", null));
+        } catch (Exception e) {
+            log.error(e.getMessage());
+            if (e instanceof NotFoundException) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new ResponseObject(HttpStatus.NOT_FOUND.toString(),
+                                e.getMessage(), null));
+            }
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString(),
+                            "Something wrong occur!", null));
+        }
+    }
+
+    @Override
+    public ResponseEntity<ResponseObject> getServicePrice(Integer serviceUnitId) {
+        try {
+            ServiceUnit serviceUnit = findServiceUnitById(serviceUnitId);
+            List<ServicePrice> servicePrices = serviceUnit.getServicePrices();
+            List<GetServicePriceResponse> responses = servicePrices
+                    .stream()
+                    .map((element -> {
+                        GetServicePriceResponse response = modelMapper.map(element, GetServicePriceResponse.class);
+                        response.setId(element.getServicePriceEnum().getId());
+                        return response;
+                    }))
+                    .collect(Collectors.toList());
+            List<ServicePriceEnum> enumsNotInResponses = Arrays.stream(ServicePriceEnum.values())
+                    .filter(enumValue -> servicePrices.stream().noneMatch(servicePrice -> servicePrice.getServicePriceEnum() == enumValue))
+                    .collect(Collectors.toList());
+            for (ServicePriceEnum servicePriceEnum :
+                    enumsNotInResponses) {
+                GetServicePriceResponse getServicePriceResponse = new GetServicePriceResponse();
+                getServicePriceResponse.setId(servicePriceEnum.getId());
+                getServicePriceResponse.setPrice(serviceUnit.getDefaultPrice());
+                getServicePriceResponse.setEmployeeCommission(serviceUnit.getHelperCommission());
+                getServicePriceResponse.setStartTime(servicePriceEnum.getStartDate());
+                getServicePriceResponse.setEndTime(servicePriceEnum.getEndDate());
+                responses.add(getServicePriceResponse);
+            }
+            List<GetServicePriceResponse> sortedResponses = responses.stream()
+                    .sorted(Comparator.comparing(GetServicePriceResponse::getId))
+                    .collect(Collectors.toList());
+            ServicePriceResponse servicePriceResponse = new ServicePriceResponse();
+            servicePriceResponse.setServiceUnitId(serviceUnit.getServiceUnitId());
+            servicePriceResponse.setResponses(sortedResponses);
+            return ResponseEntity.status(HttpStatus.OK)
+                    .body(new ResponseObject(HttpStatus.OK.toString(),
+                            "Update service price successful!", servicePriceResponse));
+        } catch (Exception e) {
+            log.error(e.getMessage());
+            if (e instanceof NotFoundException) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new ResponseObject(HttpStatus.NOT_FOUND.toString(),
+                                e.getMessage(), null));
+            }
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString(),
+                            "Something wrong occur!", null));
         }
     }
 

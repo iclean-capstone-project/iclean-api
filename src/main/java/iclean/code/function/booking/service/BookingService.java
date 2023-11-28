@@ -8,7 +8,7 @@ import org.springframework.http.ResponseEntity;
 import java.util.List;
 
 public interface BookingService {
-    ResponseEntity<ResponseObject> getBookings(Integer userId, Pageable pageable, List<String> statuses, Boolean isHelper);
+    ResponseEntity<ResponseObject> getBookings(Integer userId, Pageable pageable, List<String> statuses, Boolean isHelper, String startDate, String endDate);
 
     ResponseEntity<ResponseObject> getBookingDetailByBookingId(Integer bookingId, Integer userId);
 
@@ -33,4 +33,6 @@ public interface BookingService {
     ResponseEntity<ResponseObject> createBookingNow(CreateBookingRequestNow request, Integer renterId);
 
     ResponseEntity<ResponseObject> resendBooking(CheckOutCartRequest request, Integer id, Integer renterId);
+
+    ResponseEntity<ResponseObject> getBookingNow(CreateBookingRequestNow request, Integer renterId);
 }

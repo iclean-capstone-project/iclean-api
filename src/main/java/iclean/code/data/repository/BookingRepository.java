@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
@@ -88,4 +89,29 @@ public interface BookingRepository extends JpaRepository<Booking, Integer> {
 
     @Query("SELECT b FROM Booking b WHERE b.bookingStatus IN ?1 AND b.bookingStatus != ?2")
     Page<Booking> findAllByBookingStatus(List<BookingStatusEnum> bookingStatusEnums, BookingStatusEnum notStatus, Pageable pageable);
+
+    @Query("SELECT b FROM Booking b WHERE b.bookingStatus IN ?1 AND b.bookingStatus != ?3 AND b.orderDate >= ?2")
+    Page<Booking> findAllByBookingStatusByStartDateTime(List<BookingStatusEnum> bookingStatusEnums, LocalDateTime startDateTime, BookingStatusEnum bookingStatusEnum, Pageable pageable);
+
+    @Query("SELECT booking FROM Booking booking " +
+            "WHERE booking.bookingStatus != ?1 " +
+            "AND booking.orderDate >= ?2")
+    Page<Booking> findAllBookingByStartDateTime(BookingStatusEnum bookingStatusEnum, LocalDateTime startDateTime, Pageable pageable);
+
+    @Query("SELECT b FROM Booking b WHERE b.bookingStatus IN ?1 AND b.bookingStatus != ?3 AND b.orderDate <= ?2")
+    Page<Booking> findAllByBookingStatusByEndDateTime(List<BookingStatusEnum> bookingStatusEnums, LocalDateTime endDateTime, BookingStatusEnum bookingStatusEnum, Pageable pageable);
+
+    @Query("SELECT booking FROM Booking booking " +
+            "WHERE booking.bookingStatus != ?1 " +
+            "AND booking.orderDate <= ?2")
+    Page<Booking> findAllBookingByEndDateTime(BookingStatusEnum bookingStatusEnum, LocalDateTime endDateTime, Pageable pageable);
+
+    @Query("SELECT b FROM Booking b WHERE b.bookingStatus IN ?1 AND b.bookingStatus != ?4 AND b.orderDate <= ?3 AND b.orderDate >= ?2")
+    Page<Booking> findAllByBookingStatusStartTimeEndTime(List<BookingStatusEnum> bookingStatusEnums, LocalDateTime startDateTime, LocalDateTime endDateTime, BookingStatusEnum bookingStatusEnum, Pageable pageable);
+
+    @Query("SELECT booking FROM Booking booking " +
+            "WHERE booking.bookingStatus != ?1 " +
+            "AND booking.orderDate <= ?3 " +
+            "AND booking.orderDate >= ?2")
+    Page<Booking> findAllBookingStartTimeEndTime(BookingStatusEnum bookingStatusEnum, LocalDateTime startDateTime, LocalDateTime endDateTime, Pageable pageable);
 }

@@ -9,8 +9,6 @@ public class RegisterUserForm {
 
     private String fullName;
 
-    private String role;
-
     private String dateOfBirth;
 
     private MultipartFile fileImage;

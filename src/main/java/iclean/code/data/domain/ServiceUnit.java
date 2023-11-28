@@ -8,6 +8,7 @@ import lombok.Setter;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Getter
@@ -43,5 +44,10 @@ public class ServiceUnit {
     @JsonIgnore
     @JoinColumn(name = "unit_id")
     private Unit unit;
+
+    @OneToMany(mappedBy = "serviceUnit")
+    @JsonIgnoreProperties("serviceUnit")
+    @JsonIgnore
+    private List<ServicePrice> servicePrices;
 
 }

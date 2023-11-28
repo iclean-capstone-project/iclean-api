@@ -36,7 +36,7 @@ public class WalletServiceImpl implements WalletService {
 
             if (Objects.isNull(wallet)) {
                 response.setCurrentBalance(0D);
-                response.setWalletType(walletTypeValue);
+                response.setWalletType(walletTypeEnum.name());
             } else {
                 response.setCurrentBalance(wallet.getBalance());
                 response.setWalletType(walletTypeEnum.name());

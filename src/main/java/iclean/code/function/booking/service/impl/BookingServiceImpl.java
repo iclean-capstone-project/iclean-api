@@ -14,6 +14,7 @@ import iclean.code.data.dto.response.booking.GetBookingResponse;
 import iclean.code.data.dto.response.booking.GetCartResponseDetail;
 import iclean.code.data.dto.response.booking.GetDetailBookingResponse;
 import iclean.code.data.dto.response.bookingdetail.GetCheckOutResponseDetail;
+import iclean.code.data.dto.response.bookingdetail.GetRequestBookingDetailAsDto;
 import iclean.code.data.dto.response.helperinformation.GetPriorityResponse;
 import iclean.code.data.enumjava.*;
 import iclean.code.data.repository.*;
@@ -90,7 +91,7 @@ public class BookingServiceImpl implements BookingService {
     private ModelMapper modelMapper;
 
     @Override
-    public ResponseEntity<ResponseObject> getBookings(Integer userId, Pageable pageable, List<String> statuses, Boolean isHelper) {
+    public ResponseEntity<ResponseObject> getBookings(Integer userId, Pageable pageable, List<String> statuses, Boolean isHelper, String startDate, String endDate) {
         try {
             Page<Booking> bookings;
             List<BookingStatusEnum> bookingStatusEnums = null;
@@ -125,9 +126,32 @@ public class BookingServiceImpl implements BookingService {
                     break;
                 case MANAGER:
                 case ADMIN:
-                    bookings = !(statuses == null || statuses.isEmpty())
-                            ? bookingRepository.findAllByBookingStatus(bookingStatusEnums, BookingStatusEnum.ON_CART, pageable)
-                            : bookingRepository.findAllBooking(BookingStatusEnum.ON_CART, pageable);
+                    LocalDateTime startDateTime = null;
+                    if (startDate != null && !startDate.isEmpty()) {
+                        startDateTime = Utils.convertStringToLocalDate(startDate).atStartOfDay();
+                    }
+                    LocalDateTime endDateTime = null;
+                    if (endDate != null && !endDate.isEmpty()) {
+                        endDateTime = Utils.convertStringToLocalDate(endDate).atStartOfDay().plusDays(1);
+                    }
+                    if (startDateTime == null && endDateTime == null) {
+                        bookings = !(statuses == null || statuses.isEmpty())
+                                ? bookingRepository.findAllByBookingStatus(bookingStatusEnums, BookingStatusEnum.ON_CART, pageable)
+                                : bookingRepository.findAllBooking(BookingStatusEnum.ON_CART, pageable);
+                    } else if (startDateTime != null && endDateTime == null) {
+                        bookings = !(statuses == null || statuses.isEmpty())
+                                ? bookingRepository.findAllByBookingStatusByStartDateTime(bookingStatusEnums, startDateTime, BookingStatusEnum.ON_CART, pageable)
+                                : bookingRepository.findAllBookingByStartDateTime(BookingStatusEnum.ON_CART, startDateTime, pageable);
+                    } else if (startDateTime == null) {
+                        bookings = !(statuses == null || statuses.isEmpty())
+                                ? bookingRepository.findAllByBookingStatusByEndDateTime(bookingStatusEnums, endDateTime, BookingStatusEnum.ON_CART, pageable)
+                                : bookingRepository.findAllBookingByEndDateTime(BookingStatusEnum.ON_CART, endDateTime, pageable);
+                    } else {
+                        bookings = !(statuses == null || statuses.isEmpty())
+                                ? bookingRepository.findAllByBookingStatusStartTimeEndTime(bookingStatusEnums, startDateTime, endDateTime, BookingStatusEnum.ON_CART, pageable)
+                                : bookingRepository.findAllBookingStartTimeEndTime(BookingStatusEnum.ON_CART, startDateTime, endDateTime, pageable);
+                    }
+
 
                     break;
                 default:
@@ -167,10 +191,18 @@ public class BookingServiceImpl implements BookingService {
             }
 
             GetDetailBookingResponse response = modelMapper.map(booking, GetDetailBookingResponse.class);
+            response.setRenterAvatar(booking.getRenter().getAvatar());
+            response.setLongitude(booking.getLongitude());
+            response.setLatitude(booking.getLatitude());
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseObject(HttpStatus.OK.toString(),
                             "Booking detail", response));
         } catch (Exception e) {
+            if (e instanceof NotFoundException)
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new ResponseObject(HttpStatus.NOT_FOUND.toString(),
+                                e.getMessage(),
+                                null));
             if (e instanceof UserNotHavePermissionException)
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
                         .body(new ResponseObject(HttpStatus.FORBIDDEN.toString(),
@@ -208,6 +240,9 @@ public class BookingServiceImpl implements BookingService {
             if (!addresses.isEmpty()) {
                 addressDefault = addresses.get(0);
             }
+            if (request.getAddressId() != null && request.getAddressId() != 0) {
+                addressDefault = findAddressById(request.getAddressId());
+            }
             if (addressDefault != null && ObjectUtils.anyNull(booking.getLongitude(),
                     booking.getLatitude(),
                     booking.getLocation(),
@@ -231,12 +266,14 @@ public class BookingServiceImpl implements BookingService {
             bookingDetail.setPriceHelper(priceHelper);
             bookingDetail.setWorkStart(request.getStartTime().toLocalTime());
             bookingDetail.setWorkDate(request.getStartTime().toLocalDate());
-            bookingDetail.setBookingDetailStatus(BookingDetailStatusEnum.ON_CART);
-            bookingDetail.setNote(request.getNote());
+            bookingDetail.setBookingDetailStatus(BookingDetailStatusEnum.NOT_YET);
+            bookingDetailStatusHistoryRepository.save(bookingDetailStatusHistory);
+            bookingDetailRepository.save(bookingDetail);
+            bookingRepository.save(booking);
 
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseObject(HttpStatus.OK.toString(),
-                            "Create Booking Successfully!", booking));
+                            "Create Booking Successfully!", null));
 
         } catch (Exception e) {
             log.error(e.getMessage());
@@ -284,7 +321,7 @@ public class BookingServiceImpl implements BookingService {
                 }
             }
             User renter = findAccount(renterId);
-            if (!(booking.getRequestCount() >= getMaxRequestCount())) {
+            if (booking.getRequestCount() >= getMaxRequestCount()) {
                 throw new BadRequestException(MessageVariable.CANNOT_RESEND_THIS_BOOKING);
             }
             booking.setRequestCount(booking.getRequestCount() + 1);
@@ -361,11 +398,128 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
+    public ResponseEntity<ResponseObject> getBookingNow(CreateBookingRequestNow request, Integer renterId) {
+        try {
+            Booking booking = new Booking();
+            Double priceDetail = servicePriceService
+                    .getServicePrice(new GetServicePriceRequest(request.getServiceUnitId(),
+                            request.getStartTime().toLocalTime().format(DateTimeFormatter.ofPattern("HH:mm:ss"))));
+            Double priceHelper = servicePriceService
+                    .getServiceHelperPrice(new GetServicePriceRequest(request.getServiceUnitId(),
+                            request.getStartTime().toLocalTime().format(DateTimeFormatter.ofPattern("HH:mm:ss"))));
+            booking.setRenter(findAccount(renterId));
+            booking.setTotalPrice(0.0);
+            booking.setBookingStatus(BookingStatusEnum.ON_CART);
+
+            List<Address> addresses = addressRepository.findByUserIdAnAndIsDefault(renterId);
+            Address addressDefault = null;
+            if (!addresses.isEmpty()) {
+                addressDefault = addresses.get(0);
+            }
+            if (request.getAddressId() != null && request.getAddressId() != 0) {
+                addressDefault = findAddressById(request.getAddressId());
+            }
+            if (addressDefault != null && ObjectUtils.anyNull(booking.getLongitude(),
+                    booking.getLatitude(),
+                    booking.getLocation(),
+                    booking.getLocationDescription())) {
+                booking.setLongitude(addressDefault.getLongitude());
+                booking.setLatitude(addressDefault.getLatitude());
+                booking.setLocation(addressDefault.getLocationName());
+                booking.setLocationDescription(addressDefault.getDescription());
+            }
+            double price = booking.getTotalPrice();
+            BookingDetail bookingDetail = new BookingDetail();
+            ServiceUnit requestServiceUnit = findServiceUnitById(request.getServiceUnitId());
+            bookingDetail.setServiceUnit(requestServiceUnit);
+            price = price + priceDetail;
+            booking.setTotalPrice(price);
+            booking.setTotalPriceActual(price);
+
+            bookingDetail.setBooking(booking);
+            bookingDetail.setPriceDetail(priceDetail);
+            bookingDetail.setPriceHelper(priceHelper);
+            bookingDetail.setWorkStart(request.getStartTime().toLocalTime());
+            bookingDetail.setWorkDate(request.getStartTime().toLocalDate());
+            bookingDetail.setBookingDetailStatus(BookingDetailStatusEnum.ON_CART);
+            bookingDetail.setNote(request.getNote());
+
+            ObjectMapper objectMapper = new ObjectMapper();
+            if (Objects.nonNull(request.getAddressId()) && request.getAddressId() != 0) {
+                Address address = findAddressById(request.getAddressId());
+                if (!Objects.equals(address.getUser().getUserId(), renterId)) {
+                    throw new UserNotHavePermissionException("Address is not available!");
+                }
+                booking.setLongitude(address.getLongitude());
+                booking.setLatitude(address.getLatitude());
+                booking.setLocation(address.getLocationName());
+                booking.setLocationDescription(address.getDescription());
+            }
+            CheckOutCartRequest checkOutCartRequest = new CheckOutCartRequest();
+            checkOutCartRequest.setAddressId(request.getAddressId());
+            checkOutCartRequest.setUsingPoint(Optional.of(checkOutCartRequest)
+                    .map(CheckOutCartRequest::getUsingPoint)
+                    .orElse(false));
+            checkOutCartRequest.setAutoAssign(Optional.of(checkOutCartRequest)
+                    .map(CheckOutCartRequest::getAutoAssign)
+                    .orElse(false));
+            booking.setUsingPoint(Optional.of(checkOutCartRequest)
+                    .map(CheckOutCartRequest::getUsingPoint)
+                    .orElse(false));
+            booking.setAutoAssign(Optional.of(checkOutCartRequest)
+                    .map(CheckOutCartRequest::getUsingPoint)
+                    .orElse(false));
+            booking.setOption(objectMapper.writeValueAsString(checkOutCartRequest));
+            if (booking.getUsingPoint()) {
+                Wallet walletPoint = walletRepository.getWalletByUserIdAndType(renterId, WalletTypeEnum.POINT);
+                Double minusMoney = Utils.roundingNumber(walletPoint.getBalance() * getPointToMoney(), 1000D, RoundingMode.UP);
+                if (minusMoney > booking.getTotalPrice()) {
+                    booking.setTotalPriceActual(0D);
+                } else {
+                    booking.setTotalPriceActual(Utils.roundingNumber(booking.getTotalPrice() - minusMoney, 1000D, RoundingMode.DOWN));
+                }
+            }
+            booking.setBookingDetails(List.of(bookingDetail));
+            GetRequestBookingDetailAsDto responseDetail = modelMapper.map(booking, GetRequestBookingDetailAsDto.class);
+            responseDetail.setUsingPoint(Optional.of(checkOutCartRequest)
+                    .map(CheckOutCartRequest::getUsingPoint)
+                    .orElse(false));
+            responseDetail.setAutoAssign(Optional.of(checkOutCartRequest)
+                    .map(CheckOutCartRequest::getAutoAssign)
+                    .orElse(false));
+            if (request.getAddressId() != null && request.getAddressId() != 0) {
+                responseDetail.setAddressId(request.getAddressId());
+            } else if (addressDefault != null) {
+                responseDetail.setAddressId(addressDefault.getAddressId());
+            }
+            return ResponseEntity.status(HttpStatus.OK)
+                    .body(new ResponseObject(HttpStatus.OK.toString(),
+                            "Update checkout Successfully!", responseDetail));
+
+        } catch (Exception e) {
+            log.error(e.getMessage());
+            if (e instanceof NotFoundException) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new ResponseObject(HttpStatus.NOT_FOUND.toString()
+                                , e.getMessage(), null));
+            }
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString()
+                            , "Something wrong occur!", null));
+        }
+    }
+
+    @Override
     @Transactional
     public ResponseEntity<ResponseObject> createServiceToCart(AddBookingRequest request,
                                                               Integer userId) {
         try {
             Booking booking = bookingRepository.findCartByRenterId(userId, BookingStatusEnum.ON_CART);
+            LocalDateTime currentTime = Utils.getLocalDateTimeNow();
+            currentTime = Utils.plusLocalDateTime(currentTime, 1);
+            if (request.getStartTime().isBefore(currentTime)) {
+                throw new BadRequestException(MessageVariable.CANNOT_BOOKING_THE_PAST);
+            }
             BookingDetailStatusHistory bookingDetailStatusHistory = null;
             Double priceDetail = servicePriceService
                     .getServicePrice(new GetServicePriceRequest(request.getServiceUnitId(),
@@ -436,6 +590,11 @@ public class BookingServiceImpl implements BookingService {
             if (e instanceof NotFoundException) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body(new ResponseObject(HttpStatus.NOT_FOUND.toString()
+                                , e.getMessage(), null));
+            }
+            if (e instanceof BadRequestException) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString()
                                 , e.getMessage(), null));
             }
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
@@ -568,7 +727,6 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    @Transactional
     public ResponseEntity<ResponseObject> checkoutCart(Integer userId, CheckOutCartRequest request) {
         try {
             ObjectMapper objectMapper = new ObjectMapper();
@@ -629,6 +787,9 @@ public class BookingServiceImpl implements BookingService {
                             booking.getBookingId())
                     );
                 }
+            } else {
+                booking.setAutoAssign(false);
+                booking.setUsingPoint(false);
             }
             boolean checkTransactionMoney = createTransaction(new TransactionRequest(booking.getTotalPriceActual(),
                     MessageVariable.USING_MONEY_FOR_BOOKING,
@@ -651,8 +812,13 @@ public class BookingServiceImpl implements BookingService {
             notificationRepository.save(notificationPayment);
             List<BookingDetailStatusHistory> bookingDetailStatusHistories = new ArrayList<>();
             List<BookingDetail> bookingDetails = booking.getBookingDetails();
+            LocalDateTime currentTime = Utils.getLocalDateTimeNow();
+            currentTime = Utils.plusLocalDateTime(currentTime, 1);
             for (BookingDetail bookingDetail :
                     bookingDetails) {
+                if (LocalDateTime.of(bookingDetail.getWorkDate(), bookingDetail.getWorkStart()).isBefore(currentTime)) {
+                    throw new BadRequestException(MessageVariable.CANNOT_BOOKING_THE_PAST);
+                }
                 bookingDetail.setBookingDetailStatus(BookingDetailStatusEnum.NOT_YET);
                 BookingDetailStatusHistory bookingDetailStatusHistory = new BookingDetailStatusHistory();
                 bookingDetailStatusHistory.setBookingDetailStatus(BookingDetailStatusEnum.NOT_YET);
@@ -761,7 +927,8 @@ public class BookingServiceImpl implements BookingService {
                 bookingDetailStatusHistory.setBookingDetailStatus(bookingDetailStatusEnum);
                 bookingDetailStatusHistory.setBookingDetail(bookingDetail);
                 bookingDetailStatusHistories.add(bookingDetailStatusHistory);
-
+                bookingDetail.setBookingDetailStatus(bookingDetailStatusEnum);
+                // tạm thời bỏ qua
                 if (booking.getAutoAssign()) {
                     LocalDateTime startDateTime = LocalDateTime.of(bookingDetail.getWorkDate(), bookingDetail.getWorkStart());
                     LocalDateTime endDateTime = Utils.plusLocalDateTime(startDateTime, bookingDetail.getServiceUnit().getUnit().getUnitValue());
@@ -816,7 +983,7 @@ public class BookingServiceImpl implements BookingService {
             }
 
             booking.setBookingStatus(bookingStatusEnum);
-            if (numberReject == booking.getBookingDetails().size()) {
+            if (numberReject == booking.getBookingDetails().size() && booking.getBookingDetails().size() != 0) {
                 booking.setBookingStatus(BookingStatusEnum.REJECTED);
             }
             bookingDetailHelperRepository.saveAll(needToAssigns);

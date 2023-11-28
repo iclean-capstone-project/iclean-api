@@ -6,6 +6,7 @@ import iclean.code.data.dto.response.helperinformation.GetPriorityResponse;
 import iclean.code.data.enumjava.BookingDetailHelperStatusEnum;
 import iclean.code.data.enumjava.BookingDetailStatusEnum;
 import iclean.code.data.enumjava.BookingStatusEnum;
+import iclean.code.data.enumjava.ServiceHelperStatusEnum;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -44,14 +45,16 @@ public interface BookingDetailRepository extends JpaRepository<BookingDetail, In
             "AND bd.serviceUnit.service.serviceId = ?2")
     PointFeedbackOfHelper findPointByHelperId(Integer userId, Integer serviceId);
 
-    List<BookingDetail> findBookingDetailByBookingBookingId (Integer bookingId);
     @Query("SELECT bd FROM BookingDetail bd " +
             "LEFT JOIN bd.booking b " +
             "LEFT JOIN bd.bookingDetailHelpers bdh " +
             "WHERE bd.bookingDetailStatus = ?1 " +
             "AND NOT EXISTS (SELECT 1 FROM bdh.serviceRegistration.helperInformation.user u WHERE u.userId = ?2) " +
-            "AND NOT EXISTS (SELECT 1 FROM bd.booking b WHERE b.renter.userId = ?2) ")
-    List<BookingDetail> findBookingDetailByStatusAndNoUserIdNoEmployee(BookingDetailStatusEnum bookingStatusEnum, Integer userId);
+            "AND NOT EXISTS (SELECT 1 FROM bd.booking b WHERE b.renter.userId = ?2) " +
+            "AND bd.serviceUnit.service.serviceId IN (SELECT ser.service.serviceId FROM ServiceRegistration ser " +
+            "WHERE ser.helperInformation.user.userId = ?2 AND ser.serviceHelperStatus = ?3)")
+    List<BookingDetail> findBookingDetailByStatusAndNoUserIdNoEmployee(BookingDetailStatusEnum bookingStatusEnum,
+                                                                       Integer userId, ServiceHelperStatusEnum serviceHelperStatusEnum);
 
     @Query("SELECT bd FROM BookingDetail bd " +
             "LEFT JOIN bd.bookingDetailHelpers bdh " +
@@ -66,8 +69,10 @@ public interface BookingDetailRepository extends JpaRepository<BookingDetail, In
             "LEFT JOIN hi.user u " +
             "WHERE u.userId = ?1 " +
             "AND bd.bookingDetailStatus IN ?2 " +
-            "AND bd.bookingDetailStatus != ?3")
-    Page<BookingDetail> findByHelperId(Integer userId, List<BookingDetailStatusEnum> bookingDetailStatusEnums, BookingDetailStatusEnum noBookingStatusEnum, Pageable pageable);
+            "AND bd.bookingDetailStatus != ?3 " +
+            "AND bdh.bookingDetailHelperStatus IN ?4")
+    Page<BookingDetail> findByHelperId(Integer userId, List<BookingDetailStatusEnum> bookingDetailStatusEnums, BookingDetailStatusEnum noBookingStatusEnum,
+            List<BookingDetailHelperStatusEnum> bookingDetailHelperStatusEnums, Pageable pageable);
 
     @Query("SELECT bd FROM BookingDetail bd " +
             "LEFT JOIN bd.bookingDetailHelpers bdh " +
@@ -114,5 +119,8 @@ public interface BookingDetailRepository extends JpaRepository<BookingDetail, In
     GetPriorityResponse findPriority(BookingDetailStatusEnum bookingDetailStatusEnum, Integer serviceId, Integer helperInformationId);
 
     @Query("SELECT bd FROM BookingDetail bd WHERE bd.bookingDetailStatus = ?1 AND bd.priceHelper > 0")
-    List<BookingDetail> findAllByBookingDetailStatus(BookingDetailStatusEnum bookingDetailStatusEnum);
+    List<BookingDetail> findAllByBookingDetailStatusAndPriceHelperGreaterThanZero(BookingDetailStatusEnum bookingDetailStatusEnum);
+
+    @Query("SELECT bd FROM BookingDetail bd WHERE bd.bookingDetailStatus IN ?1")
+    List<BookingDetail> findAllByBookingDetailStatuses(List<BookingDetailStatusEnum> bookingDetailStatusEnums);
 }

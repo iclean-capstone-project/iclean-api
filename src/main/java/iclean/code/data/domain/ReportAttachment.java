@@ -12,14 +12,14 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @JsonIgnoreProperties({"hibernateLazyInitializer"})
-public class BookingAttachment {
+public class ReportAttachment {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "booking_attachment_id")
-    private Integer bookingAttachmentId;
+    @Column(name = "report_attachment_id")
+    private Integer reportAttachmentId;
 
-    @Column(name = "booking_attachment_link")
-    private String bookingAttachmentLink;
+    @Column(name = "report_attachment_link")
+    private String reportAttachmentLink;
 
     @Column(name = "create_at")
     private LocalDateTime createAt = Utils.getLocalDateTimeNow();

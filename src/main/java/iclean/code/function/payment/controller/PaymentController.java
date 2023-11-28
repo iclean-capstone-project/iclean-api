@@ -19,7 +19,7 @@ public class PaymentController {
     @Autowired
     private PaymentService paymentService;
 
-    @PostMapping("/createPayment")
+    @PostMapping("/create-payment")
     @Operation(summary = "Create Payment", description = "Return success or fail message")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Create Payment success"),
@@ -31,7 +31,7 @@ public class PaymentController {
         return paymentService.createPayment(amount);
     }
 
-    @GetMapping("/returnPayment")
+    @GetMapping("/return-payment")
     @Operation(summary = "Return Payment", description = "Return success or fail message after creating a payment")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Return Payment success"),

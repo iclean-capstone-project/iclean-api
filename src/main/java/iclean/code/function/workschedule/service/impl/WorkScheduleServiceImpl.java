@@ -21,6 +21,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.time.DayOfWeek;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -106,7 +107,9 @@ public class WorkScheduleServiceImpl implements WorkScheduleService {
         Map<DayOfWeek, List<TimeRangeOfDay>> customWorkSchedulesMap = new HashMap<>();
         for (WorkSchedule schedule : workSchedules) {
             DayOfWeek dayOfWeek = schedule.getDayOfWeek();
-            TimeRangeOfDay timeRangeOfDay = new TimeRangeOfDay(schedule.getWorkScheduleId(), schedule.getStartTime(), schedule.getEndTime());
+            TimeRangeOfDay timeRangeOfDay = new TimeRangeOfDay(schedule.getWorkScheduleId(),
+                    schedule.getStartTime().format(DateTimeFormatter.ofPattern("HH:mm")),
+                    schedule.getEndTime().format(DateTimeFormatter.ofPattern("HH:mm")));
 
             if (!customWorkSchedulesMap.containsKey(dayOfWeek)) {
                 customWorkSchedulesMap.put(dayOfWeek, new ArrayList<>());

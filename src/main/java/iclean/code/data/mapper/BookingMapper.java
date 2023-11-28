@@ -7,6 +7,7 @@ import iclean.code.data.dto.response.booking.GetBookingResponse;
 import iclean.code.data.dto.response.booking.GetCartResponseDetail;
 import iclean.code.data.dto.response.bookingdetail.GetAddressResponseBooking;
 import iclean.code.data.dto.response.bookingdetail.GetCheckOutResponseDetail;
+import iclean.code.data.dto.response.bookingdetail.GetRequestBookingDetailAsDto;
 import iclean.code.data.mapper.converter.BookingDetailToCartResponseConverter;
 import iclean.code.data.mapper.converter.BookingDetailToDtoResponseConverter;
 import org.modelmapper.ModelMapper;
@@ -30,6 +31,11 @@ public class BookingMapper {
         modelMapper.typeMap(Booking.class, GetCheckOutResponseDetail.class)
                 .addMappings(mapper -> {
                     mapper.map(Booking::getBookingDetails, GetCheckOutResponseDetail::setDetails);
+                });
+
+        modelMapper.typeMap(Booking.class, GetRequestBookingDetailAsDto.class)
+                .addMappings(mapper -> {
+                    mapper.map(Booking::getBookingDetails, GetRequestBookingDetailAsDto::setDetails);
                 });
 
         modelMapper.typeMap(Booking.class, GetDetailBookingResponse.class)
@@ -63,6 +69,13 @@ public class BookingMapper {
                 map().setManagerName(source.getManager().getFullName());
             }
         });
+        modelMapper.addMappings(new PropertyMap<Booking, GetDetailBookingResponse>() {
+            @Override
+            protected void configure() {
+                map().setRejectionReasonDescription(source.getRjReasonDescription());
+                map().setRejectionReasonContent(source.getRejectionReason().getRejectionContent());
+            }
+        });
         modelMapper.addMappings(new PropertyMap<Booking, GetCartResponseDetail>() {
             @Override
             protected void configure() {
@@ -71,6 +84,20 @@ public class BookingMapper {
         });
 
         modelMapper.addMappings(new PropertyMap<Booking, GetCheckOutResponseDetail>() {
+            @Override
+            protected void configure() {
+                map().setCartId(source.getBookingId());
+                map().setLongitude(source.getLongitude());
+                map().setLatitude(source.getLatitude());
+                map().setLocationName(source.getLocation());
+                map().setLocationDescription(source.getLocationDescription());
+                map().setTotalPrice(source.getTotalPrice());
+                map().setTotalPriceActual(source.getTotalPriceActual());
+                map().setUsingPoint(source.getUsingPoint());
+            }
+        });
+
+        modelMapper.addMappings(new PropertyMap<Booking, GetRequestBookingDetailAsDto>() {
             @Override
             protected void configure() {
                 map().setCartId(source.getBookingId());

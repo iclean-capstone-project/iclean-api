@@ -11,6 +11,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -34,6 +35,7 @@ public class ProfileController {
             @ApiResponse(responseCode = "401", description = "Need Login into the system"),
             @ApiResponse(responseCode = "400", description = "Bad request - Missing some field required")
     })
+    @PreAuthorize("hasAnyAuthority('admin', 'manager', 'employee', 'renter')")
     public ResponseEntity<ResponseObject> getProfile(Authentication authentication) {
         return profileService.getProfile(JwtUtils.decodeToAccountId(authentication));
     }
@@ -46,6 +48,7 @@ public class ProfileController {
             @ApiResponse(responseCode = "401", description = "Unauthorized - Need access_token"),
             @ApiResponse(responseCode = "400", description = "Bad request - Missing some field required or not match pattern")
     })
+    @PreAuthorize("hasAnyAuthority('admin', 'manager', 'employee', 'renter')")
     public ResponseEntity<ResponseObject> updateProfile(@RequestPart(value = "fullName")
                                                         @NotNull(message = "Full name là trường bắt buộc")
                                                         @NotBlank(message = "Full name không được để trống")

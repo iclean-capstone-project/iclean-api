@@ -42,7 +42,7 @@ public class ReportController {
             @ApiResponse(responseCode = "403", description = "Forbidden - You don't have permission to access on this api"),
             @ApiResponse(responseCode = "400", description = "Bad request - Missing some field required")
     })
-    @PreAuthorize("hasAuthority('manager')")
+    @PreAuthorize("hasAnyAuthority('manager', 'admin')")
     public ResponseEntity<ResponseObject> getReports(
             @RequestParam(name = "renterName", defaultValue = "") String renterName,
             @RequestParam(name = "displayAll", defaultValue = "false") Boolean displayAll,
@@ -61,7 +61,7 @@ public class ReportController {
             @ApiResponse(responseCode = "403", description = "Forbidden - You don't have permission to access on this api"),
             @ApiResponse(responseCode = "400", description = "Bad request - Missing some field required")
     })
-    @PreAuthorize("hasAnyAuthority('renter', 'manager')")
+    @PreAuthorize("hasAnyAuthority('renter', 'manager', 'admin')")
     public ResponseEntity<ResponseObject> getReportById(
             @PathVariable("reportId") @Valid Integer reportId) {
         return reportService.getReportById(reportId);
@@ -99,11 +99,12 @@ public class ReportController {
             @ApiResponse(responseCode = "403", description = "Forbidden - You don't have permission to access on this api"),
             @ApiResponse(responseCode = "400", description = "Bad request - Missing some field required")
     })
-    @PreAuthorize("hasAnyAuthority('admin')")
+    @PreAuthorize("hasAnyAuthority('manager', 'admin')")
     public ResponseEntity<ResponseObject> updateReport(
             @PathVariable("reportId") int reportId,
-            @RequestBody @Valid UpdateReportRequest request) {
-        return reportService.updateReport(reportId, request);
+            @RequestBody @Valid UpdateReportRequest request,
+            Authentication authentication) {
+        return reportService.updateReport(reportId, request, JwtUtils.decodeToAccountId(authentication));
     }
 
     @DeleteMapping(value = "{reportId}")
@@ -114,7 +115,7 @@ public class ReportController {
             @ApiResponse(responseCode = "403", description = "Forbidden - You don't have permission to access on this api"),
             @ApiResponse(responseCode = "400", description = "Bad request - Missing some field required")
     })
-    @PreAuthorize("hasAnyAuthority('manager')")
+    @PreAuthorize("hasAnyAuthority('manager', 'admin')")
     public ResponseEntity<ResponseObject> deleteReport(@PathVariable("reportId") @Valid int reportId) {
         return reportService.deleteReport(reportId);
     }

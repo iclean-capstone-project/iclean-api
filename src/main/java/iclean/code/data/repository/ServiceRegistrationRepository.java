@@ -25,4 +25,8 @@ public interface ServiceRegistrationRepository extends JpaRepository<ServiceRegi
     @Query("SELECT sregister FROM ServiceRegistration sregister " +
             "WHERE sregister.helperInformation.user.userId = ?1 ")
     List<ServiceRegistration> findServiceRegistrationByUserId(Integer userId);
+
+    @Query("SELECT sregister FROM ServiceRegistration sregister " +
+            "WHERE sregister.helperInformation.helperInformationId = ?1 ")
+    List<ServiceRegistration> findAllByHelperId(Integer id);
 }

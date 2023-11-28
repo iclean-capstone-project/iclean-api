@@ -125,12 +125,12 @@ public class BookingDetailController {
             @ApiResponse(responseCode = "403", description = "Forbidden - You don't have permission to access on this api"),
             @ApiResponse(responseCode = "400", description = "Bad request - Missing some field required")
     })
-    @PreAuthorize("hasAuthority('renter')")
+    @PreAuthorize("hasAnyAuthority('renter', 'employee', 'manager')")
     public ResponseEntity<ResponseObject> getBookingDetails(@RequestParam(name = "page", defaultValue = "1") int page,
                                                             @RequestParam(name = "size", defaultValue = "10") int size,
                                                             @RequestParam(name = "statuses", required = false)
                                                             @ValidInputList(value = "(?i)(rejected|not_yet|approved|waiting" +
-                                                            "|in_process|finished|no_money)", message = "Booking Status ddd is not valid")
+                                                            "|in_process|finished|no_money)", message = "Booking Status is not valid")
                                                             List<String> statuses,
                                                             @RequestParam(name = "isHelper", defaultValue = "false")
                                                             Boolean isHelper,
@@ -148,9 +148,22 @@ public class BookingDetailController {
             @ApiResponse(responseCode = "403", description = "Forbidden - You don't have permission to access on this api"),
             @ApiResponse(responseCode = "400", description = "Bad request - Missing some field required")
     })
-    @PreAuthorize("hasAuthority('renter')")
+    @PreAuthorize("hasAnyAuthority('renter', 'manager')")
     public ResponseEntity<ResponseObject> getBookingDetail(Authentication authentication, @PathVariable Integer bookingDetailId) {
         return bookingDetailService.getBookingDetail(JwtUtils.decodeToAccountId(authentication), bookingDetailId);
+    }
+
+    @GetMapping("/helper/{bookingDetailId}")
+    @Operation(summary = "Get booking detail detail information", description = "Return booking detail detail information")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Return successful"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - Login please"),
+            @ApiResponse(responseCode = "403", description = "Forbidden - You don't have permission to access on this api"),
+            @ApiResponse(responseCode = "400", description = "Bad request - Missing some field required")
+    })
+    @PreAuthorize("hasAnyAuthority('employee')")
+    public ResponseEntity<ResponseObject> getBookingDetailByHelper(Authentication authentication, @PathVariable Integer bookingDetailId) {
+        return bookingDetailService.getBookingDetailByHelper(JwtUtils.decodeToAccountId(authentication), bookingDetailId);
     }
 
     @PostMapping("/validate/{detailId}")
@@ -182,8 +195,22 @@ public class BookingDetailController {
         return bookingDetailService.acceptBookingForHelper(request, JwtUtils.decodeToAccountId(authentication));
     }
 
-    @GetMapping("/helper")
+    @PostMapping("/helper/checkout/{id}")
     @Operation(summary = "Get all booking of a user", description = "Return all booking information")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Booking Information"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - Login please"),
+            @ApiResponse(responseCode = "403", description = "Forbidden - You don't have permission to access on this api"),
+            @ApiResponse(responseCode = "400", description = "Bad request - Missing some field required")
+    })
+    @PreAuthorize("hasAuthority('employee')")
+    public ResponseEntity<ResponseObject> checkoutBookingDetail(Authentication authentication,
+                                                                @PathVariable Integer id) {
+        return bookingDetailService.checkoutBookingDetail(id, JwtUtils.decodeToAccountId(authentication));
+    }
+
+    @GetMapping("/helper")
+    @Operation(summary = "Get all booking around for a helper", description = "Return all booking information")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Booking Information"),
             @ApiResponse(responseCode = "401", description = "Unauthorized - Login please"),
