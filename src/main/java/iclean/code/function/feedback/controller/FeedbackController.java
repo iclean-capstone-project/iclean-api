@@ -74,7 +74,7 @@ public class FeedbackController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('renter', 'employee', 'manager')")
+    @PreAuthorize("hasAnyAuthority('renter', 'employee', 'manager', 'admin')")
     @Operation(summary = "Delete a feedback by booking detail id", description = "Return message fail or successful")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Delete a feedback Successful"),

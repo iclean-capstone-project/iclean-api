@@ -66,7 +66,7 @@ public class BookingController {
             @ApiResponse(responseCode = "403", description = "Forbidden - You don't have permission to access on this api"),
             @ApiResponse(responseCode = "400", description = "Bad request - Missing some field required")
     })
-    @PreAuthorize("hasAnyAuthority('renter', 'employee', 'manager')")
+    @PreAuthorize("hasAnyAuthority('renter', 'employee', 'manager', 'admin')")
     public ResponseEntity<ResponseObject> getCart(Authentication authentication,
                                                   @RequestParam(required = false, defaultValue = "false")
                                                   Boolean usingPoint) {
@@ -74,7 +74,7 @@ public class BookingController {
     }
 
     @GetMapping(value = "{bookingId}")
-    @PreAuthorize("hasAnyAuthority('renter', 'manager', 'employee')")
+    @PreAuthorize("hasAnyAuthority('renter', 'manager', 'employee', 'admin')")
     @Operation(summary = "Get by booking of a user", description = "Return booking information")
     public ResponseEntity<ResponseObject> getBookingByBookingId(
             @PathVariable @Valid Integer bookingId,
@@ -83,7 +83,7 @@ public class BookingController {
     }
 
     @PutMapping(value = "manager/{bookingId}")
-    @PreAuthorize("hasAnyAuthority('manager')")
+    @PreAuthorize("hasAnyAuthority('manager', 'admin')")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Accept/Reject successful"),
             @ApiResponse(responseCode = "401", description = "Unauthorized - Login please"),

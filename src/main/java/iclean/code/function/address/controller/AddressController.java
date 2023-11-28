@@ -104,7 +104,7 @@ public class AddressController {
             @ApiResponse(responseCode = "403", description = "Forbidden - You don't have permission to access on this api"),
             @ApiResponse(responseCode = "400", description = "Bad request - Missing some field required")
     })
-    public ResponseEntity<ResponseObject> updateAddress(@PathVariable Integer id,
+    public ResponseEntity<ResponseObject> deleteAddress(@PathVariable Integer id,
                                                         Authentication authentication) {
         return addressService.deleteAddress(id, JwtUtils.decodeToAccountId(authentication));
     }

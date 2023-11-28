@@ -28,7 +28,7 @@ public class MoneyRequestController {
     private MoneyRequestService moneyRequestService;
 
     @GetMapping
-    @PreAuthorize("hasAuthority('manager')")
+    @PreAuthorize("hasAnyAuthority('manager', 'admin')")
     @Operation(summary = "Get all money requests of a user", description = "Return all money requests information")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Money Requests Information"),
@@ -48,7 +48,7 @@ public class MoneyRequestController {
     }
 
     @GetMapping("/{userId}")
-    @PreAuthorize("hasAuthority('manager')")
+    @PreAuthorize("hasAnyAuthority('manager', 'admin')")
     @Operation(summary = "Get a money request of a user by id", description = "Return money request information")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Money Request Information"),
@@ -60,7 +60,7 @@ public class MoneyRequestController {
     }
 
     @PutMapping("{id}")
-    @PreAuthorize("hasAuthority('manager')")
+    @PreAuthorize("hasAnyAuthority('manager', 'admin')")
     @Operation(summary = "Resend OTP request of a user", description = "Return message fail or successful")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Create new Money Request Successful"),
@@ -72,7 +72,7 @@ public class MoneyRequestController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAuthority('manager')")
+    @PreAuthorize("hasAnyAuthority('manager', 'admin')")
     @Operation(summary = "Create new money request of a user", description = "Return message fail or successful")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Create new Money Request Successful"),
@@ -84,7 +84,7 @@ public class MoneyRequestController {
     }
 
     @PostMapping("/validated")
-    @PreAuthorize("hasAuthority('manager')")
+    @PreAuthorize("hasAnyAuthority('manager', 'admin')")
     @Operation(summary = "Update a money request of a user", description = "Return message fail or successful")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Update a Money Request Successful"),
