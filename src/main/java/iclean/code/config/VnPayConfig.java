@@ -20,7 +20,7 @@ public class VnPayConfig {
     public static String vnp_PayUrl = "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html";
 
     //TEST LOCAL THI DOI LAI URL
-    public static String vnp_ReturnUrl = "https://iclean.azurewebsites.net/api/v1/payments/returnPayment";
+    public static String vnp_ReturnUrl = "https://iclean.azurewebsites.net/api/v1/payments/return-payment";
     public static String vnp_TmnCode = "073KW6PD";
     public static String vnp_Version = "2.1.0";
     public static String vnp_Command = "pay";
