@@ -1085,6 +1085,51 @@ public class BookingDetailServiceImpl implements BookingDetailService {
         }
     }
 
+    @Override
+    public ResponseEntity<ResponseObject> getCurrentBookingDetail(Integer helperId) {
+        try {
+            List<BookingDetail> bookingDetails = bookingDetailRepository.findCurrentByHelperId(helperId, BookingDetailStatusEnum.IN_PROCESS, BookingDetailHelperStatusEnum.ACTIVE);
+            BookingDetail bookingDetail = null;
+            GetBookingResponseForHelper response = new GetBookingResponseForHelper();
+            if (bookingDetails != null && !bookingDetails.isEmpty()) {
+                bookingDetail = bookingDetails.get(0);
+                response.setBookingDetailId(bookingDetail.getBookingDetailId());
+                response.setServiceUnitId(bookingDetail.getServiceUnit().getServiceUnitId());
+                response.setEquivalent(bookingDetail.getServiceUnit().getUnit().getUnitValue());
+                response.setValue(bookingDetail.getServiceUnit().getUnit().getUnitDetail());
+                response.setRenterName(bookingDetail.getBooking().getRenter().getFullName());
+                response.setServiceName(bookingDetail.getServiceUnit().getService().getServiceName());
+                response.setServiceImages(bookingDetail.getServiceUnit().getService().getServiceImage());
+                response.setWorkDate(Utils.getLocalDateAsString(bookingDetail.getWorkDate()));
+                response.setWorkStart(Utils.getLocalTimeAsString(bookingDetail.getWorkStart()));
+                response.setAmount(bookingDetail.getPriceHelper());
+                response.setLocationDescription(bookingDetail.getBooking().getLocationDescription());
+                response.setLongitude(bookingDetail.getBooking().getLongitude());
+                response.setLatitude(bookingDetail.getBooking().getLatitude());
+                response.setIsApplied(true);
+            }
+
+            return ResponseEntity.status(HttpStatus.OK)
+                    .body(new ResponseObject(HttpStatus.OK.toString(),
+                            "Booking Detail Detail!", response));
+        } catch (Exception e) {
+            log.error(e.getMessage());
+            if (e instanceof NotFoundException) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new ResponseObject(HttpStatus.NOT_FOUND.toString(),
+                                e.getMessage(), null));
+            }
+            if (e instanceof UserNotHavePermissionException) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(new ResponseObject(HttpStatus.FORBIDDEN.toString(),
+                                e.getMessage(), null));
+            }
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString(),
+                            "Something wrong occur!", null));
+        }
+    }
+
     private void updateBookingIfSameStatusBookingDetail(Booking booking) {
         try {
             List<BookingDetail> bookingDetails = booking.getBookingDetails();

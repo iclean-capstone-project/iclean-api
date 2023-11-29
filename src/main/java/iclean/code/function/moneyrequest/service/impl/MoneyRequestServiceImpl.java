@@ -91,6 +91,12 @@ public class MoneyRequestServiceImpl implements MoneyRequestService {
     public ResponseEntity<ResponseObject> createMoneyRequest(CreateMoneyRequestRequest request) {
         try {
             User user = findUserByPhoneNumber(request.getUserPhoneNumber());
+            List<MoneyRequest> moneyRequests = moneyRequestRepository
+                    .findAllByPhoneNumberAndPending(request.getUserPhoneNumber(), MoneyRequestStatusEnum.PENDING);
+            for (MoneyRequest moneyRequest :
+                    moneyRequests) {
+                moneyRequest.setRequestStatus(MoneyRequestStatusEnum.CANCEL);
+            }
             MoneyRequest moneyRequest = modelMapper.map(request, MoneyRequest.class);
             moneyRequest.setRequestType(MoneyRequestEnum.valueOf(request.getMoneyRequestType().toUpperCase()));
             moneyRequest.setRequestStatus(MoneyRequestStatusEnum.FAIL);
@@ -99,6 +105,7 @@ public class MoneyRequestServiceImpl implements MoneyRequestService {
             moneyRequest.setOtpToken(token);
             moneyRequest.setExpiredTime(Utils.getLocalDateTimeNow().plusMinutes(expiredTime));
             moneyRequest.setRequestStatus(MoneyRequestStatusEnum.PENDING);
+            moneyRequestRepository.saveAll(moneyRequests);
             MoneyRequest moneyRequestUpdate = moneyRequestRepository.save(moneyRequest);
 
             return ResponseEntity.status(HttpStatus.OK)

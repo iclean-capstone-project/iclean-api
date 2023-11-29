@@ -166,6 +166,19 @@ public class BookingDetailController {
         return bookingDetailService.getBookingDetailByHelper(JwtUtils.decodeToAccountId(authentication), bookingDetailId);
     }
 
+    @GetMapping("/helper/current-booking")
+    @Operation(summary = "Get booking detail detail information", description = "Return booking detail detail information")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Return successful"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - Login please"),
+            @ApiResponse(responseCode = "403", description = "Forbidden - You don't have permission to access on this api"),
+            @ApiResponse(responseCode = "400", description = "Bad request - Missing some field required")
+    })
+    @PreAuthorize("hasAnyAuthority('employee')")
+    public ResponseEntity<ResponseObject> getCurrentBookingDetail(Authentication authentication) {
+        return bookingDetailService.getCurrentBookingDetail(JwtUtils.decodeToAccountId(authentication));
+    }
+
     @PostMapping("/validate/{detailId}")
     @Operation(summary = "Validate QR a booking detail to start", description = "Return message fail or successful")
     @ApiResponses(value = {

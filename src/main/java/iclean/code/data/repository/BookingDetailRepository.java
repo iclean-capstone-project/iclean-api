@@ -123,4 +123,11 @@ public interface BookingDetailRepository extends JpaRepository<BookingDetail, In
 
     @Query("SELECT bd FROM BookingDetail bd WHERE bd.bookingDetailStatus IN ?1")
     List<BookingDetail> findAllByBookingDetailStatuses(List<BookingDetailStatusEnum> bookingDetailStatusEnums);
+
+    @Query("SELECT bd FROM BookingDetail bd " +
+            "LEFT JOIN bd.bookingDetailHelpers bdh " +
+            "WHERE bd.bookingDetailStatus = ?2 " +
+            "AND bdh.bookingDetailHelperStatus = ?3 " +
+            "AND bdh.serviceRegistration.helperInformation.user.userId = ?1")
+    List<BookingDetail> findCurrentByHelperId(Integer helperId, BookingDetailStatusEnum bookingDetailStatusEnum, BookingDetailHelperStatusEnum bookingDetailHelperStatusEnum);
 }

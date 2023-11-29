@@ -22,6 +22,8 @@ public class Service {
     @Column(name = "service_name")
     private String serviceName;
 
+    @Lob
+    @Column(name = "description", length = 100000)
     private String description;
 
     @Column(name = "service_image")
