@@ -112,7 +112,11 @@ public class HelperRegistrationServiceImpl implements HelperRegistrationService 
             }
             List<GetHelperInformationRequestResponse> responses = helpersInformation
                     .stream()
-                    .map(helperInformation -> modelMapper.map(helperInformation, GetHelperInformationRequestResponse.class))
+                    .map(helperInformation -> {
+                        GetHelperInformationRequestResponse response = modelMapper.map(helperInformation, GetHelperInformationRequestResponse.class);
+                        response.setPersonalAvatar(helperInformation.getUser().getAvatar());
+                        return response;
+                    })
                     .collect(Collectors.toList());
             PageResponseObject pageResponseObject = Utils.convertToPageResponse(helpersInformation, responses);
             return ResponseEntity.status(HttpStatus.OK)
@@ -196,7 +200,7 @@ public class HelperRegistrationServiceImpl implements HelperRegistrationService 
         try {
             User manager = findUserById(managerId);
             HelperInformation helperInformation = findHelperInformationById(id);
-            isPermission(manager, helperInformation);
+//            isPermission(manager, helperInformation);
             helperInformation.setHelperStatus(HelperStatusEnum.DISABLED);
             helperInformation.setRejectionReason(request.getReason());
             CancelHelperRequestSendMail requestSendMail = new CancelHelperRequestSendMail(helperInformation.getEmail(),
@@ -263,7 +267,10 @@ public class HelperRegistrationServiceImpl implements HelperRegistrationService 
                                                                    Integer renterId) {
         try {
             ObjectMapper objectMapper = new ObjectMapper();
-            String imgAvatarLink = storageService.uploadFile(helperRegistrationRequest.getAvatar());
+            String imgAvatarLink = null;
+            if (helperRegistrationRequest.getAvatar() != null) {
+                imgAvatarLink = storageService.uploadFile(helperRegistrationRequest.getAvatar());
+            }
             List<Attachment> attachments = new ArrayList<>();
             String frontResponse = externalApiService.scanNationId(helperRegistrationRequest.getFrontIdCard());
             CMTFrontResponse cmtFrontResponse = objectMapper.readValue(frontResponse, CMTFrontResponse.class);
@@ -300,16 +307,15 @@ public class HelperRegistrationServiceImpl implements HelperRegistrationService 
 
             List<MultipartFile> attachmentRequest = helperRegistrationRequest.getOthers();
             Attachment avatar = new Attachment();
-            String avatarLink = storageService.uploadFile(helperRegistrationRequest.getAvatar());
-            if (Utils.isNullOrEmpty(avatarLink)) {
-                avatar.setAttachmentLink(avatarLink);
+            if (!Utils.isNullOrEmpty(imgAvatarLink)) {
+                avatar.setAttachmentLink(imgAvatarLink);
                 avatar.setHelperInformation(helperInformation);
                 attachments.add(avatar);
             }
 
             Attachment frontCMT = new Attachment();
             String frontCMTLink = storageService.uploadFile(helperRegistrationRequest.getFrontIdCard());
-            if (Utils.isNullOrEmpty(frontCMTLink)) {
+            if (!Utils.isNullOrEmpty(frontCMTLink)) {
                 frontCMT.setAttachmentLink(frontCMTLink);
                 frontCMT.setHelperInformation(helperInformation);
                 attachments.add(frontCMT);
@@ -317,7 +323,7 @@ public class HelperRegistrationServiceImpl implements HelperRegistrationService 
 
             Attachment backCMT = new Attachment();
             String backCMTLink = storageService.uploadFile(helperRegistrationRequest.getBackIdCard());
-            if (Utils.isNullOrEmpty(backCMTLink)) {
+            if (!Utils.isNullOrEmpty(backCMTLink)) {
                 frontCMT.setAttachmentLink(backCMTLink);
                 frontCMT.setHelperInformation(helperInformation);
                 attachments.add(backCMT);
@@ -326,7 +332,7 @@ public class HelperRegistrationServiceImpl implements HelperRegistrationService 
                     attachmentRequest) {
                 Attachment attachment = new Attachment();
                 String fileLink = storageService.uploadFile(element);
-                if (!fileLink.isEmpty()) {
+                if (!Utils.isNullOrEmpty(fileLink)) {
                     attachment.setAttachmentLink(fileLink);
                     attachment.setHelperInformation(helperInformation);
                     attachments.add(attachment);
@@ -364,6 +370,7 @@ public class HelperRegistrationServiceImpl implements HelperRegistrationService 
         try {
             HelperInformation helperInformation = findHelperInformationById(id);
             GetHelperInformationDetailResponse response = modelMapper.map(helperInformation, GetHelperInformationDetailResponse.class);
+            response.setPersonalAvatar(helperInformation.getUser().getAvatar());
             List<String> attachments = helperInformation.getAttachments()
                     .stream()
                     .map(Attachment::getAttachmentLink).collect(Collectors.toList());
@@ -445,7 +452,7 @@ public class HelperRegistrationServiceImpl implements HelperRegistrationService 
         try {
             HelperInformation helperInformation = findHelperInformationById(id);
             User manager = findUserById(managerId);
-            isPermission(manager, helperInformation);
+//            isPermission(manager, helperInformation);
             helperInformation.setHelperStatus(HelperStatusEnum.ONLINE);
             List<ServiceRegistration> serviceRegistrations = new ArrayList<>();
             List<String> serviceNames = new ArrayList<>();

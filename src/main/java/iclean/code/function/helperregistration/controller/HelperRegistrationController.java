@@ -104,7 +104,7 @@ public class HelperRegistrationController {
     public ResponseEntity<ResponseObject> createHelperRequest(@RequestPart("email") String email,
                                                               @RequestPart("frontIdCard") MultipartFile frontIdCard,
                                                               @RequestPart("backIdCard") MultipartFile backIdCard,
-                                                              @RequestPart("avatar") MultipartFile avatar,
+                                                              @RequestPart(value = "avatar", required = false) MultipartFile avatar,
                                                               @RequestPart(value = "others", required = false) List<MultipartFile> others,
                                                               @RequestParam(value = "service") List<Integer> services,
                                                               Authentication authentication) {

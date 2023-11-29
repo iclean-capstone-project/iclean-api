@@ -27,4 +27,5 @@ public interface BookingDetailService {
     ResponseEntity<ResponseObject> resendBookingDetail(Integer renterId, ResendBookingDetailRequest request, Integer bookingDetailId);
     ResponseEntity<ResponseObject> checkoutBookingDetail(Integer id, Integer helperId);
     ResponseEntity<ResponseObject> getBookingDetailByHelper(Integer helperId, Integer bookingDetailId);
+    ResponseEntity<ResponseObject> getCurrentBookingDetail(Integer helperId);
 }
