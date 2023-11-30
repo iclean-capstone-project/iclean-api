@@ -32,6 +32,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -283,9 +284,10 @@ public class HelperRegistrationServiceImpl implements HelperRegistrationService 
             HelperInformation helperInformation = mappingCMTToHelperInformation(cmtFrontResponse.getData().get(0),
                     cmtBackResponse.getData().get(0),
                     imgAvatarLink);
-            if (Utils.getLocalDateTimeNow().toLocalDate().minusYears(18).isAfter(helperInformation.getDateOfBirth())) {
-                throw new BadRequestException(MessageVariable.CANNOT_REGISTER_HELPER_NOT_ENOUGH_AGE);
-            };
+            LocalDate date = Utils.getLocalDateTimeNow().toLocalDate().minusYears(18);
+//            if (Utils.getLocalDateTimeNow().toLocalDate().minusYears(18).isBefore(helperInformation.getDateOfBirth())) {
+//                throw new BadRequestException(MessageVariable.CANNOT_REGISTER_HELPER_NOT_ENOUGH_AGE);
+//            };
             User user = findUserById(renterId);
             helperInformation.setUser(user);
             helperInformation.setPhoneNumber(user.getPhoneNumber());

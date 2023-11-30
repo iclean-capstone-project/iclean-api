@@ -4,7 +4,9 @@ import com.google.maps.DistanceMatrixApi;
 import com.google.maps.GeoApiContext;
 import com.google.maps.model.DistanceMatrix;
 import com.google.maps.model.LatLng;
+import iclean.code.data.domain.Address;
 import iclean.code.data.domain.BookingDetail;
+import iclean.code.data.domain.HelperInformation;
 import iclean.code.data.dto.common.Position;
 import iclean.code.function.common.service.GoogleMapService;
 import lombok.extern.log4j.Log4j2;
@@ -74,6 +76,22 @@ public class GoogleMapServiceImpl implements GoogleMapService {
         }
         filteredPositions.sort(Comparator.comparingDouble(element ->
                 calculateDistance(new Position(element.getBooking().getLongitude(), element.getBooking().getLatitude()), position)));
+
+        return filteredPositions;
+    }
+
+    @Override
+    public List<Address> checkDistanceHelper(List<Address> positionList, Position position, double maxDistance) {
+        List<Address> filteredPositions = new ArrayList<>();
+
+        for (Address element : positionList) {
+            double distance = calculateDistance(new Position(element.getLongitude(), element.getLatitude()), position);
+            if (distance <= maxDistance) {
+                filteredPositions.add(element);
+            }
+        }
+        filteredPositions.sort(Comparator.comparingDouble(element ->
+                calculateDistance(new Position(element.getLongitude(), element.getLatitude()), position)));
 
         return filteredPositions;
     }

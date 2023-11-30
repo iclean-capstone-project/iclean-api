@@ -44,4 +44,5 @@ public class MessageVariable {
     public static final String CANNOT_ACCEPT_BOOKING_NOT_APPROVED = "Không thể nhận đăng ký nhận dịch vụ này!";
     public static final String NOT_ON_TIME_TO_END_WORK = "Bạn chưa đủ điều kiện hoàn thành công việc hiện tại!";
     public static final String CANCEL_BOOKING_BY_SYSTEM = "Dịch vụ số #%s - %s đã bị hủy bởi hệ thống do người làm không check in, chúng tôi rất xin lỗi về sự cố này!";
+    public static final String NOT_ENOUGH_MONEY = "Không đủ tiền để thanh toán!";
 }

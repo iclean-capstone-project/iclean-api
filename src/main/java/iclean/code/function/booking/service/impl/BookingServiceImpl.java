@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import iclean.code.config.MessageVariable;
 import iclean.code.config.SystemParameterField;
 import iclean.code.data.domain.*;
+import iclean.code.data.dto.common.Position;
 import iclean.code.data.dto.common.ResponseObject;
 import iclean.code.data.dto.request.authen.NotificationRequestDto;
 import iclean.code.data.dto.request.booking.*;
@@ -36,7 +37,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.math.RoundingMode;
 import java.time.DayOfWeek;
@@ -53,6 +53,8 @@ public class BookingServiceImpl implements BookingService {
     private FCMService fcmService;
     @Value("${iclean.app.point.to.money}")
     private Double pointToMoney;
+    @Value("${iclean.app.max.distance.length}")
+    private Double maxDistance;
     @Autowired
     private BookingRepository bookingRepository;
     @Autowired
@@ -510,7 +512,6 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    @Transactional
     public ResponseEntity<ResponseObject> createServiceToCart(AddBookingRequest request,
                                                               Integer userId) {
         try {
@@ -759,10 +760,6 @@ public class BookingServiceImpl implements BookingService {
                 }
             }
             User renter = findAccount(userId);
-            booking.setRequestCount(1);
-            booking.setBookingStatus(BookingStatusEnum.NOT_YET);
-            booking.setUpdateAt(Utils.getLocalDateTimeNow());
-            booking.setBookingCode(Utils.generateRandomCode());
             if (request != null) {
                 booking.setAutoAssign(request.getAutoAssign() != null ? request.getAutoAssign() : booking.getAutoAssign());
                 booking.setUsingPoint(request.getUsingPoint() != null ? request.getUsingPoint() : booking.getUsingPoint());
@@ -825,6 +822,11 @@ public class BookingServiceImpl implements BookingService {
                 bookingDetailStatusHistory.setBookingDetail(bookingDetail);
                 bookingDetailStatusHistories.add(bookingDetailStatusHistory);
             }
+            booking.setRequestCount(1);
+            booking.setBookingStatus(BookingStatusEnum.NOT_YET);
+            booking.setUpdateAt(Utils.getLocalDateTimeNow());
+            booking.setBookingCode(Utils.generateRandomCode());
+            bookingRepository.save(booking);
             bookingDetailRepository.saveAll(bookingDetails);
             bookingDetailStatusHistoryRepository.saveAll(bookingDetailStatusHistories);
 
@@ -928,12 +930,25 @@ public class BookingServiceImpl implements BookingService {
                 bookingDetailStatusHistory.setBookingDetail(bookingDetail);
                 bookingDetailStatusHistories.add(bookingDetailStatusHistory);
                 bookingDetail.setBookingDetailStatus(bookingDetailStatusEnum);
-                // tạm thời bỏ qua
+
                 if (booking.getAutoAssign()) {
                     LocalDateTime startDateTime = LocalDateTime.of(bookingDetail.getWorkDate(), bookingDetail.getWorkStart());
                     LocalDateTime endDateTime = Utils.plusLocalDateTime(startDateTime, bookingDetail.getServiceUnit().getUnit().getUnitValue());
-                    List<HelperInformation> helpersInformation = helperInformationRepository.findAllByWorkScheduleStartEndAndServiceId(startDateTime, endDateTime, currentDate,
+                    List<HelperInformation> helpersInformation = helperInformationRepository.findAllByWorkScheduleStartEndAndServiceId(bookingDetail.getWorkStart(), currentDate,
                             bookingDetail.getServiceUnit().getService().getServiceId(), ServiceHelperStatusEnum.ACTIVE, BookingDetailHelperStatusEnum.ACTIVE);
+
+                    List<Integer> userIds = helpersInformation.stream().map(element -> element.getUser().getUserId()).collect(Collectors.toList());
+                    List<Address> addressList = new ArrayList<>();
+                    // loại bỏ helper quá xa
+                    for (Integer userId:
+                    userIds) {
+                        List<Address> addresses = addressRepository.findByUserIdAnAndIsDefault(userId);
+                        addressList.addAll(addresses);
+                    }
+                    addressList = googleMapService.checkDistanceHelper(addressList, new Position(booking.getLongitude(), booking.getLatitude()), getMaxDistance());
+                    List<Integer> addressIds = addressList.stream().map(Address::getAddressId).collect(Collectors.toList());
+                    helpersInformation = helperInformationRepository.findAllByAddressIds(addressIds);
+
                     HelperInformation helperInformation = getPriority(helpersInformation, bookingDetail.getServiceUnit().getService().getServiceId());
                     BookingDetailHelper bookingDetailHelper = new BookingDetailHelper();
                     bookingDetailHelper.setBookingDetail(bookingDetail);
@@ -946,7 +961,7 @@ public class BookingServiceImpl implements BookingService {
                         needToAssigns.add(bookingDetailHelper);
                     } else {
                         numberReject++;
-                        bookingDetail.setBookingDetailStatus(BookingDetailStatusEnum.REJECTED);
+                        bookingDetail.setBookingDetailStatus(BookingDetailStatusEnum.CANCEL_BY_SYSTEM);
                         if (booking.getUsingPoint()) {
                             Transaction transactionPoint = transactionRepository.findByBookingIdAndWalletTypeAndTransactionTypeAndUserId(bookingId,
                                     WalletTypeEnum.POINT, TransactionTypeEnum.WITHDRAW, renter.getUserId());
@@ -956,18 +971,21 @@ public class BookingServiceImpl implements BookingService {
                                         String.format(MessageVariable.REFUND_POINT_CANCEL_BOOKING, bookingId),
                                         renter.getUserId(),
                                         TransactionTypeEnum.DEPOSIT.name(),
-                                        WalletTypeEnum.POINT.name()
+                                        WalletTypeEnum.POINT.name(),
+                                        bookingId
                                 ));
                             }
                         }
                         Transaction transaction = transactionRepository.findByBookingIdAndWalletTypeAndTransactionTypeAndUserId(bookingId,
                                 WalletTypeEnum.MONEY, TransactionTypeEnum.WITHDRAW, renter.getUserId());
-                        createTransaction(new TransactionRequest(transaction.getAmount(),
-                                MessageVariable.REFUND_REJECT_BOOKING,
-                                renter.getUserId(),
-                                TransactionTypeEnum.DEPOSIT.name(),
-                                WalletTypeEnum.MONEY.name(),
-                                bookingId));
+                        if (transaction != null) {
+                            createTransaction(new TransactionRequest(transaction.getAmount(),
+                                    MessageVariable.REFUND_REJECT_BOOKING,
+                                    renter.getUserId(),
+                                    TransactionTypeEnum.DEPOSIT.name(),
+                                    WalletTypeEnum.MONEY.name(),
+                                    bookingId));
+                        }
                         NotificationRequestDto notificationRequestDto1 = new NotificationRequestDto();
                         notificationRequestDto1.setTitle(MessageVariable.TITLE_APP);
                         notificationRequestDto1.setBody(String.format(MessageVariable.NOT_FOUND_HELPER_FOR_THIS_SERVICE,
@@ -1025,6 +1043,10 @@ public class BookingServiceImpl implements BookingService {
             for (Integer helperId :
                     helperIds) {
                 GetPriorityResponse priorityResponse = bookingDetailRepository.findPriority(BookingDetailStatusEnum.FINISHED, serviceId, helperId);
+                priorityResponse.setHelperInformationId(helperId);
+                if (priorityResponse.getNumberOfBookingDetail() == 0 ) {
+                    priorityResponse.setAvgRate(5D);
+                }
                 priorityResponses.add(priorityResponse);
             }
             double maxValue = 0D;
@@ -1237,7 +1259,7 @@ public class BookingServiceImpl implements BookingService {
         }
     }
 
-    public boolean createTransaction(TransactionRequest request) {
+    public boolean createTransaction(TransactionRequest request) throws BadRequestException {
         User user = findAccount(request.getUserId());
         Booking booking = findBookingById(request.getBookingId());
         if (request.getBookingId() != null) {
@@ -1266,7 +1288,7 @@ public class BookingServiceImpl implements BookingService {
                 break;
             case WITHDRAW:
                 if (wallet.getBalance() < request.getBalance()) {
-                    return false;
+                    throw new BadRequestException(MessageVariable.PAYMENT_FAIL);
                 }
                 wallet.setBalance(wallet.getBalance() - request.getBalance());
                 notificationRequestDto.setBody(request.getNote());
@@ -1276,7 +1298,9 @@ public class BookingServiceImpl implements BookingService {
         Wallet walletUpdate = walletRepository.save(wallet);
         Transaction transaction = mappingForCreate(request);
         transaction.setWallet(walletUpdate);
-        transactionRepository.save(transaction);
+        if (request.getBalance() != 0) {
+            transactionRepository.save(transaction);
+        }
         return true;
     }
 
@@ -1319,10 +1343,18 @@ public class BookingServiceImpl implements BookingService {
                 .collect(Collectors.toList());
         return Utils.convertToPageResponse(bookings, dtoList);
     }
-
     private User findAccount(int userId) {
         return userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("User is not exist"));
+    }
+
+    private Double getMaxDistance() {
+        SystemParameter systemParameter = systemParameterRepository.findSystemParameterByParameterField(SystemParameterField.MAX_DISTANCE);
+        try {
+            return Double.parseDouble(systemParameter.getParameterValue());
+        } catch (Exception e) {
+            return maxDistance;
+        }
     }
 
     private RejectionReason findById(int id) {

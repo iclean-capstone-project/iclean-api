@@ -146,14 +146,22 @@ public class MoneyRequestServiceImpl implements MoneyRequestService {
                     MessageVariable.DEPOSIT_SUCCESSFUL
                     : MessageVariable.WITHDRAW_SUCCESSFUL;
 
-            transactionService.createTransactionService(new TransactionRequest(moneyRequest.getBalance(), note,
+            boolean check = transactionService.createTransactionService(new TransactionRequest(moneyRequest.getBalance(), note,
                     moneyRequest.getUser().getUserId(), moneyRequest.getRequestType().name(), WalletTypeEnum.MONEY.name()));
-            moneyRequestRepository.save(moneyRequest);
-
-            return ResponseEntity.status(HttpStatus.OK)
-                    .body(new ResponseObject(HttpStatus.OK.toString(),
-                            "Update Money Request Successful",
-                            null));
+            if (check) {
+                moneyRequestRepository.save(moneyRequest);
+                return ResponseEntity.status(HttpStatus.OK)
+                        .body(new ResponseObject(HttpStatus.OK.toString(),
+                                "Update Money Request Successful",
+                                null));
+            } else {
+                moneyRequest.setRequestStatus(MoneyRequestStatusEnum.FAIL);
+                moneyRequestRepository.save(moneyRequest);
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString(),
+                                "User not have enough money",
+                                null));
+            }
         } catch (Exception e) {
             log.error(e.getMessage());
             if (e instanceof NotFoundException)
