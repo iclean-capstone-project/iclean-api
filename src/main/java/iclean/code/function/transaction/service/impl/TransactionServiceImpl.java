@@ -48,6 +48,7 @@ public class TransactionServiceImpl implements TransactionService {
     private WalletRepository walletRepository;
     @Autowired
     private ModelMapper modelMapper;
+
     @Override
     public ResponseEntity<ResponseObject> getTransactions(Integer userId, String walletType, Pageable pageable) {
         try {
@@ -161,40 +162,40 @@ public class TransactionServiceImpl implements TransactionService {
 
     @Override
     public boolean createTransactionService(TransactionRequest request) throws BadRequestException {
-            User user = findUserById(request.getUserId());
-            if (!Objects.equals(user.getRole().getTitle().toUpperCase(), RoleEnum.EMPLOYEE.name()) &&
-                    !user.getRole().getTitle().toUpperCase().equals(RoleEnum.RENTER.name())) {
-                throw new BadRequestException("This user cannot have this information");
-            }
-            Wallet wallet = walletRepository.getWalletByUserIdAndType(request.getUserId(),
-                    WalletTypeEnum.valueOf(request.getWalletType().toUpperCase()));
-            if (Objects.isNull(wallet)) {
-                wallet = new Wallet();
-                wallet.setUser(user);
-                wallet.setBalance(0D);
-                wallet.setWalletTypeEnum(WalletTypeEnum.valueOf(request.getWalletType().toUpperCase()));
-            }
+        User user = findUserById(request.getUserId());
+        if (!Objects.equals(user.getRole().getTitle().toUpperCase(), RoleEnum.EMPLOYEE.name()) &&
+                !user.getRole().getTitle().toUpperCase().equals(RoleEnum.RENTER.name())) {
+            throw new BadRequestException("This user cannot have this information");
+        }
+        Wallet wallet = walletRepository.getWalletByUserIdAndType(request.getUserId(),
+                WalletTypeEnum.valueOf(request.getWalletType().toUpperCase()));
+        if (Objects.isNull(wallet)) {
+            wallet = new Wallet();
+            wallet.setUser(user);
+            wallet.setBalance(0D);
+            wallet.setWalletTypeEnum(WalletTypeEnum.valueOf(request.getWalletType().toUpperCase()));
+        }
 
-            wallet.setUpdateAt(Utils.getLocalDateTimeNow());
-            TransactionTypeEnum transactionTypeEnum = TransactionTypeEnum.valueOf(request.getTransactionType().toUpperCase());
-            switch (transactionTypeEnum) {
-                case DEPOSIT:
-                    wallet.setBalance(wallet.getBalance() + request.getBalance());
-                    break;
-                case TRANSFER:
-                    break;
-                case WITHDRAW:
-                    if (wallet.getBalance() < request.getBalance()) {
-                        throw new BadRequestException("The balance of user is less than the request balance");
-                    }
-                    wallet.setBalance(wallet.getBalance() - request.getBalance());
-                    break;
-            }
-            Wallet walletUpdate = walletRepository.save(wallet);
+        wallet.setUpdateAt(Utils.getLocalDateTimeNow());
+        TransactionTypeEnum transactionTypeEnum = TransactionTypeEnum.valueOf(request.getTransactionType().toUpperCase());
+        switch (transactionTypeEnum) {
+            case DEPOSIT:
+                wallet.setBalance(wallet.getBalance() + request.getBalance());
+                break;
+            case TRANSFER:
+                break;
+            case WITHDRAW:
+                if (wallet.getBalance() < request.getBalance()) {
+                    throw new BadRequestException("The balance of user is less than the request balance");
+                }
+                wallet.setBalance(wallet.getBalance() - request.getBalance());
+                break;
+        }
+        Wallet walletUpdate = walletRepository.save(wallet);
         Transaction transaction = mappingForCreate(request);
         transaction.setWallet(walletUpdate);
         transactionRepository.save(transaction);
-            return true;
+        return true;
     }
 
     private User findUserById(Integer id) {

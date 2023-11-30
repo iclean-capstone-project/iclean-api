@@ -71,6 +71,11 @@ public class User {
     @OneToMany(mappedBy = "user")
     @JsonIgnoreProperties("user")
     @JsonIgnore
+    private List<Address> addresses;
+
+    @OneToMany(mappedBy = "user")
+    @JsonIgnoreProperties("user")
+    @JsonIgnore
     private List<DeviceToken> deviceTokens;
 
     @OneToMany(mappedBy = "manager")

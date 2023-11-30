@@ -13,6 +13,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.DayOfWeek;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -53,16 +54,20 @@ public interface HelperInformationRepository extends JpaRepository<HelperInforma
             "LEFT JOIN hi.workSchedules ws " +
             "LEFT JOIN hi.serviceRegistrations sr " +
             "LEFT JOIN sr.bookingDetailHelpers bds " +
-            "WHERE ws.startTime >= ?1 " +
-            "AND ws.endTime <= ?2 " +
-            "AND ws.dayOfWeek = ?3 " +
-            "AND sr.service.serviceId = ?4 " +
-            "AND sr.serviceHelperStatus = ?5 " +
-            "AND NOT EXISTS (SELECT 1 FROM bds WHERE bds.bookingDetailHelperStatus = ?6) ")
-    List<HelperInformation> findAllByWorkScheduleStartEndAndServiceId(LocalDateTime startDateTime, LocalDateTime endDateTime, DayOfWeek dayOfWeek, Integer serviceId,
+            "WHERE ws.startTime <= ?1 " +
+            "AND ws.dayOfWeek = ?2 " +
+            "AND sr.service.serviceId = ?3 " +
+            "AND sr.serviceHelperStatus = ?4 ")
+    List<HelperInformation> findAllByWorkScheduleStartEndAndServiceId(LocalTime startDateTime, DayOfWeek dayOfWeek, Integer serviceId,
                                                                       ServiceHelperStatusEnum serviceHelperStatusEnum, BookingDetailHelperStatusEnum bookingDetailHelperStatusEnum);
 
     @Query("SELECT hi FROM HelperInformation hi " +
             "WHERE hi.managerId = ?1 ")
     Page<HelperInformation> findAllByManagerId(Integer managerId, Pageable pageable);
+
+    @Query("SELECT hi FROM HelperInformation hi " +
+            "LEFT JOIN hi.user u " +
+            "LEFT JOIN u.addresses addr " +
+            "WHERE addr.addressId IN ?1 ")
+    List<HelperInformation> findAllByAddressIds(List<Integer> addressIds);
 }

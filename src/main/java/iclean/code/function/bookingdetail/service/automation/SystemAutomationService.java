@@ -83,7 +83,7 @@ public class SystemAutomationService {
                 LocalDateTime endDateTime = Utils.plusLocalDateTime(startDateTime, bookingDetail.getServiceUnit().getUnit().getUnitValue());
 
                 // lấy tất cả các helper có workschedule thỏa điều kiện startDateTime và endDateTime và service đã đăng kí
-                List<HelperInformation> helpersInformation = helperInformationRepository.findAllByWorkScheduleStartEndAndServiceId(startDateTime, endDateTime, currentDate,
+                List<HelperInformation> helpersInformation = helperInformationRepository.findAllByWorkScheduleStartEndAndServiceId(startDateTime.toLocalTime(), currentDate,
                         bookingDetail.getServiceUnit().getService().getServiceId(), ServiceHelperStatusEnum.ACTIVE, BookingDetailHelperStatusEnum.ACTIVE);
 
                 HelperInformation helperInformation = getPriority(helpersInformation, bookingDetail.getServiceUnit().getService().getServiceId());
