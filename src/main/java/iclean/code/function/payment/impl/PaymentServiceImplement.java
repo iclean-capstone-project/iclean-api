@@ -6,6 +6,7 @@ import iclean.code.data.domain.Transaction;
 import iclean.code.data.domain.User;
 import iclean.code.data.domain.Wallet;
 import iclean.code.data.dto.common.ResponseObject;
+import iclean.code.data.dto.response.authen.UserPrinciple;
 import iclean.code.data.enumjava.TransactionStatusEnum;
 import iclean.code.data.enumjava.TransactionTypeEnum;
 import iclean.code.data.enumjava.WalletTypeEnum;
@@ -62,9 +63,11 @@ public class PaymentServiceImplement implements PaymentService {
             vnp_Params.put("vnp_TxnRef", vnp_TxnRef);
 
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            int userID = userRepository.findByUsername(authentication.getName()).getUserId();
 
-            vnp_Params.put("vnp_OrderInfo", String.valueOf(userID));
+            UserPrinciple userPrinciple = (UserPrinciple) authentication.getPrincipal();
+            int userId = userPrinciple.getId();
+
+            vnp_Params.put("vnp_OrderInfo", String.valueOf(userId));
             vnp_Params.put("vnp_OrderType", orderType);
 
             vnp_Params.put("vnp_Locale", "vn");
