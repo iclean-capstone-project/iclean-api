@@ -13,6 +13,5 @@ public interface ServicePriceService {
     Double getServicePrice(GetServicePriceRequest request);
     Double getServiceHelperPrice(GetServicePriceRequest request);
     ResponseEntity<ResponseObject> createServicePrice(List<ServicePriceRequest> requests, Integer serviceUnitId);
-
     ResponseEntity<ResponseObject> getServicePrice(Integer serviceUnitId);
 }
