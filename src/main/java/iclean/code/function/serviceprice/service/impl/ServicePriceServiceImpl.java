@@ -11,9 +11,7 @@ import iclean.code.data.dto.response.serviceprice.ServicePriceResponse;
 import iclean.code.data.enumjava.ServicePriceEnum;
 import iclean.code.data.repository.ServiceUnitRepository;
 import iclean.code.data.repository.ServicePriceRepository;
-import iclean.code.exception.BadRequestException;
 import iclean.code.exception.NotFoundException;
-import iclean.code.exception.UserNotHavePermissionException;
 import iclean.code.function.serviceprice.service.ServicePriceService;
 import iclean.code.utils.Utils;
 import lombok.extern.log4j.Log4j2;
@@ -24,7 +22,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -71,6 +68,9 @@ public class ServicePriceServiceImpl implements ServicePriceService {
             if (!servicePrices.isEmpty()) {
                 int i = 0;
                 do {
+                    if (i >= servicePrices.size()) {
+                        break;
+                    }
                     ServicePrice servicePrice = servicePrices.get(i);
                     if (Utils.isBeforeOrEqual(servicePrice.getEndTime(), startTime)) {
                         i++;
@@ -117,6 +117,9 @@ public class ServicePriceServiceImpl implements ServicePriceService {
             if (!servicePrices.isEmpty()) {
                 int i = 0;
                 do {
+                    if (i >= servicePrices.size()) {
+                        break;
+                    }
                     ServicePrice servicePrice = servicePrices.get(i);
                     if (Utils.isBeforeOrEqual(servicePrice.getEndTime(), startTime)) {
                         i++;
