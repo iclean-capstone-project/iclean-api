@@ -15,4 +15,6 @@ public class ProfileUserResponse {
     private String defaultAddress;
 
     private String avatar;
+
+    private Boolean isRegistration;
 }

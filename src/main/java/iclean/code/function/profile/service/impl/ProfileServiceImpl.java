@@ -1,11 +1,14 @@
 package iclean.code.function.profile.service.impl;
 
 import iclean.code.data.domain.Address;
+import iclean.code.data.domain.HelperInformation;
 import iclean.code.data.domain.User;
 import iclean.code.data.dto.common.ResponseObject;
 import iclean.code.data.dto.request.profile.UpdateProfileDto;
 import iclean.code.data.dto.response.profile.ProfileUserResponse;
+import iclean.code.data.enumjava.HelperStatusEnum;
 import iclean.code.data.repository.AddressRepository;
+import iclean.code.data.repository.HelperInformationRepository;
 import iclean.code.data.repository.UserRepository;
 import iclean.code.exception.NotFoundException;
 import iclean.code.exception.UserNotHavePermissionException;
@@ -35,12 +38,22 @@ public class ProfileServiceImpl implements ProfileService {
     AddressRepository addressRepository;
 
     @Autowired
+    HelperInformationRepository helperInformationRepository;
+
+    @Autowired
     StorageService storageService;
     @Override
     public ResponseEntity<ResponseObject> getProfile(Integer userId) {
         try {
             User user = findUser(userId);
             ProfileUserResponse profileUserResponse = modelMapper.map(user, ProfileUserResponse.class);
+            HelperInformation helper = helperInformationRepository.findByUserId(user.getUserId());
+            if(!Objects.isNull(helper)){
+                profileUserResponse.setIsRegistration(!HelperStatusEnum.DISABLED.equals(helper.getHelperStatus()));
+            } else {
+                profileUserResponse.setIsRegistration(false);
+            }
+
             profileUserResponse.setRoleName(user.getRole().getTitle());
             List<Address> addressList = addressRepository.findByUserIdAnAndIsDefault(user.getUserId());
             if (!addressList.isEmpty()) {
