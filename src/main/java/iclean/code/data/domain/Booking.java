@@ -21,7 +21,7 @@ public class Booking {
     @Column(name = "booking_id")
     private Integer bookingId;
 
-    private String bookingCode;
+    private String bookingCode = Utils.generateRandomCode();
 
     private String location;
 

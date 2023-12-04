@@ -39,6 +39,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
 
 import java.math.RoundingMode;
@@ -229,8 +231,12 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     public ResponseEntity<ResponseObject> createBookingNow(CreateBookingRequestNow request, Integer renterId) {
+        TransactionStatus status = transactionManager.getTransaction(new DefaultTransactionDefinition());
         try {
+            ObjectMapper objectMapper = new ObjectMapper();
             Booking booking = new Booking();
+            bookingRepository.save(booking);
+            User renter = findAccount(renterId);
             Double priceDetail = servicePriceService
                     .getServicePrice(new GetServicePriceRequest(request.getServiceUnitId(),
                             request.getStartTime().toLocalTime().format(DateTimeFormatter.ofPattern("HH:mm:ss"))));
@@ -238,7 +244,7 @@ public class BookingServiceImpl implements BookingService {
                     .getServiceHelperPrice(new GetServicePriceRequest(request.getServiceUnitId(),
                             request.getStartTime().toLocalTime().format(DateTimeFormatter.ofPattern("HH:mm:ss"))));
             BookingDetailStatusHistory bookingDetailStatusHistory = new BookingDetailStatusHistory();
-            booking.setRenter(findAccount(renterId));
+            booking.setRenter(renter);
             booking.setTotalPrice(0.0);
             booking.setBookingStatus(BookingStatusEnum.NOT_YET);
             bookingDetailStatusHistory.setBookingDetailStatus(BookingDetailStatusEnum.NOT_YET);
@@ -249,15 +255,17 @@ public class BookingServiceImpl implements BookingService {
             }
             if (request.getAddressId() != null && request.getAddressId() != 0) {
                 addressDefault = findAddressById(request.getAddressId());
+                if (!Objects.equals(addressDefault.getUser().getUserId(), renterId)) {
+                    throw new UserNotHavePermissionException("Address is not available!");
+                }
             }
-            if (addressDefault != null && ObjectUtils.anyNull(booking.getLongitude(),
-                    booking.getLatitude(),
-                    booking.getLocation(),
-                    booking.getLocationDescription())) {
+            if (addressDefault != null) {
                 booking.setLongitude(addressDefault.getLongitude());
                 booking.setLatitude(addressDefault.getLatitude());
                 booking.setLocation(addressDefault.getLocationName());
                 booking.setLocationDescription(addressDefault.getDescription());
+            } else {
+                throw new NotFoundException(MessageVariable.NEED_ADD_LOCATION_FOR_BOOKING);
             }
             double price = booking.getTotalPrice();
             BookingDetail bookingDetail = new BookingDetail();
@@ -267,31 +275,82 @@ public class BookingServiceImpl implements BookingService {
             price = price + priceDetail;
             booking.setTotalPrice(price);
             booking.setTotalPriceActual(price);
-
+            CheckOutCartRequest checkOutCartRequest = new CheckOutCartRequest(request.getAddressId(), request.getUsingPoint(), request.getAutoAssign());
+            booking.setOption(objectMapper.writeValueAsString(checkOutCartRequest));
+            booking.setAutoAssign(request.getAutoAssign() != null ? request.getAutoAssign() : false);
+            booking.setUsingPoint(request.getUsingPoint() != null ? request.getUsingPoint() : false);
+            booking.setRequestCount(1);
+            booking.setUpdateAt(Utils.getLocalDateTimeNow());
             bookingDetail.setBooking(booking);
             bookingDetail.setPriceDetail(priceDetail);
             bookingDetail.setPriceHelper(priceHelper);
             bookingDetail.setWorkStart(request.getStartTime().toLocalTime());
             bookingDetail.setWorkDate(request.getStartTime().toLocalDate());
             bookingDetail.setBookingDetailStatus(BookingDetailStatusEnum.NOT_YET);
-            bookingDetailStatusHistoryRepository.save(bookingDetailStatusHistory);
-            bookingDetailRepository.save(bookingDetail);
-            bookingRepository.save(booking);
+            if (Objects.nonNull(request.getUsingPoint()) && request.getUsingPoint()) {
+                Wallet walletPoint = walletRepository.getWalletByUserIdAndType(renterId, WalletTypeEnum.POINT);
+                Double minusMoney = Utils.roundingNumber(walletPoint.getBalance() * getPointToMoney(), 1000D, RoundingMode.UP);
+                Double usingPoint;
+                if (minusMoney > booking.getTotalPrice()) {
+                    booking.setTotalPriceActual(0D);
+                    usingPoint = (minusMoney - booking.getTotalPrice()) / getPointToMoney();
+                    usingPoint = Utils.roundingNumber(usingPoint, 1D, RoundingMode.DOWN);
+                } else {
+                    booking.setTotalPriceActual(Utils.roundingNumber(booking.getTotalPrice() - minusMoney, 1000D, RoundingMode.DOWN));
+                    usingPoint = walletPoint.getBalance();
+                }
+                createTransaction(new TransactionRequest(usingPoint,
+                        MessageVariable.USING_POINT_FOR_BOOKING,
+                        renter.getUserId(),
+                        TransactionTypeEnum.WITHDRAW.name(),
+                        WalletTypeEnum.POINT.name(),
+                        booking.getBookingId())
+                );
+            }
+            boolean checkMoney = createTransaction(new TransactionRequest(booking.getTotalPriceActual(),
+                    String.format(MessageVariable.PAYMENT_A_SERVICE, booking.getBookingCode()),
+                    renter.getUserId(),
+                    TransactionTypeEnum.WITHDRAW.name(),
+                    WalletTypeEnum.MONEY.name(),
+                    booking.getBookingId())
+            );
+            if (!checkMoney) {
+                throw new BadRequestException(MessageVariable.NOT_ENOUGH_MONEY);
+            }
+            NotificationRequestDto notificationRequestDto = new NotificationRequestDto();
+            notificationRequestDto.setTitle(MessageVariable.TITLE_APP);
+            notificationRequestDto.setBody(String.format(MessageVariable.ORDER_SUCCESSFUL, booking.getBookingCode()));
+            Notification notification = new Notification();
+            notification.setContent(notificationRequestDto.getBody());
+            notification.setTitle(notification.getTitle());
+            notification.setUser(renter);
+            notificationRepository.save(notification);
+            sendMessage(notificationRequestDto, renter);
 
+            bookingDetailStatusHistoryRepository.save(bookingDetailStatusHistory);
+            bookingRepository.save(booking);
+            bookingDetailRepository.save(bookingDetail);
+            transactionManager.commit(status);
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseObject(HttpStatus.OK.toString(),
                             "Create Booking Successfully!", null));
 
         } catch (Exception e) {
             log.error(e.getMessage());
+            transactionManager.rollback(status);
+            if (e instanceof BadRequestException) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString(),
+                                e.getMessage(), null));
+            }
             if (e instanceof NotFoundException) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(new ResponseObject(HttpStatus.NOT_FOUND.toString()
-                                , e.getMessage(), null));
+                        .body(new ResponseObject(HttpStatus.NOT_FOUND.toString(),
+                                e.getMessage(), null));
             }
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString()
-                            , "Something wrong occur!", null));
+                    .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString(),
+                            "Something wrong occur!", null));
         }
     }
 
@@ -339,7 +398,7 @@ public class BookingServiceImpl implements BookingService {
                 booking.setAutoAssign(request.getAutoAssign() != null ? request.getAutoAssign() : booking.getAutoAssign());
                 booking.setUsingPoint(request.getUsingPoint() != null ? request.getUsingPoint() : booking.getUsingPoint());
                 booking.setOption(objectMapper.writeValueAsString(request));
-                if (request.getUsingPoint()) {
+                if (Objects.nonNull(request.getUsingPoint()) && request.getUsingPoint()) {
                     Wallet walletPoint = walletRepository.getWalletByUserIdAndType(renterId, WalletTypeEnum.POINT);
                     Double minusMoney = Utils.roundingNumber(walletPoint.getBalance() * getPointToMoney(), 1000D, RoundingMode.UP);
                     Double usingPoint;
@@ -426,10 +485,7 @@ public class BookingServiceImpl implements BookingService {
             if (request.getAddressId() != null && request.getAddressId() != 0) {
                 addressDefault = findAddressById(request.getAddressId());
             }
-            if (addressDefault != null && ObjectUtils.anyNull(booking.getLongitude(),
-                    booking.getLatitude(),
-                    booking.getLocation(),
-                    booking.getLocationDescription())) {
+            if (addressDefault != null) {
                 booking.setLongitude(addressDefault.getLongitude());
                 booking.setLatitude(addressDefault.getLatitude());
                 booking.setLocation(addressDefault.getLocationName());
@@ -442,7 +498,8 @@ public class BookingServiceImpl implements BookingService {
             price = price + priceDetail;
             booking.setTotalPrice(price);
             booking.setTotalPriceActual(price);
-
+            booking.setAutoAssign(request.getAutoAssign() != null ? request.getAutoAssign() : false);
+            booking.setUsingPoint(request.getUsingPoint() != null ? request.getUsingPoint() : false);
             bookingDetail.setBooking(booking);
             bookingDetail.setPriceDetail(priceDetail);
             bookingDetail.setPriceHelper(priceHelper);
@@ -464,17 +521,21 @@ public class BookingServiceImpl implements BookingService {
             }
             CheckOutCartRequest checkOutCartRequest = new CheckOutCartRequest();
             checkOutCartRequest.setAddressId(request.getAddressId());
-            checkOutCartRequest.setUsingPoint(Optional.of(checkOutCartRequest)
-                    .map(CheckOutCartRequest::getUsingPoint)
+            assert addressDefault != null;
+            checkOutCartRequest.setAddressId(Optional.of(request)
+                    .map(CreateBookingRequestNow::getAddressId)
+                    .orElse(addressDefault.getAddressId()));
+            checkOutCartRequest.setAutoAssign(Optional.of(request)
+                    .map(CreateBookingRequestNow::getAutoAssign)
                     .orElse(false));
-            checkOutCartRequest.setAutoAssign(Optional.of(checkOutCartRequest)
-                    .map(CheckOutCartRequest::getAutoAssign)
+            checkOutCartRequest.setUsingPoint(Optional.of(request)
+                    .map(CreateBookingRequestNow::getUsingPoint)
                     .orElse(false));
-            booking.setUsingPoint(Optional.of(checkOutCartRequest)
-                    .map(CheckOutCartRequest::getUsingPoint)
+            booking.setUsingPoint(Optional.of(request)
+                    .map(CreateBookingRequestNow::getUsingPoint)
                     .orElse(false));
-            booking.setAutoAssign(Optional.of(checkOutCartRequest)
-                    .map(CheckOutCartRequest::getUsingPoint)
+            booking.setAutoAssign(Optional.of(request)
+                    .map(CreateBookingRequestNow::getUsingPoint)
                     .orElse(false));
             booking.setOption(objectMapper.writeValueAsString(checkOutCartRequest));
             if (booking.getUsingPoint()) {
@@ -1267,6 +1328,7 @@ public class BookingServiceImpl implements BookingService {
         }
     }
 
+    @Transactional(propagation = Propagation.REQUIRED)
     public boolean createTransaction(TransactionRequest request) throws BadRequestException {
         User user = findAccount(request.getUserId());
         Booking booking = findBookingById(request.getBookingId());

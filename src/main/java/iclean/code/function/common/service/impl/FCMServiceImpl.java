@@ -67,7 +67,6 @@ public class FCMServiceImpl implements FCMService {
                 log.info("Res = {}", res);
                 log.info(notificationRequestDto.toString());
             } catch (ExecutionException | InterruptedException e) {
-                e.printStackTrace();
             }
         }
         return null;
