@@ -20,9 +20,6 @@ public class Unit {
     @Column(name = "unit_id")
     private Integer unitId;
 
-    @Column(name = "unit_image")
-    private String unitImage;
-
     @Column(name = "unit_detail")
     private String unitDetail;
 

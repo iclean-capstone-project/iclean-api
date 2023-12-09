@@ -23,9 +23,6 @@ public class Notification {
 
     private String content;
 
-    @Column(name = "notification_img_link")
-    private String notificationImgLink;
-
     @Column(name = "is_helper")
     private Boolean isHelper = false;
 

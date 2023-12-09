@@ -148,7 +148,7 @@ public class BookingDetailController {
             @ApiResponse(responseCode = "403", description = "Forbidden - You don't have permission to access on this api"),
             @ApiResponse(responseCode = "400", description = "Bad request - Missing some field required")
     })
-    @PreAuthorize("hasAnyAuthority('renter', 'manager')")
+    @PreAuthorize("hasAnyAuthority('renter', 'manager', 'employee')")
     public ResponseEntity<ResponseObject> getBookingDetail(Authentication authentication, @PathVariable Integer bookingDetailId) {
         return bookingDetailService.getBookingDetail(JwtUtils.decodeToAccountId(authentication), bookingDetailId);
     }
