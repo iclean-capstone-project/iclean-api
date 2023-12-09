@@ -434,7 +434,7 @@ public class BookingServiceImpl implements BookingService {
 
             NotificationRequestDto notificationRequestDto = new NotificationRequestDto();
             notificationRequestDto.setTitle(MessageVariable.TITLE_APP);
-            notificationRequestDto.setBody(String.format(MessageVariable.ORDER_SUCCESSFUL, booking.getBookingId()));
+            notificationRequestDto.setBody(String.format(MessageVariable.ORDER_SUCCESSFUL, booking.getBookingCode()));
             Notification notification = new Notification();
             notification.setContent(notificationRequestDto.getBody());
             notification.setTitle(notification.getTitle());
@@ -858,7 +858,7 @@ public class BookingServiceImpl implements BookingService {
                 booking.setUsingPoint(false);
             }
             boolean checkTransactionMoney = createTransaction(new TransactionRequest(booking.getTotalPriceActual(),
-                    MessageVariable.USING_MONEY_FOR_BOOKING,
+                    String.format(MessageVariable.USING_MONEY_FOR_BOOKING, booking.getBookingCode()),
                     userId,
                     TransactionTypeEnum.WITHDRAW.name(),
                     WalletTypeEnum.MONEY.name(),
@@ -866,7 +866,7 @@ public class BookingServiceImpl implements BookingService {
             NotificationRequestDto notificationRequestDtoPayment = new NotificationRequestDto();
             notificationRequestDtoPayment.setTitle(String.format(MessageVariable.PAYMENT_A_SERVICE, booking.getBookingCode()));
             if (checkTransactionMoney) {
-                notificationRequestDtoPayment.setBody(MessageVariable.PAYMENT_SUCCESS);
+                notificationRequestDtoPayment.setBody(String.format(MessageVariable.PAYMENT_SUCCESS, booking.getBookingCode()));
             } else {
                 throw new BadRequestException(MessageVariable.PAYMENT_FAIL);
             }
@@ -901,7 +901,7 @@ public class BookingServiceImpl implements BookingService {
 
             NotificationRequestDto notificationRequestDto = new NotificationRequestDto();
             notificationRequestDto.setTitle(MessageVariable.TITLE_APP);
-            notificationRequestDto.setBody(String.format(MessageVariable.ORDER_SUCCESSFUL, booking.getBookingId()));
+            notificationRequestDto.setBody(String.format(MessageVariable.ORDER_SUCCESSFUL, booking.getBookingCode()));
             Notification notification = new Notification();
             notification.setContent(notificationRequestDto.getBody());
             notification.setTitle(notification.getTitle());
@@ -962,7 +962,7 @@ public class BookingServiceImpl implements BookingService {
                         if (transactionPoint != null) {
                             createTransaction(new TransactionRequest(
                                     transactionPoint.getAmount(),
-                                    String.format(MessageVariable.REFUND_POINT_CANCEL_BOOKING, bookingId),
+                                    String.format(MessageVariable.REFUND_POINT_CANCEL_BOOKING, booking.getBookingCode()),
                                     renter.getUserId(),
                                     TransactionTypeEnum.DEPOSIT.name(),
                                     WalletTypeEnum.POINT.name()
@@ -970,14 +970,14 @@ public class BookingServiceImpl implements BookingService {
                         }
                     }
                     createTransaction(new TransactionRequest(booking.getTotalPriceActual(),
-                            MessageVariable.REFUND_REJECT_BOOKING,
+                            String.format(MessageVariable.REFUND_REJECT_BOOKING, booking.getBookingCode()),
                             renter.getUserId(),
                             TransactionTypeEnum.DEPOSIT.name(),
                             WalletTypeEnum.MONEY.name(),
                             bookingId));
                     NotificationRequestDto notificationRequestDto = new NotificationRequestDto();
                     notificationRequestDto.setTitle(MessageVariable.TITLE_APP);
-                    notificationRequestDto.setBody(MessageVariable.REFUND_REJECT_BOOKING);
+                    notificationRequestDto.setBody(String.format(MessageVariable.REFUND_REJECT_BOOKING, booking.getBookingCode()));
                     sendMessage(notificationRequestDto, renter);
                     break;
                 case APPROVED:
@@ -1009,8 +1009,8 @@ public class BookingServiceImpl implements BookingService {
                     List<Integer> userIds = helpersInformation.stream().map(element -> element.getUser().getUserId()).collect(Collectors.toList());
                     List<Address> addressList = new ArrayList<>();
                     // loại bỏ helper quá xa
-                    for (Integer userId:
-                    userIds) {
+                    for (Integer userId :
+                            userIds) {
                         List<Address> addresses = addressRepository.findByUserIdAnAndIsDefault(userId);
                         addressList.addAll(addresses);
                     }
@@ -1037,7 +1037,7 @@ public class BookingServiceImpl implements BookingService {
                             if (transactionPoint != null) {
                                 createTransaction(new TransactionRequest(
                                         transactionPoint.getAmount(),
-                                        String.format(MessageVariable.REFUND_POINT_CANCEL_BOOKING, bookingId),
+                                        String.format(MessageVariable.REFUND_POINT_CANCEL_BOOKING, booking.getBookingCode()),
                                         renter.getUserId(),
                                         TransactionTypeEnum.DEPOSIT.name(),
                                         WalletTypeEnum.POINT.name(),
@@ -1049,7 +1049,7 @@ public class BookingServiceImpl implements BookingService {
                                 WalletTypeEnum.MONEY, TransactionTypeEnum.WITHDRAW, renter.getUserId());
                         if (transaction != null) {
                             createTransaction(new TransactionRequest(transaction.getAmount(),
-                                    MessageVariable.REFUND_REJECT_BOOKING,
+                                    String.format(MessageVariable.REFUND_REJECT_BOOKING, booking.getBookingCode()),
                                     renter.getUserId(),
                                     TransactionTypeEnum.DEPOSIT.name(),
                                     WalletTypeEnum.MONEY.name(),
@@ -1062,7 +1062,7 @@ public class BookingServiceImpl implements BookingService {
                         sendMessage(notificationRequestDto1, renter);
                         NotificationRequestDto notificationRequestDto = new NotificationRequestDto();
                         notificationRequestDto.setTitle(MessageVariable.TITLE_APP);
-                        notificationRequestDto.setBody(MessageVariable.REFUND_REJECT_BOOKING);
+                        notificationRequestDto.setBody(String.format(MessageVariable.REFUND_REJECT_BOOKING, booking.getBookingCode()));
                         sendMessage(notificationRequestDto, renter);
                         break;
                     }
@@ -1113,7 +1113,7 @@ public class BookingServiceImpl implements BookingService {
                     helperIds) {
                 GetPriorityResponse priorityResponse = bookingDetailRepository.findPriority(BookingDetailStatusEnum.FINISHED, serviceId, helperId);
                 priorityResponse.setHelperInformationId(helperId);
-                if (priorityResponse.getNumberOfBookingDetail() == 0 ) {
+                if (priorityResponse.getNumberOfBookingDetail() == 0) {
                     priorityResponse.setAvgRate(5D);
                 }
                 priorityResponses.add(priorityResponse);
@@ -1413,6 +1413,7 @@ public class BookingServiceImpl implements BookingService {
                 .collect(Collectors.toList());
         return Utils.convertToPageResponse(bookings, dtoList);
     }
+
     private User findAccount(int userId) {
         return userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("User is not exist"));

@@ -12,7 +12,7 @@ public class MessageVariable {
 
     public static final String RENTER_CANCEL_BOOKING_TITLE = "Dịch vụ #%s đã bị hủy, vui lòng kiểm tra lại!";
     public static final String RENTER_CANCEL_BOOKING = "Dịch vụ #%s đã được người dùng hủy, vui lòng kiểm tra lại thông tin!";
-    public static final String HELPER_CANCEL_BOOKING = "Dịch vụ #%s đã bị hủy bởi nhân viên, kiểm tra lại ngay!";
+    public static final String HELPER_CANCEL_BOOKING = "Dịch vụ #%s đã bị hủy bởi nhân viên, vui lòng kiểm tra lại thông tin!";
     public static final String PAYMENT_SUCCESS = "Thanh toán cho dịch vụ số #%s thành công";
     public static final String REFUND_REJECT_BOOKING = "Hoàn tiền cho dịch vụ #%s";
     public static final String USING_POINT_FOR_BOOKING = "Sử dụng điểm cho dịch vụ";

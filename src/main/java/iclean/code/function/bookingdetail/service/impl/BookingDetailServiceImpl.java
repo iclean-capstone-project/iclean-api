@@ -138,7 +138,8 @@ public class BookingDetailServiceImpl implements BookingDetailService {
             List<BookingDetailHelper> bookingDetailHelpers;
             switch (bookingDetail.getBookingDetailStatus()) {
                 case WAITING:
-                    String checkTime = checkInTime(LocalDateTime.of(bookingDetail.getWorkDate(), bookingDetail.getWorkStart()));
+                    String checkTime = checkInTime(LocalDateTime.of(bookingDetail.getWorkDate(), bookingDetail.getWorkStart()),
+                            bookingDetail.getServiceUnit().getService().getServiceName());
                     if (!Utils.isNullOrEmpty(checkTime)) {
                         throw new BadRequestException(String.format(checkTime, bookingDetail.getServiceUnit().getService().getServiceName()));
                     }
@@ -151,7 +152,8 @@ public class BookingDetailServiceImpl implements BookingDetailService {
                                         .getHelperInformation()
                                         .getUser().getUserId()).collect(Collectors.toList());
                         NotificationRequestDto notificationRequestDto = new NotificationRequestDto();
-                        notificationRequestDto.setBody(MessageVariable.RENTER_CANCEL_BOOKING);
+                        notificationRequestDto.setBody(String.format(MessageVariable.RENTER_CANCEL_BOOKING,
+                                bookingDetail.getBooking().getBookingCode()));
                         notificationRequestDto.setTitle(MessageVariable.TITLE_APP);
                         sendNotificationForUser(notificationRequestDto, userIds);
                     }
@@ -161,7 +163,7 @@ public class BookingDetailServiceImpl implements BookingDetailService {
                     bookingDetailRepository.save(bookingDetail);
                     break;
                 default:
-                    throw new BadRequestException(MessageVariable.CANNOT_CANCEL_BOOKING);
+                    throw new BadRequestException(String.format(MessageVariable.CANNOT_CANCEL_BOOKING, bookingDetail.getBooking().getBookingCode()));
             }
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseObject(HttpStatus.OK.toString(),
@@ -198,12 +200,14 @@ public class BookingDetailServiceImpl implements BookingDetailService {
             Booking booking = bookingDetail.getBooking();
             switch (bookingDetail.getBookingDetailStatus()) {
                 case WAITING:
-                    String checkTime = checkInTime(LocalDateTime.of(bookingDetail.getWorkDate(), bookingDetail.getWorkStart()));
+                    String checkTime = checkInTime(LocalDateTime.of(bookingDetail.getWorkDate(), bookingDetail.getWorkStart()),
+                            bookingDetail.getServiceUnit().getService().getServiceName());
                     if (!Utils.isNullOrEmpty(checkTime)) {
                         throw new BadRequestException(String.format(checkTime, bookingDetail.getServiceUnit().getService().getServiceName()));
                     }
                     NotificationRequestDto notificationRequestDto = new NotificationRequestDto();
-                    notificationRequestDto.setBody(MessageVariable.HELPER_CANCEL_BOOKING);
+                    notificationRequestDto.setBody(String.format(MessageVariable.HELPER_CANCEL_BOOKING,
+                            booking.getBookingCode()));
                     notificationRequestDto.setTitle(MessageVariable.TITLE_APP);
                     sendNotificationForUser(notificationRequestDto, booking.getRenter().getUserId());
                     bookingDetail.setBookingDetailStatus(BookingDetailStatusEnum.CANCEL_BY_HELPER);
@@ -214,7 +218,7 @@ public class BookingDetailServiceImpl implements BookingDetailService {
                     bookingDetailHelper.ifPresent(detailHelper -> bookingDetailHelperRepository.delete(detailHelper));
                     break;
                 default:
-                    throw new BadRequestException(MessageVariable.CANNOT_CANCEL_BOOKING);
+                    throw new BadRequestException(String.format(MessageVariable.CANNOT_CANCEL_BOOKING, booking.getBookingCode()));
             }
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseObject(HttpStatus.OK.toString(),
@@ -264,7 +268,8 @@ public class BookingDetailServiceImpl implements BookingDetailService {
                             bookingDetail.getBookingDetailId());
                     NotificationRequestDto notificationRequestDto = new NotificationRequestDto();
                     notificationRequestDto.setTitle(MessageVariable.TITLE_APP);
-                    notificationRequestDto.setBody(MessageVariable.RENTER_CHANGE_BOOKING);
+                    notificationRequestDto.setBody(String.format(MessageVariable.RENTER_CHANGE_BOOKING,
+                            booking.getBookingCode()));
                     sendNotificationForUser(notificationRequestDto, bookingDetailHelper
                             .getServiceRegistration()
                             .getHelperInformation().getUser().getUserId());
@@ -566,7 +571,6 @@ public class BookingDetailServiceImpl implements BookingDetailService {
             }
 
 
-
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseObject(HttpStatus.OK.toString(),
                             "Booking History Response!", dtoList));
@@ -617,7 +621,7 @@ public class BookingDetailServiceImpl implements BookingDetailService {
             Double distance = googleMapService.checkDistance(new Position(booking.getLongitude(), booking.getLatitude()),
                     new Position(address.getLongitude(), address.getLatitude()));
             if (distance > getMaxDistance()) {
-                throw new BadRequestException(MessageVariable.TOO_FAR);
+                throw new BadRequestException(String.format(MessageVariable.TOO_FAR, booking.getBookingCode()));
             }
 
             List<BookingDetail> bookingDetails = getBookingDetailNotOverlapTime(userId, List.of(bookingDetail));
@@ -1279,12 +1283,12 @@ public class BookingDetailServiceImpl implements BookingDetailService {
         return Utils.convertToPageResponse(bookingDetails, dtoList);
     }
 
-    private String checkInTime(LocalDateTime startDateTime) {
+    private String checkInTime(LocalDateTime startDateTime, String serviceName) {
         LocalDateTime current = Utils.getLocalDateTimeNow();
         long difference = Utils.minusLocalDateTime(startDateTime,
                 current);
         if (difference >= 0 && Utils.isLateMinutes(difference, getMaxUpdateMinutes())) {
-            return MessageVariable.TOO_LATE_TO_UPDATE;
+            return String.format(MessageVariable.TOO_LATE_TO_UPDATE, serviceName);
         }
         return null;
     }

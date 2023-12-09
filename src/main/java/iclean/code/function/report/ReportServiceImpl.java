@@ -315,7 +315,7 @@ public class ReportServiceImpl implements ReportService {
                 report.setOption(OptionProcessReportEnum.MONEY);
                 report.setProcessAt(Utils.getLocalDateTimeNow());
                 solution = String.format(MessageVariable.REFUND_CANCEL_BOOKING,
-                        report.getBookingDetail().getServiceUnit().getService().getServiceName());
+                        report.getBookingDetail().getBooking().getBookingCode());
                 report.setSolution(solution);
                 reportResultResponse.setStatus(ReportStatusEnum.PROCESSED.name());
                 reportResultResponse.setSolution(solution);
@@ -348,14 +348,14 @@ public class ReportServiceImpl implements ReportService {
                 }
                 if (moneyRefund > 0) {
                     createTransaction(new TransactionRequest(moneyRefund, String.format(MessageVariable.REFUND_CANCEL_BOOKING,
-                            report.getBookingDetail().getServiceUnit().getService().getServiceName()),
+                            report.getBookingDetail().getBooking().getBookingCode()),
                             renter.getUserId(),
                             TransactionTypeEnum.DEPOSIT.name(),
                             WalletTypeEnum.MONEY.name()));
                 }
                 if (pointRefund > 0) {
                     createTransaction(new TransactionRequest(pointRefund, String.format(MessageVariable.REFUND_POINT_CANCEL_BOOKING,
-                            report.getBookingDetail().getServiceUnit().getService().getServiceName()),
+                            report.getBookingDetail().getBooking().getBookingCode()),
                             renter.getUserId(),
                             TransactionTypeEnum.DEPOSIT.name(),
                             WalletTypeEnum.POINT.name()));
