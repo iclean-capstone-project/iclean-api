@@ -1,0 +1,82 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns:th="http://www.thymeleaf.org" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title>Spring boot eamil teplate with Thymeleaf</title>
+
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+    <link href='http://fonts.googleapis.com/css?family=Roboto' rel='stylesheet' type='text/css'/>
+
+    <!-- use the font -->
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+
+        p {
+            margin-bottom: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #ffffff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        header {
+            background-color: #a557ea;
+            color: #ffffff;
+            text-align: center;
+            padding: 10px 0;
+        }
+
+        h1 {
+            color: #ffffff;
+        }
+
+        p, h3 {
+            margin-bottom: 20px;
+        }
+
+        footer {
+            margin-top: 20px;
+            text-align: left;
+            color: #888888;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <header>
+        <h1 th:text="${company_name}"></h1>
+    </header>
+</div>
+<h3 th:text="${'Xin chào ' + renter_name + ','}"> ,</h3>
+
+
+<p th:text="${'Tôi hy vọng bạn đang có một ngày tốt lành. Tôi viết email này để gửi đến bạn kết quả report của dịch vụ #' + bookingId +
+'. Đây là một phần quan trọng trong quá trình cải thiện và đáng tin cậy hơn của sản phẩm của chúng tôi.'}"></p>
+<p>Chúng tôi chân thành xin lỗi vì sự bất tiện mà bạn đã phải trải qua gần đây. Chúng tôi nhận thức được rằng có những
+    vấn đề không mong muốn đã ảnh hưởng đến trải nghiệm của bạn khi sử dụng dịch vụ của chúng tôi. Chúng tôi đang nỗ lực
+    hết mình để khắc phục và cải thiện các vấn đề này để đảm bảo rằng bạn sẽ nhận được dịch vụ tốt nhất từ chúng
+    tôi.</p>
+<p th:text="${'Bên dưới là kết quả báo cáo của #' + bookingId +
+':'}"></p>
+<p th:text="${'Nội dung báo cáo:' + content_report }"></p>
+<p th:text="${'Trạng thái: ' + status}"></p>
+<p th:text="${'Cách xử lý: ' + solution}"></p>
+
+<footer>
+    <p>Trân trọng,<br th:text="${'Quản lý - ' + manager_name}"></p>
+</footer>
+</body>
+</html>

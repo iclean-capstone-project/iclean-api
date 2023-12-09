@@ -1,0 +1,86 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns:th="http://www.thymeleaf.org" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title>Spring boot eamil teplate with Thymeleaf</title>
+
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+    <link href='http://fonts.googleapis.com/css?family=Roboto' rel='stylesheet' type='text/css'/>
+
+    <!-- use the font -->
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+
+        p {
+            margin-bottom: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #ffffff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        header {
+            background-color: #a557ea;
+            color: #ffffff;
+            text-align: center;
+            padding: 10px 0;
+        }
+
+        h1 {
+            color: #ffffff;
+        }
+
+        p, h3 {
+            margin-bottom: 0px;
+        }
+
+        footer {
+            margin-top: 20px;
+            text-align: left;
+            color: #888888;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <header>
+        <h1 th:text="${company_name}"></h1>
+    </header>
+</div>
+<h3 th:text="${'Chào ' + name + ', '}"> ,</h3>
+<p>
+    Tôi hy vọng bạn đang có một ngày tốt lành.
+</p>
+<p>Email này để xác nhận về cuộc hẹn trao đổi thông tin tại <b th:text="${company_name}"></b> cho vị trí đối tác nhân
+    viên.
+    Tôi rất hứng thú với cơ hội được tham gia cuộc phỏng vấn tại công ty của bạn và muốn đảm bảo rằng thời gian và địa
+    điểm đều được xác nhận chính xác.</p>
+<p>Theo thông tin ban đầu, cuộc trao đổi được lên kế hoạch diễn ra vào ngày <b th:text="${date_meeting}"></b> và tại địa
+    chỉ <b th:text="${location}"></b>.</p>
+
+<p>Chúng tôi muốn xác nhận lại thông tin này và đảm bảo rằng không có sự nhầm lẫn nào xảy ra.
+    Nếu có bất kỳ điều chỉnh nào về thời gian hoặc địa điểm, hoặc nếu cần thêm thông tin nào khác từ phía của bạn,
+    tôi rất mong được nhận thông tin cập nhật để có thể sắp xếp kế hoạch của mình một cách chính xác.</p>
+<p>
+    Chúng tôi mong nhận được sự hỗ trợ của bạn trong việc cung cấp thông tin này.
+    Vui lòng không xác nhận email này.
+</p>
+
+<footer>
+    <p>Trân trọng,<br th:text="${'Quản lý - ' + manager_name + ' '}"><b th:text="${company_name}"></b></p>
+</footer>
+</body>
+</html>
