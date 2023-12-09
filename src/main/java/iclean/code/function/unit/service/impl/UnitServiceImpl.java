@@ -62,8 +62,6 @@ public class UnitServiceImpl implements UnitService {
     public ResponseEntity<ResponseObject> createUnit(CreateUnitRequest request) {
         try {
             Unit unit = modelMapper.map(request, Unit.class);
-            String unitImageLink = storageService.uploadFile(request.getFileUnit());
-            unit.setUnitImage(unitImageLink);
 
             unitRepository.save(unit);
             return ResponseEntity.status(HttpStatus.OK)
@@ -89,11 +87,6 @@ public class UnitServiceImpl implements UnitService {
             modelMapper.map(request, unit);
             if (!Utils.isNullOrEmpty(request.getIsActive())) {
                 unit.setIsDeleted(DeleteStatusEnum.valueOf(request.getIsActive().toUpperCase()).getValue());
-            }
-            if (request.getFileUnit() != null) {
-                storageService.deleteFile(unit.getUnitImage());
-                String unitImageLink = storageService.uploadFile(request.getFileUnit());
-                unit.setUnitImage(unitImageLink);
             }
 
             unitRepository.save(unit);

@@ -9,5 +9,4 @@ import org.springframework.web.multipart.MultipartFile;
 public class CreateUnitRequest {
     private String unitDetail;
     private Double unitValue;
-    private MultipartFile fileUnit;
 }
