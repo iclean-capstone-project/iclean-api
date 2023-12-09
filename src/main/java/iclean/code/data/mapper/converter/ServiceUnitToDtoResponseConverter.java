@@ -10,10 +10,8 @@ public class ServiceUnitToDtoResponseConverter implements Converter<ServiceUnit,
     @Override
     public GetServiceUnitResponseForHelper convert(MappingContext<ServiceUnit, GetServiceUnitResponseForHelper> context) {
         ServiceUnit source = context.getSource();
-        Unit unit = source.getUnit();
         GetServiceUnitResponseForHelper response = new GetServiceUnitResponseForHelper();
         response.setServiceUnitId(source.getServiceUnitId());
-        response.setServiceUnitImage(unit.getUnitImage());
         response.setHelperCommissionPrice(source.getHelperCommission() * source.getDefaultPrice() / 100);
         return response;
     }

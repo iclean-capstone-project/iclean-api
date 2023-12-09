@@ -11,13 +11,6 @@ public class ServiceUnitMapper {
     private final ModelMapper modelMapper;
     public ServiceUnitMapper(ModelMapper modelMapper) {
         this.modelMapper = modelMapper;
-
-        modelMapper.addMappings(new PropertyMap<ServiceUnit, GetServiceUnitResponseForRenter>() {
-            @Override
-            protected void configure() {
-                map().setServiceUnitImage(source.getUnit().getUnitImage());
-            }
-        });
     }
 
     public <S, D> D map(S source, Class<D> destinationType) {

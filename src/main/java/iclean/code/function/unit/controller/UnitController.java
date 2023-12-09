@@ -54,14 +54,12 @@ public class UnitController {
                                                      @NotBlank(message = "Unit Detail cannot be empty")
                                                      @Schema(example = "10 m2")
                                                      @RequestPart String unitDetail,
-                                                     @NotNull(message = "File is required")
-                                                     @RequestPart MultipartFile imgUnitFile,
                                                      @NotNull(message = "Unit Value cannot be null")
                                                      @Pattern(regexp = "\\d+\\.?\\d*",message = "Unit Value is required number")
                                                      @Schema(example = "1")
                                                      @Range(min = 1, max = 10, message = "Unit value cannot be greater than 10 and smaller than 1")
                                                      @RequestPart String unitValue) {
-        return unitService.createUnit(new CreateUnitRequest(unitDetail, Double.parseDouble(unitValue), imgUnitFile));
+        return unitService.createUnit(new CreateUnitRequest(unitDetail, Double.parseDouble(unitValue)));
     }
 
     @PutMapping(value = "{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
