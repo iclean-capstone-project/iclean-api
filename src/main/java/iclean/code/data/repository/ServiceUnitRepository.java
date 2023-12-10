@@ -11,7 +11,8 @@ import java.util.List;
 @Repository
 public interface ServiceUnitRepository extends JpaRepository<ServiceUnit, Integer> {
     @Query("SELECT serunit FROM ServiceUnit serunit " +
-            "WHERE serunit.service.serviceId = ?1")
+            "WHERE serunit.service.serviceId = ?1 " +
+            "AND serunit.isDeleted = FALSE ")
     List<ServiceUnit> findByService(Integer serviceId, Sort sort);
 
     @Query("SELECT serunit FROM ServiceUnit serunit " +
