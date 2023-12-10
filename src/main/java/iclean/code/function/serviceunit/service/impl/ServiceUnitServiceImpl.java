@@ -133,9 +133,6 @@ public class ServiceUnitServiceImpl implements ServiceUnitService {
         try {
             ServiceUnit serviceUnit = findById(id);
             modelMapper.map(request, serviceUnit);
-            if (!Utils.isNullOrEmpty(request.getServiceUnitStatus())) {
-                serviceUnit.setIsDeleted(DeleteStatusEnum.valueOf(request.getServiceUnitStatus().toUpperCase()).getValue());
-            }
             serviceUnit.setUpdateAt(Utils.getLocalDateTimeNow());
             List<ServicePrice> servicePrices = serviceUnit.getServicePrices();
             for (ServicePrice servicePrice :
@@ -157,8 +154,6 @@ public class ServiceUnitServiceImpl implements ServiceUnitService {
             }
             servicePriceRepository.saveAll(servicePrices);
             servicePriceRepository.saveAll(createServicePrices);
-            serviceUnitRepository.save(serviceUnit);
-            transactionManager.commit(status);
             serviceUnitRepository.save(serviceUnit);
             transactionManager.commit(status);
             return ResponseEntity.status(HttpStatus.OK)
@@ -208,7 +203,7 @@ public class ServiceUnitServiceImpl implements ServiceUnitService {
     public ResponseEntity<ResponseObject> getServiceUnit(Integer serviceUnitId) {
         try {
             ServiceUnit serviceUnit = findById(serviceUnitId);
-            List<ServicePrice> servicePrices = serviceUnit.getServicePrices();
+            List<ServicePrice> servicePrices = servicePriceRepository.findByServiceUnitId(serviceUnitId);
             GetServiceUnitDetailResponse data = modelMapper.map(serviceUnit, GetServiceUnitDetailResponse.class);
             List<GetServicePriceResponse> responses = servicePrices
                     .stream()

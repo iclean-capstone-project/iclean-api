@@ -16,8 +16,5 @@ public class UpdateServiceUnitRequest {
     @Schema(example = "65")
     @Range(min = 1, max = 95, message = "Helper commission cannot be greater than 70 and smaller than 1")
     private Double helperCommission;
-    @Pattern(regexp = "(?i)(Active)", message = "Status are invalid")
-    @Schema(example = "Active")
-    private String serviceUnitStatus;
     private List<ServicePriceRequest> servicePriceRequests;
 }
