@@ -59,6 +59,18 @@ public class ServiceUnitController {
         return serviceUnitService.getServiceUnits(serviceId, sort);
     }
 
+    @GetMapping("{id}")
+    @PreAuthorize("hasAnyAuthority('admin', 'manager')")
+    @Operation(summary = "Get all service unit for admin and manager", description = "Return all service unit information")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Service Unit Information"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - Login please"),
+            @ApiResponse(responseCode = "400", description = "Bad request - Missing some field required")
+    })
+    public ResponseEntity<ResponseObject> getServiceUnits(@PathVariable Integer id) {
+        return serviceUnitService.getServiceUnit(id);
+    }
+
     @PostMapping
     @PreAuthorize("hasAnyAuthority('admin')")
     @Operation(summary = "Create new service unit", description = "Return message fail or successful")

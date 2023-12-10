@@ -13,6 +13,5 @@ public class HelperRegistrationRequest {
     private MultipartFile frontIdCard;
     private MultipartFile backIdCard;
     private MultipartFile avatar;
-    private List<MultipartFile> others;
     private List<Integer> serviceIds;
 }

@@ -40,7 +40,7 @@ public class Report {
     @Column(name = "process_at")
     private LocalDateTime processAt;
 
-    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToOne
     @JsonIgnoreProperties("report")
     @JoinColumn(name = "booking_detail_id")
     private BookingDetail bookingDetail;

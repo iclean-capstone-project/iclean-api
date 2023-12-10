@@ -24,6 +24,7 @@ import javax.validation.Valid;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Pattern;
 import java.util.List;
 
 @RestController
@@ -75,20 +76,22 @@ public class ReportController {
             @ApiResponse(responseCode = "403", description = "Forbidden - You don't have permission to access on this api"),
             @ApiResponse(responseCode = "400", description = "Bad request - Missing some field required")
     })
-    @PreAuthorize("hasAnyAuthority('renter')")
-    public ResponseEntity<ResponseObject> createReport(@RequestPart(name = "bookingId")
-                                                       @Min(value = 1, message = "Booking ID cannot smaller than 1")
-                                                       Integer bookingId,
+    @PreAuthorize("hasAnyAuthority('renter', 'helper')")
+    public ResponseEntity<ResponseObject> createReport(@RequestPart(name = "bookingDetailId")
+                                                       @Pattern(regexp = "^\\d+$", message = "Booking Detail ID is required number")
+                                                       String bookingDetailId,
                                                        @RequestPart(name = "reportTypeId")
-                                                       @Min(value = 1, message = "Report Type ID cannot smaller than 1")
-                                                       Integer reportTypeId,
+                                                       @Pattern(regexp = "^\\d+$", message = "Report Type ID is required number")
+                                                       String reportTypeId,
+                                                       @RequestPart
                                                        @Length(max = 200, message = "Detail length cannot greater than 200")
                                                        @NotNull(message = "Detail cannot be null")
                                                        @NotBlank(message = "Detail cannot be empty")
                                                        String detail,
                                                        @RequestPart(name = "files", required = false)
                                                        List<MultipartFile> files, Authentication authentication) {
-        return reportService.createReport(new CreateReportRequest(bookingId, reportTypeId, detail, files), JwtUtils.decodeToAccountId(authentication));
+        return reportService.createReport(new CreateReportRequest(Integer.parseInt(bookingDetailId),
+                Integer.parseInt(reportTypeId), detail, files), JwtUtils.decodeToAccountId(authentication));
     }
 
     @PutMapping(value = "{reportId}")

@@ -105,11 +105,10 @@ public class HelperRegistrationController {
                                                               @RequestPart("frontIdCard") MultipartFile frontIdCard,
                                                               @RequestPart("backIdCard") MultipartFile backIdCard,
                                                               @RequestPart(value = "avatar", required = false) MultipartFile avatar,
-                                                              @RequestPart(value = "others", required = false) List<MultipartFile> others,
                                                               @RequestParam(value = "service") List<Integer> services,
                                                               Authentication authentication) {
         return helperRegistrationService.createHelperRegistration(
-                new HelperRegistrationRequest(email, frontIdCard, backIdCard, avatar, others, services),
+                new HelperRegistrationRequest(email, frontIdCard, backIdCard, avatar, services),
                 JwtUtils.decodeToAccountId(authentication));
     }
 

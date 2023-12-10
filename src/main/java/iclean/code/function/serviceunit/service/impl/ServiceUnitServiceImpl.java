@@ -1,14 +1,20 @@
 package iclean.code.function.serviceunit.service.impl;
 
 import iclean.code.data.domain.Service;
+import iclean.code.data.domain.ServicePrice;
 import iclean.code.data.domain.ServiceUnit;
 import iclean.code.data.domain.Unit;
 import iclean.code.data.dto.common.ResponseObject;
+import iclean.code.data.dto.request.serviceprice.ServicePriceRequest;
 import iclean.code.data.dto.request.serviceunit.CreateServiceUnitRequest;
 import iclean.code.data.dto.request.serviceunit.UpdateServiceUnitRequest;
+import iclean.code.data.dto.response.serviceprice.GetServicePriceResponse;
+import iclean.code.data.dto.response.serviceunit.GetServiceUnitDetailResponse;
 import iclean.code.data.dto.response.serviceunit.GetServiceUnitResponse;
 import iclean.code.data.dto.response.serviceunit.GetServiceUnitResponseForRenter;
 import iclean.code.data.enumjava.DeleteStatusEnum;
+import iclean.code.data.enumjava.ServicePriceEnum;
+import iclean.code.data.repository.ServicePriceRepository;
 import iclean.code.data.repository.ServiceRepository;
 import iclean.code.data.repository.ServiceUnitRepository;
 import iclean.code.data.repository.UnitRepository;
@@ -21,7 +27,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.support.DefaultTransactionDefinition;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -34,6 +46,10 @@ public class ServiceUnitServiceImpl implements ServiceUnitService {
     private ServiceUnitRepository serviceUnitRepository;
     @Autowired
     private UnitRepository unitRepository;
+    @Autowired
+    private ServicePriceRepository servicePriceRepository;
+    @Autowired
+    private PlatformTransactionManager transactionManager;
     @Autowired
     private ModelMapper modelMapper;
     @Override
@@ -68,6 +84,7 @@ public class ServiceUnitServiceImpl implements ServiceUnitService {
 
     @Override
     public ResponseEntity<ResponseObject> createServiceUnit(CreateServiceUnitRequest request) {
+        TransactionStatus status = transactionManager.getTransaction(new DefaultTransactionDefinition());
         try {
             ServiceUnit serviceUnit = new ServiceUnit();
             modelMapper.map(request, serviceUnit);
@@ -76,12 +93,28 @@ public class ServiceUnitServiceImpl implements ServiceUnitService {
             serviceUnit.setService(service);
             serviceUnit.setUnit(unit);
 
+            List<ServicePrice> createServicePrices = new ArrayList<>();
+            for (ServicePriceRequest element :
+                    request.getServicePrices()) {
+                ServicePriceEnum servicePriceEnum = ServicePriceEnum.getById(element.getId());
+                ServicePrice servicePrice = new ServicePrice();
+                servicePrice.setPrice(element.getPrice());
+                servicePrice.setServicePriceEnum(servicePriceEnum);
+                servicePrice.setEmployeeCommission(element.getEmployeeCommission());
+                servicePrice.setStartTime(Utils.convertToLocalTime(servicePriceEnum.getStartDate()));
+                servicePrice.setEndTime(Utils.convertToLocalTime(servicePriceEnum.getEndDate()));
+                servicePrice.setServiceUnit(serviceUnit);
+                createServicePrices.add(servicePrice);
+            }
+            servicePriceRepository.saveAll(createServicePrices);
             serviceUnitRepository.save(serviceUnit);
+            transactionManager.commit(status);
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseObject(HttpStatus.OK.toString(),
                             "Create Service Unit Successfully!", null));
 
         } catch (Exception e) {
+            transactionManager.rollback(status);
             log.error(e.getMessage());
             if (e instanceof NotFoundException) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
@@ -96,20 +129,39 @@ public class ServiceUnitServiceImpl implements ServiceUnitService {
 
     @Override
     public ResponseEntity<ResponseObject> updateServiceUnit(Integer id, UpdateServiceUnitRequest request) {
+        TransactionStatus status = transactionManager.getTransaction(new DefaultTransactionDefinition());
         try {
             ServiceUnit serviceUnit = findById(id);
             modelMapper.map(request, serviceUnit);
-            if (!Utils.isNullOrEmpty(request.getServiceUnitStatus())) {
-                serviceUnit.setIsDeleted(DeleteStatusEnum.valueOf(request.getServiceUnitStatus().toUpperCase()).getValue());
-            }
             serviceUnit.setUpdateAt(Utils.getLocalDateTimeNow());
-
+            List<ServicePrice> servicePrices = serviceUnit.getServicePrices();
+            for (ServicePrice servicePrice :
+                    servicePrices) {
+                servicePrice.setIsDelete(true);
+            }
+            List<ServicePrice> createServicePrices = new ArrayList<>();
+            for (ServicePriceRequest element :
+                    request.getServicePriceRequests()) {
+                ServicePriceEnum servicePriceEnum = ServicePriceEnum.getById(element.getId());
+                ServicePrice servicePrice = new ServicePrice();
+                servicePrice.setPrice(element.getPrice());
+                servicePrice.setServicePriceEnum(servicePriceEnum);
+                servicePrice.setEmployeeCommission(element.getEmployeeCommission());
+                servicePrice.setStartTime(Utils.convertToLocalTime(servicePriceEnum.getStartDate()));
+                servicePrice.setEndTime(Utils.convertToLocalTime(servicePriceEnum.getEndDate()));
+                servicePrice.setServiceUnit(serviceUnit);
+                createServicePrices.add(servicePrice);
+            }
+            servicePriceRepository.saveAll(servicePrices);
+            servicePriceRepository.saveAll(createServicePrices);
             serviceUnitRepository.save(serviceUnit);
+            transactionManager.commit(status);
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseObject(HttpStatus.OK.toString(),
                             "Update Service Unit Successfully!", null));
 
         } catch (Exception e) {
+            transactionManager.rollback(status);
             log.error(e.getMessage());
             if (e instanceof NotFoundException) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
@@ -134,6 +186,53 @@ public class ServiceUnitServiceImpl implements ServiceUnitService {
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseObject(HttpStatus.OK.toString(),
                             "All Service Unit", dtoList));
+        } catch (Exception e) {
+            log.error(e.getMessage());
+            if (e instanceof NotFoundException) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new ResponseObject(HttpStatus.NOT_FOUND.toString(),
+                                e.getMessage(), null));
+            }
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ResponseObject(HttpStatus.INTERNAL_SERVER_ERROR.toString(),
+                            "Something wrong occur!", null));
+        }
+    }
+
+    @Override
+    public ResponseEntity<ResponseObject> getServiceUnit(Integer serviceUnitId) {
+        try {
+            ServiceUnit serviceUnit = findById(serviceUnitId);
+            List<ServicePrice> servicePrices = servicePriceRepository.findByServiceUnitId(serviceUnitId);
+            GetServiceUnitDetailResponse data = modelMapper.map(serviceUnit, GetServiceUnitDetailResponse.class);
+            List<GetServicePriceResponse> responses = servicePrices
+                    .stream()
+                    .map((element -> {
+                        GetServicePriceResponse response = modelMapper.map(element, GetServicePriceResponse.class);
+                        response.setId(element.getServicePriceEnum().getId());
+                        return response;
+                    }))
+                    .collect(Collectors.toList());
+            List<ServicePriceEnum> enumsNotInResponses = Arrays.stream(ServicePriceEnum.values())
+                    .filter(enumValue -> servicePrices.stream().noneMatch(servicePrice -> servicePrice.getServicePriceEnum() == enumValue))
+                    .collect(Collectors.toList());
+            for (ServicePriceEnum servicePriceEnum :
+                    enumsNotInResponses) {
+                GetServicePriceResponse getServicePriceResponse = new GetServicePriceResponse();
+                getServicePriceResponse.setId(servicePriceEnum.getId());
+                getServicePriceResponse.setPrice(serviceUnit.getDefaultPrice());
+                getServicePriceResponse.setEmployeeCommission(serviceUnit.getHelperCommission());
+                getServicePriceResponse.setStartTime(servicePriceEnum.getStartDate());
+                getServicePriceResponse.setEndTime(servicePriceEnum.getEndDate());
+                responses.add(getServicePriceResponse);
+            }
+            List<GetServicePriceResponse> sortedResponses = responses.stream()
+                    .sorted(Comparator.comparing(GetServicePriceResponse::getId))
+                    .collect(Collectors.toList());
+            data.setServicePrices(sortedResponses);
+            return ResponseEntity.status(HttpStatus.OK)
+                    .body(new ResponseObject(HttpStatus.OK.toString(),
+                            "All Service Unit", data));
         } catch (Exception e) {
             log.error(e.getMessage());
             if (e instanceof NotFoundException) {

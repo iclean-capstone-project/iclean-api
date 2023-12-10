@@ -37,6 +37,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.DefaultTransactionDefinition;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
@@ -83,10 +87,13 @@ public class ReportServiceImpl implements ReportService {
     private ReportTypeRepository reportTypeRepository;
 
     @Autowired
-    private BookingAttachmentRepository bookingAttachmentRepository;
+    private ReportAttachmentRepository reportAttachmentRepository;
 
     @Autowired
     private StorageService storageService;
+
+    @Autowired
+    private PlatformTransactionManager transactionManager;
 
     @Autowired
     private ModelMapper modelMapper;
@@ -235,9 +242,11 @@ public class ReportServiceImpl implements ReportService {
             reportRepository.save(report);
 
             List<String> images = new ArrayList<>(Collections.emptyList());
-            for (MultipartFile file :
-                    reportRequest.getFiles()) {
-                images.add(storageService.uploadFile(file));
+            if (Objects.nonNull(reportRequest.getFiles())) {
+                for (MultipartFile file :
+                        reportRequest.getFiles()) {
+                    images.add(storageService.uploadFile(file));
+                }
             }
             List<ReportAttachment> reportAttachments = new ArrayList<>();
             for (String imageLink :
@@ -247,10 +256,7 @@ public class ReportServiceImpl implements ReportService {
                 reportAttachment.setReport(report);
                 reportAttachments.add(reportAttachment);
             }
-            if (!reportAttachments.isEmpty()) {
-                bookingAttachmentRepository.saveAll(reportAttachments);
-            }
-
+            reportAttachmentRepository.saveAll(reportAttachments);
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseObject(HttpStatus.OK.toString(),
                             "Create Report Successfully!", null));
@@ -278,6 +284,7 @@ public class ReportServiceImpl implements ReportService {
 
     @Override
     public ResponseEntity<ResponseObject> updateReport(int reportId, UpdateReportRequest reportRequest, Integer managerId) {
+        TransactionStatus status = transactionManager.getTransaction(new DefaultTransactionDefinition());
         try {
             User manager = findById(managerId);
             ReportResultResponse reportResultResponse = new ReportResultResponse();
@@ -368,12 +375,14 @@ public class ReportServiceImpl implements ReportService {
             notificationRepository.save(notification);
             reportRepository.save(report);
             bookingDetailRepository.save(bookingDetail);
+            transactionManager.commit(status);
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseObject(HttpStatus.OK.toString(),
                             "Update Report Successfully!", null));
 
         } catch (Exception e) {
             log.error(e.getMessage());
+            transactionManager.rollback(status);
             if (e instanceof NotFoundException) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body(new ResponseObject(HttpStatus.NOT_FOUND.toString(),
@@ -478,6 +487,7 @@ public class ReportServiceImpl implements ReportService {
         BookingDetail optionalBooking = findBookingDetail(request.getBookingDetailId());
         ReportType optionalReportType = findReportType(request.getReportTypeId());
         Report report = modelMapper.map(request, Report.class);
+        report.setReportId(null);
         report.setDetail(request.getDetail());
         report.setReportStatus(ReportStatusEnum.PROCESSING);
         report.setCreateAt(Utils.getLocalDateTimeNow());

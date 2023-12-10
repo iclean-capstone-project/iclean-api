@@ -7,9 +7,4 @@ import org.springframework.http.ResponseEntity;
 
 public interface RejectReasonService {
     ResponseEntity<ResponseObject> getRejectionReasons();
-    ResponseEntity<ResponseObject> createRejectReason(CreateRejectionReasonRequest request);
-
-    ResponseEntity<ResponseObject> updateRejectReason(Integer id, UpdateRejectionReasonRequest request);
-
-    ResponseEntity<ResponseObject> deleteRejectReason(Integer id);
 }
