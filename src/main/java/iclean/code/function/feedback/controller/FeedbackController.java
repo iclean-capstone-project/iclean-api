@@ -60,7 +60,7 @@ public class FeedbackController {
 
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyAuthority('renter', 'employee')")
-    @Operation(summary = "Create or Update a feedback", description = "Return message fail or successful")
+    @Operation(summary = "Create or Update a feedback by booking detail id", description = "Return message fail or successful")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Update a feedback Successful"),
             @ApiResponse(responseCode = "401", description = "Unauthorized - Login please"),

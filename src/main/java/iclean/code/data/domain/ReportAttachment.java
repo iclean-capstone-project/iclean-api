@@ -28,5 +28,4 @@ public class ReportAttachment {
     @JsonIgnore
     @JoinColumn(name = "report_id")
     private Report report;
-
 }

@@ -30,6 +30,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.support.DefaultTransactionDefinition;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
@@ -61,6 +64,8 @@ public class HelperRegistrationServiceImpl implements HelperRegistrationService 
     private ExternalApiService externalApiService;
     @Autowired
     private StorageService storageService;
+    @Autowired
+    private PlatformTransactionManager transactionManager;
     @Autowired
     private ModelMapper modelMapper;
 
@@ -266,6 +271,7 @@ public class HelperRegistrationServiceImpl implements HelperRegistrationService 
     @Override
     public ResponseEntity<ResponseObject> createHelperRegistration(HelperRegistrationRequest helperRegistrationRequest,
                                                                    Integer renterId) {
+        TransactionStatus status = transactionManager.getTransaction(new DefaultTransactionDefinition());
         try {
             ObjectMapper objectMapper = new ObjectMapper();
             String imgAvatarLink = null;
@@ -273,6 +279,12 @@ public class HelperRegistrationServiceImpl implements HelperRegistrationService 
                 imgAvatarLink = storageService.uploadFile(helperRegistrationRequest.getAvatar());
             }
             List<Attachment> attachments = new ArrayList<>();
+
+            Attachment frontCMT = new Attachment();
+            String frontCMTLink = storageService.uploadFile(helperRegistrationRequest.getFrontIdCard());
+            Attachment backCMT = new Attachment();
+            String backCMTLink = storageService.uploadFile(helperRegistrationRequest.getBackIdCard());
+
             String frontResponse = externalApiService.scanNationId(helperRegistrationRequest.getFrontIdCard());
             CMTFrontResponse cmtFrontResponse = objectMapper.readValue(frontResponse, CMTFrontResponse.class);
             String backResponse = externalApiService.scanNationId(helperRegistrationRequest.getBackIdCard());
@@ -284,10 +296,9 @@ public class HelperRegistrationServiceImpl implements HelperRegistrationService 
             HelperInformation helperInformation = mappingCMTToHelperInformation(cmtFrontResponse.getData().get(0),
                     cmtBackResponse.getData().get(0),
                     imgAvatarLink);
-            LocalDate date = Utils.getLocalDateTimeNow().toLocalDate().minusYears(18);
-//            if (Utils.getLocalDateTimeNow().toLocalDate().minusYears(18).isBefore(helperInformation.getDateOfBirth())) {
-//                throw new BadRequestException(MessageVariable.CANNOT_REGISTER_HELPER_NOT_ENOUGH_AGE);
-//            };
+            if (Utils.getLocalDateTimeNow().toLocalDate().minusYears(18).isBefore(helperInformation.getDateOfBirth())) {
+                throw new BadRequestException(MessageVariable.CANNOT_REGISTER_HELPER_NOT_ENOUGH_AGE);
+            }
             User user = findUserById(renterId);
             helperInformation.setUser(user);
             helperInformation.setPhoneNumber(user.getPhoneNumber());
@@ -307,7 +318,6 @@ public class HelperRegistrationServiceImpl implements HelperRegistrationService 
             }
             serviceRegistrationRepository.saveAll(serviceRegistrations);
 
-            List<MultipartFile> attachmentRequest = helperRegistrationRequest.getOthers();
             Attachment avatar = new Attachment();
             if (!Utils.isNullOrEmpty(imgAvatarLink)) {
                 avatar.setAttachmentLink(imgAvatarLink);
@@ -315,39 +325,26 @@ public class HelperRegistrationServiceImpl implements HelperRegistrationService 
                 attachments.add(avatar);
             }
 
-            Attachment frontCMT = new Attachment();
-            String frontCMTLink = storageService.uploadFile(helperRegistrationRequest.getFrontIdCard());
             if (!Utils.isNullOrEmpty(frontCMTLink)) {
                 frontCMT.setAttachmentLink(frontCMTLink);
                 frontCMT.setHelperInformation(helperInformation);
                 attachments.add(frontCMT);
             }
 
-            Attachment backCMT = new Attachment();
-            String backCMTLink = storageService.uploadFile(helperRegistrationRequest.getBackIdCard());
             if (!Utils.isNullOrEmpty(backCMTLink)) {
-                frontCMT.setAttachmentLink(backCMTLink);
-                frontCMT.setHelperInformation(helperInformation);
+                backCMT.setAttachmentLink(backCMTLink);
+                backCMT.setHelperInformation(helperInformation);
                 attachments.add(backCMT);
             }
-            for (MultipartFile element :
-                    attachmentRequest) {
-                Attachment attachment = new Attachment();
-                String fileLink = storageService.uploadFile(element);
-                if (!Utils.isNullOrEmpty(fileLink)) {
-                    attachment.setAttachmentLink(fileLink);
-                    attachment.setHelperInformation(helperInformation);
-                    attachments.add(attachment);
-                }
-            }
             attachmentRepository.saveAll(attachments);
-
+            transactionManager.commit(status);
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseObject(HttpStatus.OK.toString(),
                             "Register become helper successful - please waiting for our response email!",
                             null));
         } catch (Exception e) {
             log.error(e.getMessage());
+            transactionManager.rollback(status);
             if (e instanceof BadRequestException) {
                 ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString(),
