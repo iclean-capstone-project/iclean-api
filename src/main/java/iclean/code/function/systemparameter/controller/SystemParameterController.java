@@ -25,16 +25,9 @@ public class SystemParameterController {
         return systemParameterService.getAllSystemParameter();
     }
 
-    @GetMapping(value = "{systemId}")
+    @PutMapping
     @PreAuthorize("hasAnyAuthority('admin')")
-    public ResponseEntity<ResponseObject> getSystemParameterById(@PathVariable("systemId") @Valid int systemId) {
-        return systemParameterService.getSystemParameterById(systemId);
-    }
-
-    @PutMapping(value = "{systemId}")
-    @PreAuthorize("hasAnyAuthority('admin')")
-    public ResponseEntity<ResponseObject> updateSystemParameter(@PathVariable("systemId") int systemId,
-                                                              @RequestBody @Valid UpdateSystemParameter systemParameter) {
-        return systemParameterService.updateSystemParameter(systemId, systemParameter);
+    public ResponseEntity<ResponseObject> updateSystemParameter(@RequestBody @Valid UpdateSystemParameter systemParameter) {
+        return systemParameterService.updateSystemParameter(systemParameter);
     }
 }

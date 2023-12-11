@@ -6,8 +6,5 @@ import org.springframework.http.ResponseEntity;
 
 public interface SystemParameterService {
     ResponseEntity<ResponseObject> getAllSystemParameter();
-
-    ResponseEntity<ResponseObject> getSystemParameterById(int systemId);
-
-    ResponseEntity<ResponseObject> updateSystemParameter(int systemId, UpdateSystemParameter systemParameter);
+    ResponseEntity<ResponseObject> updateSystemParameter(UpdateSystemParameter systemParameter);
 }

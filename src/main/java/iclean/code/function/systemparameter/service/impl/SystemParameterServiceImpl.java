@@ -33,31 +33,14 @@ public class SystemParameterServiceImpl implements SystemParameterService {
     }
 
     @Override
-    public ResponseEntity<ResponseObject> getSystemParameterById(int systemId) {
+    public ResponseEntity<ResponseObject> updateSystemParameter(UpdateSystemParameter systemParameter) {
         try {
-            if (systemParameterRepository.findById(systemId).isEmpty()) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(new ResponseObject(HttpStatus.NOT_FOUND.toString(), "SystemParameter", "Image booking is not exist"));
-            }
-            return ResponseEntity.status(HttpStatus.OK)
-                    .body(new ResponseObject(HttpStatus.OK.toString(), "SystemParameter", systemParameterRepository.findById(systemId)));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString()
-                            , "Something wrong occur!", null));
-        }
-    }
-
-    @Override
-    public ResponseEntity<ResponseObject> updateSystemParameter(int systemId, UpdateSystemParameter systemParameter) {
-        try {
-            SystemParameter systemParameterForUpdate = findSystemParameter(systemId);
-                    //modelMapper.map(systemParameter, SystemParameter.class);
-            systemParameterForUpdate.setUpdateAt(Utils.getLocalDateTimeNow());
-            systemParameterForUpdate.setUpdateVersion(systemParameter.getUpdateVersion());
-
-            SystemParameter update = modelMapper.map(systemParameterForUpdate, SystemParameter.class);
-            systemParameterRepository.save(update);
+//            SystemParameter systemParameterForUpdate = findSystemParameter(systemId);
+//            systemParameterForUpdate.setUpdateAt(Utils.getLocalDateTimeNow());
+//            systemParameterForUpdate.setUpdateVersion(systemParameter.getUpdateVersion());
+//
+//            SystemParameter update = modelMapper.map(systemParameterForUpdate, SystemParameter.class);
+//            systemParameterRepository.save(update);
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseObject(HttpStatus.OK.toString()
                             , "Update SystemParameter Successfully!", null));
@@ -65,8 +48,8 @@ public class SystemParameterServiceImpl implements SystemParameterService {
         } catch (Exception e) {
             if (e instanceof NotFoundException) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(new ResponseObject(HttpStatus.NOT_FOUND.toString()
-                                , "Something wrong occur!", e.getMessage()));
+                        .body(new ResponseObject(HttpStatus.NOT_FOUND.toString(),
+                                e.getMessage(), null));
             }
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new ResponseObject(HttpStatus.INTERNAL_SERVER_ERROR.toString()

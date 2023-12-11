@@ -12,6 +12,7 @@ import iclean.code.data.dto.request.bookingdetail.HelperChoiceRequest;
 import iclean.code.data.dto.request.bookingdetail.ResendBookingDetailRequest;
 import iclean.code.data.dto.request.security.ValidateOTPRequest;
 import iclean.code.data.dto.request.serviceprice.GetServicePriceRequest;
+import iclean.code.data.dto.request.transaction.TransactionRequest;
 import iclean.code.data.dto.request.workschedule.DateTimeRange;
 import iclean.code.data.dto.response.PageResponseObject;
 import iclean.code.data.dto.response.booking.GetBookingResponseForHelper;
@@ -69,6 +70,9 @@ public class BookingDetailServiceImpl implements BookingDetailService {
     @Value("${iclean.app.max.update.and.cancel.minutes}")
     private long maxUpdateMinutes;
 
+    @Value("${iclean.app.money.to.point}")
+    private long moneyToPoint;
+
     @Value("${iclean.app.max.end.time.minutes}")
     private long maxEndTimeMinutes;
 
@@ -94,7 +98,7 @@ public class BookingDetailServiceImpl implements BookingDetailService {
     private BookingDetailStatusHistoryRepository bookingDetailStatusHistoryRepository;
 
     @Autowired
-    private BookingEmployeeRepository bookingEmployeeRepository;
+    private WalletRepository walletRepository;
 
     @Autowired
     private ServiceUnitRepository serviceUnitRepository;
@@ -1005,6 +1009,15 @@ public class BookingDetailServiceImpl implements BookingDetailService {
             BookingDetailStatusHistory bookingDetailStatusHistory = new BookingDetailStatusHistory();
             bookingDetailStatusHistory.setBookingDetailStatus(BookingDetailStatusEnum.FINISHED);
             bookingDetailStatusHistory.setBookingDetail(bookingDetail);
+            double point = bookingDetail.getPriceDetail() / getMoneyToPoint();
+            createTransaction(new TransactionRequest(
+                    point,
+                    String.format(MessageVariable.GET_POINT),
+                    bookingDetail.getBooking().getRenter().getUserId(),
+                    TransactionTypeEnum.DEPOSIT.name(),
+                    WalletTypeEnum.POINT.name(),
+                    bookingDetail.getBooking().getBookingId()
+            ));
             bookingDetailStatusHistoryRepository.save(bookingDetailStatusHistory);
             bookingDetailRepository.save(bookingDetail);
             updateBookingIfSameStatusBookingDetail(bookingDetail.getBooking());
@@ -1354,6 +1367,82 @@ public class BookingDetailServiceImpl implements BookingDetailService {
         }
     }
 
+    private long getMoneyToPoint() {
+        SystemParameter systemParameter = systemParameterRepository.findSystemParameterByParameterField(SystemParameterField.MONEY_TO_POINT);
+        try {
+            return Long.parseLong(systemParameter.getParameterValue());
+        } catch (Exception e) {
+            return moneyToPoint;
+        }
+    }
+    private void sendMessage(NotificationRequestDto notificationRequestDto, User user) {
+        List<DeviceToken> deviceTokens = deviceTokenRepository.findByUserId(user.getUserId());
+        if (!deviceTokens.isEmpty()) {
+            notificationRequestDto.setTarget(convertToListFcmToken(deviceTokens));
+            fcmService.sendPnsToTopic(notificationRequestDto);
+        }
+    }
+
+    private List<String> convertToListFcmToken(List<DeviceToken> deviceTokens) {
+        return deviceTokens.stream()
+                .map(DeviceToken::getFcmToken)
+                .collect(Collectors.toList());
+    }
+    public boolean createTransaction(TransactionRequest request) {
+        User user = findAccount(request.getUserId());
+        Booking booking = findBookingById(request.getBookingId());
+        if (request.getBookingId() != null) {
+            request.setNote(String.format(request.getNote(), booking.getBookingCode()));
+        }
+        NotificationRequestDto notificationRequestDto = new NotificationRequestDto();
+        notificationRequestDto.setTitle(MessageVariable.TITLE_APP);
+        Wallet wallet = walletRepository.getWalletByUserIdAndType(request.getUserId(),
+                WalletTypeEnum.valueOf(request.getWalletType().toUpperCase()));
+        if (wallet == null) {
+            wallet = new Wallet();
+            wallet.setUser(user);
+            wallet.setBalance(0D);
+            wallet.setWalletTypeEnum(WalletTypeEnum.valueOf(request.getWalletType().toUpperCase()));
+        }
+
+        wallet.setUpdateAt(Utils.getLocalDateTimeNow());
+        TransactionTypeEnum transactionTypeEnum = TransactionTypeEnum.valueOf(request.getTransactionType().toUpperCase());
+        switch (transactionTypeEnum) {
+            case DEPOSIT:
+                wallet.setBalance(wallet.getBalance() + request.getBalance());
+                notificationRequestDto.setBody(request.getNote());
+                sendMessage(notificationRequestDto, user);
+                break;
+            case TRANSFER:
+                break;
+            case WITHDRAW:
+                if (wallet.getBalance() < request.getBalance()) {
+                    return false;
+                }
+                wallet.setBalance(wallet.getBalance() - request.getBalance());
+                notificationRequestDto.setBody(request.getNote());
+                sendMessage(notificationRequestDto, user);
+                break;
+        }
+        Wallet walletUpdate = walletRepository.save(wallet);
+        Transaction transaction = mappingForCreate(request);
+        transaction.setWallet(walletUpdate);
+        transactionRepository.save(transaction);
+        return true;
+    }
+
+    private Transaction mappingForCreate(TransactionRequest request) {
+        Transaction transaction = modelMapper.map(request, Transaction.class);
+        Booking booking = findBookingById(request.getBookingId());
+        transaction.setAmount(request.getBalance());
+        transaction.setBooking(booking);
+        transaction.setTransactionCode(Utils.generateRandomCode());
+        transaction.setCreateAt(Utils.getLocalDateTimeNow());
+        transaction.setTransactionStatusEnum(TransactionStatusEnum.SUCCESS);
+        transaction.setTransactionTypeEnum(TransactionTypeEnum.valueOf(request.getTransactionType().toUpperCase()));
+        return transaction;
+    }
+
     private long getDifferEndMinutes() {
         SystemParameter systemParameter = systemParameterRepository.findSystemParameterByParameterField(SystemParameterField.MAX_END_TIME_MINUTES);
         try {
@@ -1366,6 +1455,11 @@ public class BookingDetailServiceImpl implements BookingDetailService {
     private BookingDetail findBookingDetail(int id) {
         return bookingDetailRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException(String.format("Booking Detail ID %s is not exist!", id)));
+    }
+
+    private Booking findBookingById(int id) {
+        return bookingRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException(String.format("Booking ID %s is not exist!", id)));
     }
 
     private User findAccount(int userId) {
