@@ -45,4 +45,6 @@ public class MessageVariable {
     public static final String NOT_ON_TIME_TO_END_WORK = "Bạn chưa đủ điều kiện hoàn thành công việc hiện tại!";
     public static final String CANCEL_BOOKING_BY_SYSTEM = "Dịch vụ số #%s - %s đã bị hủy bởi hệ thống do người làm không check in, chúng tôi rất xin lỗi về sự cố này!";
     public static final String NOT_ENOUGH_MONEY = "Không đủ tiền để thanh toán!";
+    public static final String CANNOT_REGISTER_HELPER_ALREADY_HAVE = "Bạn đã đăng ký nhân viên trước đó";
+    public static final String GET_POINT = "Nhận điểm thưởng đặt dịch vụ!";
 }

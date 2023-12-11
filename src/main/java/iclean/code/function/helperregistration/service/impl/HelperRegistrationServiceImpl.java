@@ -273,6 +273,10 @@ public class HelperRegistrationServiceImpl implements HelperRegistrationService 
                                                                    Integer renterId) {
         TransactionStatus status = transactionManager.getTransaction(new DefaultTransactionDefinition());
         try {
+            HelperInformation helperInformationCheck = helperInformationRepository.findByUserId(renterId);
+            if (Objects.nonNull(helperInformationCheck)) {
+                throw new BadRequestException(MessageVariable.CANNOT_REGISTER_HELPER_ALREADY_HAVE);
+            }
             ObjectMapper objectMapper = new ObjectMapper();
             String imgAvatarLink = null;
             if (helperRegistrationRequest.getAvatar() != null) {

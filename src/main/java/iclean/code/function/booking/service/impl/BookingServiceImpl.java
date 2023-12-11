@@ -326,7 +326,7 @@ public class BookingServiceImpl implements BookingService {
             notification.setUser(renter);
             notificationRepository.save(notification);
             sendMessage(notificationRequestDto, renter);
-
+            bookingDetailStatusHistory.setBookingDetail(bookingDetail);
             bookingDetailStatusHistoryRepository.save(bookingDetailStatusHistory);
             bookingRepository.save(booking);
             bookingDetailRepository.save(bookingDetail);
@@ -1023,7 +1023,7 @@ public class BookingServiceImpl implements BookingService {
                     bookingDetailHelper.setBookingDetail(bookingDetail);
                     bookingDetailHelper.setBookingDetailHelperStatus(BookingDetailHelperStatusEnum.ACTIVE);
                     if (helperInformation != null) {
-                        bookingDetail.setBookingDetailStatus(bookingDetailStatusEnum);
+                        bookingDetail.setBookingDetailStatus(BookingDetailStatusEnum.WAITING);
                         ServiceRegistration serviceRegistration = serviceRegistrationRepository.findByServiceIdAndUserId(bookingDetail.getServiceUnit().getService().getServiceId(),
                                 helperInformation.getUser().getUserId());
                         bookingDetailHelper.setServiceRegistration(serviceRegistration);
