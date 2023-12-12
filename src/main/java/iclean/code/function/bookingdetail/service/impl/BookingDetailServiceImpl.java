@@ -1127,6 +1127,7 @@ public class BookingDetailServiceImpl implements BookingDetailService {
             BookingDetail bookingDetail = null;
             GetBookingResponseForHelper response = new GetBookingResponseForHelper();
             if (bookingDetails != null && !bookingDetails.isEmpty()) {
+                bookingDetail = bookingDetails.get(0);
                 List<Address> addresses = addressRepository.findByUserIdAnAndIsDefault(bookingDetail.getBooking().getRenter().getUserId());
                 if (!addresses.isEmpty()) {
                     address = addresses.get(0);
@@ -1135,7 +1136,6 @@ public class BookingDetailServiceImpl implements BookingDetailService {
                             .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString(),
                                     MessageVariable.NEED_ADD_LOCATION, null));
                 }
-                bookingDetail = bookingDetails.get(0);
                 response.setBookingDetailId(bookingDetail.getBookingDetailId());
                 response.setServiceUnitId(bookingDetail.getServiceUnit().getServiceUnitId());
                 response.setEquivalent(bookingDetail.getServiceUnit().getUnit().getUnitValue());
