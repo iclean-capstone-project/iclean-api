@@ -48,4 +48,6 @@ public class MessageVariable {
     public static final String CANNOT_REGISTER_HELPER_ALREADY_HAVE = "Bạn đã đăng ký nhân viên trước đó";
     public static final String GET_POINT = "Nhận điểm thưởng đặt dịch vụ!";
     public static final String COMPLETE_BOOKING = "Dịch vụ %s thuộc đơn #%s đã được nhân viên hoàn thành";
+
+    public static final String BOOKING_CANCELED = "Dịch vụ không khả dụng! Vui lòng tải lại trang";
 }

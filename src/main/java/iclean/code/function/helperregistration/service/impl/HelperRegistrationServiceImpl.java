@@ -12,6 +12,8 @@ import iclean.code.data.dto.response.others.BackCCCD;
 import iclean.code.data.dto.response.others.CMTBackResponse;
 import iclean.code.data.dto.response.others.CMTFrontResponse;
 import iclean.code.data.dto.response.others.FrontCCCD;
+import iclean.code.data.dto.response.service.GetServiceResponse;
+import iclean.code.data.dto.response.serviceregistration.GetServiceOfHelperResponse;
 import iclean.code.data.enumjava.*;
 import iclean.code.data.repository.*;
 import iclean.code.exception.BadRequestException;
@@ -373,6 +375,15 @@ public class HelperRegistrationServiceImpl implements HelperRegistrationService 
         try {
             HelperInformation helperInformation = findHelperInformationById(id);
             GetHelperInformationDetailResponse response = modelMapper.map(helperInformation, GetHelperInformationDetailResponse.class);
+            if(HelperStatusEnum.ONLINE.equals(helperInformation.getHelperStatus())){
+                List<ServiceRegistration> filteredList = helperInformation.getServiceRegistrations().stream()
+                        .filter(serviceRegistration -> serviceRegistration.getServiceHelperStatus().equals(ServiceHelperStatusEnum.ACTIVE))
+                        .collect(Collectors.toList());
+                List<GetServiceOfHelperResponse> serviceOfHelperResponses = filteredList.stream()
+                        .map(service -> modelMapper.map(service, GetServiceOfHelperResponse.class))
+                        .collect(Collectors.toList());
+                response.setServices(serviceOfHelperResponses);
+            }
             response.setPersonalAvatar(helperInformation.getUser().getAvatar());
             List<String> attachments = helperInformation.getAttachments()
                     .stream()

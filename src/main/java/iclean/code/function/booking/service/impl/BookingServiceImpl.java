@@ -984,6 +984,11 @@ public class BookingServiceImpl implements BookingService {
     public ResponseEntity<ResponseObject> acceptOrRejectBooking(Integer bookingId, AcceptRejectBookingRequest request, Integer managerId) {
         try {
             Booking booking = findBookingById(bookingId);
+            if (!BookingStatusEnum.NOT_YET.equals(booking.getBookingStatus())){
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString(),
+                                MessageVariable.BOOKING_CANCELED , null));
+            }
             User renter = booking.getRenter();
             booking.setManager(userRepository.findByUserId(managerId));
             BookingStatusEnum bookingStatusEnum = BookingStatusEnum.valueOf(request.getAction().toUpperCase());
