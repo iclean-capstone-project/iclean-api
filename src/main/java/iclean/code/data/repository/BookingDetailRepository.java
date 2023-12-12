@@ -92,7 +92,7 @@ public interface BookingDetailRepository extends JpaRepository<BookingDetail, In
 
     @Query("SELECT bd FROM BookingDetail bd WHERE bd.booking.renter.userId = ?1 " +
             "AND bd.bookingDetailStatus IN ?2 " +
-            "AND bd.bookingDetailStatus != ?3" +
+            "AND bd.bookingDetailStatus != ?3 " +
             "ORDER BY  bd.booking.orderDate desc")
     Page<BookingDetail> findByRenterId(Integer userId, List<BookingDetailStatusEnum> bookingDetailStatusEnums, BookingDetailStatusEnum noBookingStatusEnum, Pageable pageable);
 
@@ -103,7 +103,7 @@ public interface BookingDetailRepository extends JpaRepository<BookingDetail, In
     Page<BookingDetail> findAllByBookingStatus(List<BookingDetailStatusEnum> bookingDetailStatusEnums, BookingDetailStatusEnum noBookingStatusEnum, Pageable pageable);
 
     @Query("SELECT bd FROM BookingDetail bd " +
-            "WHERE bd.bookingDetailStatus != ?1" +
+            "WHERE bd.bookingDetailStatus != ?1 " +
             "ORDER BY  bd.booking.orderDate desc")
     Page<BookingDetail> findAllBooking(BookingDetailStatusEnum bookingStatusEnum, Pageable pageable);
 
@@ -132,6 +132,9 @@ public interface BookingDetailRepository extends JpaRepository<BookingDetail, In
 
     @Query("SELECT bd FROM BookingDetail bd WHERE bd.bookingDetailStatus IN ?1")
     List<BookingDetail> findAllByBookingDetailStatuses(List<BookingDetailStatusEnum> bookingDetailStatusEnums);
+
+    @Query("SELECT bd FROM BookingDetail bd WHERE bd.booking.bookingId = ?1 and bd.bookingDetailStatus in ?2")
+    List<BookingDetail> findAllByBookingIdHaveFinished(int bookingId, BookingDetailStatusEnum bookingDetailStatusEnum);
 
     @Query("SELECT bd FROM BookingDetail bd " +
             "LEFT JOIN bd.bookingDetailHelpers bdh " +
