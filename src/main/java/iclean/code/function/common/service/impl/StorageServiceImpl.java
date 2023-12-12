@@ -34,6 +34,7 @@ public class StorageServiceImpl implements StorageService {
             FirebaseOptions options = new FirebaseOptions.Builder()
                     .setCredentials(GoogleCredentials.fromStream(serviceAccount))
                     .setStorageBucket(storageBucket)
+                    .setDatabaseUrl("https://iclean-59a5b-default-rtdb.asia-southeast1.firebasedatabase.app")
                     .build();
 
             if (FirebaseApp.getApps().isEmpty()) {

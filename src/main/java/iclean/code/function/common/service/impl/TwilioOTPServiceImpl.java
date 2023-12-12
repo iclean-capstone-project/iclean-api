@@ -30,7 +30,6 @@ public class TwilioOTPServiceImpl implements TwilioOTPService {
 
     private String getMessageDefault() {
         try {
-
             return systemParameterRepository
                     .findSystemParameterByParameterField("otp_message_default")
                     .getParameterValue();
