@@ -568,6 +568,8 @@ public class BookingDetailServiceImpl implements BookingDetailService {
                                         responseForHelper.setIsApplied(true);
                                         responseForHelper.setNoteMessage(String.format(MessageVariable.DUPLICATE_BOOKING, booking.getBooking().getBookingCode()));
                                     }
+                                    responseForHelper.setDistance(googleMapService.calculateDistance(new Position(booking.getBooking().getLongitude(), booking.getBooking().getLatitude())
+                                            , new Position(address.getLongitude(), address.getLatitude())));
                                     return responseForHelper;
                                 }
                         )
@@ -1105,10 +1107,19 @@ public class BookingDetailServiceImpl implements BookingDetailService {
     @Override
     public ResponseEntity<ResponseObject> getCurrentBookingDetail(Integer helperId) {
         try {
+            Address address = null;
             List<BookingDetail> bookingDetails = bookingDetailRepository.findCurrentByHelperId(helperId, BookingDetailStatusEnum.IN_PROCESS, BookingDetailHelperStatusEnum.ACTIVE);
             BookingDetail bookingDetail = null;
             GetBookingResponseForHelper response = new GetBookingResponseForHelper();
             if (bookingDetails != null && !bookingDetails.isEmpty()) {
+                List<Address> addresses = addressRepository.findByUserIdAnAndIsDefault(bookingDetail.getBooking().getRenter().getUserId());
+                if (!addresses.isEmpty()) {
+                    address = addresses.get(0);
+                } else {
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                            .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString(),
+                                    MessageVariable.NEED_ADD_LOCATION, null));
+                }
                 bookingDetail = bookingDetails.get(0);
                 response.setBookingDetailId(bookingDetail.getBookingDetailId());
                 response.setServiceUnitId(bookingDetail.getServiceUnit().getServiceUnitId());
@@ -1124,6 +1135,8 @@ public class BookingDetailServiceImpl implements BookingDetailService {
                 response.setLongitude(bookingDetail.getBooking().getLongitude());
                 response.setLatitude(bookingDetail.getBooking().getLatitude());
                 response.setIsApplied(true);
+                response.setDistance(googleMapService.calculateDistance(new Position(bookingDetail.getBooking().getLongitude(), bookingDetail.getBooking().getLatitude())
+                        , new Position(address.getLongitude(), address.getLatitude())));
             }
 
             return ResponseEntity.status(HttpStatus.OK)

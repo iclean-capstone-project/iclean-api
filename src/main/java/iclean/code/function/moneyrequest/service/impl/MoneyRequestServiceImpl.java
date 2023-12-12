@@ -1,9 +1,10 @@
 package iclean.code.function.moneyrequest.service.impl;
 
 import iclean.code.config.MessageVariable;
-import iclean.code.data.domain.MoneyRequest;
-import iclean.code.data.domain.User;
+import iclean.code.config.SystemParameterField;
+import iclean.code.data.domain.*;
 import iclean.code.data.dto.common.ResponseObject;
+import iclean.code.data.dto.request.authen.NotificationRequestDto;
 import iclean.code.data.dto.request.moneyrequest.CreateMoneyRequestRequest;
 import iclean.code.data.dto.request.moneyrequest.ValidateMoneyRequest;
 import iclean.code.data.dto.request.security.ValidateOTPRequest;
@@ -11,14 +12,11 @@ import iclean.code.data.dto.request.transaction.TransactionRequest;
 import iclean.code.data.dto.response.PageResponseObject;
 import iclean.code.data.dto.response.moneyrequest.GetMoneyRequestResponse;
 import iclean.code.data.dto.response.moneyrequest.GetMoneyRequestUserResponse;
-import iclean.code.data.enumjava.MoneyRequestEnum;
-import iclean.code.data.enumjava.MoneyRequestStatusEnum;
-import iclean.code.data.enumjava.WalletTypeEnum;
-import iclean.code.data.repository.MoneyRequestRepository;
-import iclean.code.data.repository.UserRepository;
-import iclean.code.data.repository.WalletRepository;
+import iclean.code.data.enumjava.*;
+import iclean.code.data.repository.*;
 import iclean.code.exception.BadRequestException;
 import iclean.code.exception.NotFoundException;
+import iclean.code.function.common.service.FCMService;
 import iclean.code.function.moneyrequest.service.MoneyRequestService;
 import iclean.code.function.transaction.service.TransactionService;
 import iclean.code.function.common.service.TwilioOTPService;
@@ -35,16 +33,32 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
 @Slf4j
 public class MoneyRequestServiceImpl implements MoneyRequestService {
     @Autowired
+    private SystemParameterRepository systemParameterRepository;
+    @Autowired
+    private TransactionRepository transactionRepository;
+    @Autowired
+    private DeviceTokenRepository deviceTokenRepository;
+    @Autowired
+    private BookingRepository bookingRepository;
+    @Autowired
+    private BookingDetailHelperRepository bookingDetailHelperRepository;
+    @Autowired
+    private BookingDetailRepository bookingDetailRepository;
+    @Autowired
     private MoneyRequestRepository moneyRequestRepository;
     @Autowired
     private UserRepository userRepository;
+    @Autowired
+    private FCMService fcmService;
     @Autowired
     private TwilioOTPService twilioOTPService;
     @Autowired
@@ -59,6 +73,9 @@ public class MoneyRequestServiceImpl implements MoneyRequestService {
     private String depositMessage;
     @Value("${iclean.app.message.withdraw}")
     private String withdrawMessage;
+    @Value("${iclean.app.max.minutes.send.money}")
+    private long maxMinutesSendMoney;
+
     @Override
     public ResponseEntity<ResponseObject> getMoneyRequests(String phoneNumber, Pageable pageable) {
         try {
@@ -214,6 +231,163 @@ public class MoneyRequestServiceImpl implements MoneyRequestService {
                     .body(new ResponseObject(HttpStatus.INTERNAL_SERVER_ERROR.toString(),
                             "Internal System Error",
                             null));
+        }
+    }
+
+    @Override
+    public ResponseEntity<ResponseObject> sendMoneyToHelper(int bookingDetailId) {
+        try {
+            BookingDetail bookingDetail = findBookingDetailsById(bookingDetailId);
+            if(!Objects.equals(bookingDetail.getBookingDetailStatus(), BookingDetailStatusEnum.FINISHED)){
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString(),
+                                "Booking not finished! Cannot send money",
+                                null));
+            }
+
+            BookingDetailHelper bookingDetailHelper = bookingDetailHelperRepository.findByBookingDetailIdAndActiveLimit(bookingDetail.getBookingDetailId(),
+                    BookingDetailHelperStatusEnum.ACTIVE);
+            if (bookingDetailHelper == null) {
+                throw new BadRequestException();
+            }
+            if (bookingDetail.getWorkDate() != null && bookingDetail.getWorkEnd() != null) {
+                LocalDateTime endDateTime = LocalDateTime.of(bookingDetail.getWorkDate(), bookingDetail.getWorkEnd());
+                if (!checkInTimeToSendMoney(endDateTime)) {
+                    throw new BadRequestException();
+                }
+            }
+            createTransaction(new TransactionRequest(
+                    bookingDetail.getPriceHelper(),
+                    String.format(MessageVariable.PAYMENT_FOR_HELPER, bookingDetail.getBooking().getBookingCode(),
+                            bookingDetail.getServiceUnit().getService().getServiceName()),
+                    bookingDetailHelper.getServiceRegistration().getHelperInformation().getUser().getUserId(),
+                    TransactionTypeEnum.DEPOSIT.name(),
+                    WalletTypeEnum.MONEY.name(),
+                    bookingDetail.getBooking().getBookingId()
+            ));
+            bookingDetail.setPriceHelper(0D);
+            bookingDetailRepository.save(bookingDetail);
+            return ResponseEntity.status(HttpStatus.OK)
+                    .body(new ResponseObject(HttpStatus.OK.toString(),
+                            Utils.getDateTimeNowAsString() + " ----> Auto Send Money Successful!",
+                            null));
+        } catch (Exception e) {
+            if (e instanceof NotFoundException)
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new ResponseObject(HttpStatus.NOT_FOUND.toString(),
+                                e.getMessage(),
+                                null));
+            if (e instanceof BadRequestException) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString(),
+                                e.getMessage(),
+                                null));
+            }
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ResponseObject(HttpStatus.INTERNAL_SERVER_ERROR.toString(),
+                            "Internal System Error",
+                            null));
+        }
+    }
+
+
+    public boolean createTransaction(TransactionRequest request) {
+        User user = findAccount(request.getUserId());
+        Booking booking = findBookingById(request.getBookingId());
+        if (request.getBookingId() != null) {
+            request.setNote(String.format(request.getNote(), booking.getBookingCode()));
+        }
+        NotificationRequestDto notificationRequestDto = new NotificationRequestDto();
+        notificationRequestDto.setTitle(MessageVariable.TITLE_APP);
+        Wallet wallet = walletRepository.getWalletByUserIdAndType(request.getUserId(),
+                WalletTypeEnum.valueOf(request.getWalletType().toUpperCase()));
+        if (wallet == null) {
+            wallet = new Wallet();
+            wallet.setUser(user);
+            wallet.setBalance(0D);
+            wallet.setWalletTypeEnum(WalletTypeEnum.valueOf(request.getWalletType().toUpperCase()));
+        }
+
+        wallet.setUpdateAt(Utils.getLocalDateTimeNow());
+        TransactionTypeEnum transactionTypeEnum = TransactionTypeEnum.valueOf(request.getTransactionType().toUpperCase());
+        switch (transactionTypeEnum) {
+            case DEPOSIT:
+                wallet.setBalance(wallet.getBalance() + request.getBalance());
+                notificationRequestDto.setBody(request.getNote());
+                sendMessage(notificationRequestDto, user);
+                break;
+            case TRANSFER:
+                break;
+            case WITHDRAW:
+                if (wallet.getBalance() < request.getBalance()) {
+                    return false;
+                }
+                wallet.setBalance(wallet.getBalance() - request.getBalance());
+                notificationRequestDto.setBody(request.getNote());
+                sendMessage(notificationRequestDto, user);
+                break;
+        }
+        Wallet walletUpdate = walletRepository.save(wallet);
+        Transaction transaction = mappingForCreate(request);
+        transaction.setWallet(walletUpdate);
+        transactionRepository.save(transaction);
+        return true;
+    }
+
+    private Transaction mappingForCreate(TransactionRequest request) {
+        Transaction transaction = modelMapper.map(request, Transaction.class);
+        Booking booking = findBookingById(request.getBookingId());
+        transaction.setAmount(request.getBalance());
+        transaction.setBooking(booking);
+        transaction.setTransactionCode(Utils.generateRandomCode());
+        transaction.setCreateAt(Utils.getLocalDateTimeNow());
+        transaction.setTransactionStatusEnum(TransactionStatusEnum.SUCCESS);
+        transaction.setTransactionTypeEnum(TransactionTypeEnum.valueOf(request.getTransactionType().toUpperCase()));
+        return transaction;
+    }
+
+    private Booking findBookingById(int bookingId) {
+        return bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new NotFoundException("Booking is not exist"));
+    }
+
+    private BookingDetail findBookingDetailsById(int bookingId) {
+        return bookingDetailRepository.findById(bookingId)
+                .orElseThrow(() -> new NotFoundException("Booking details is not exist"));
+    }
+
+    private User findAccount(int userId) {
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("User is not exist"));
+    }
+
+    private void sendMessage(NotificationRequestDto notificationRequestDto, User user) {
+        List<DeviceToken> deviceTokens = deviceTokenRepository.findByUserId(user.getUserId());
+        if (!deviceTokens.isEmpty()) {
+            notificationRequestDto.setTarget(convertToListFcmToken(deviceTokens));
+            fcmService.sendPnsToTopic(notificationRequestDto);
+        }
+    }
+
+    private List<String> convertToListFcmToken(List<DeviceToken> deviceTokens) {
+        return deviceTokens.stream()
+                .map(DeviceToken::getFcmToken)
+                .collect(Collectors.toList());
+    }
+
+    private boolean checkInTimeToSendMoney(LocalDateTime time) {
+        LocalDateTime current = Utils.getLocalDateTimeNow();
+        long difference = Utils.minusLocalDateTime(current,
+                time);
+        return difference >= 0 && Utils.isLateMinutes(difference, getMaxMinutesSendMoney());
+    }
+
+    private long getMaxMinutesSendMoney() {
+        SystemParameter systemParameter = systemParameterRepository.findSystemParameterByParameterField(SystemParameterField.MAX_MINUTES_SEND_MONEY);
+        try {
+            return Long.parseLong(systemParameter.getParameterValue());
+        } catch (Exception e) {
+            return maxMinutesSendMoney;
         }
     }
 

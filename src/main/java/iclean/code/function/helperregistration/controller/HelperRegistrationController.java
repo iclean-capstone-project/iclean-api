@@ -162,4 +162,16 @@ public class HelperRegistrationController {
                                                                @RequestBody ConfirmHelperRequest request) {
         return helperRegistrationService.confirmHelperInformation(JwtUtils.decodeToAccountId(authentication), id, request);
     }
+
+    @PostMapping("/setManager")
+    @PreAuthorize("hasAnyAuthority('manager', 'admin')")
+    @Operation(summary = "", description = "Return message fail or successful")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Delete a RegisterEmployee Successful"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - Login please"),
+            @ApiResponse(responseCode = "400", description = "Bad request - Missing some field required")
+    })
+    public ResponseEntity<ResponseObject> assignManageToRegistration() {
+        return helperRegistrationService.assignManageToRegistration();
+    }
 }

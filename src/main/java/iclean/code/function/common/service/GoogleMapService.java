@@ -16,4 +16,6 @@ public interface GoogleMapService {
                                              Position position,
                                              double maxDistance);
     public Double checkDistance(Position src, Position des);
+
+    public Double calculateDistance(Position reference, Position position);
 }

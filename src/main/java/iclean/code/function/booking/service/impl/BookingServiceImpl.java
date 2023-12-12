@@ -578,6 +578,45 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
+    public ResponseEntity<ResponseObject> setBookingForManager() {
+        try {
+            List<Booking> bookings = bookingRepository.findAllWithNoManager();
+            List<User> managers = userRepository.findAllManager();
+            if (bookings.isEmpty()) {
+                //log.info(Utils.getDateTimeNowAsString() + " ----> No booking at this time!");
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new ResponseObject(HttpStatus.NOT_FOUND.toString()
+                                , Utils.getDateTimeNowAsString() + " ----> No booking at this time!", null));
+            }
+            if (managers.isEmpty()) {
+                //log.warn(Utils.getDateTimeNowAsString() + " ----> No manager at this time!");
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new ResponseObject(HttpStatus.NOT_FOUND.toString()
+                                , Utils.getDateTimeNowAsString() + " ----> No manager at this time!", null));
+            }
+
+            int countManager = managers.size();
+            int i = 0;
+            for (Booking booking :
+                    bookings
+            ) {
+                booking.setManager(managers.get(i++));
+                if (i == countManager) i = 0;
+            }
+
+            bookingRepository.saveAll(bookings);
+            return ResponseEntity.status(HttpStatus.OK)
+                    .body(new ResponseObject(HttpStatus.OK.toString(),
+                            Utils.getDateTimeNowAsString() + " ----> Set Manager successful!", null));
+        } catch (Exception e) {
+            log.error(e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString()
+                            , "Something wrong occur!", null));
+        }
+    }
+
+    @Override
     public ResponseEntity<ResponseObject> createServiceToCart(AddBookingRequest request,
                                                               Integer userId) {
         TransactionStatus status = transactionManager.getTransaction(new DefaultTransactionDefinition());

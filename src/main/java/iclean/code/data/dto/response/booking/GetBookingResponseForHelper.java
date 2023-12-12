@@ -31,4 +31,5 @@ public class GetBookingResponseForHelper {
 
     private String noteMessage;
     private Boolean isApplied = false;
+    private Double distance;
 }
