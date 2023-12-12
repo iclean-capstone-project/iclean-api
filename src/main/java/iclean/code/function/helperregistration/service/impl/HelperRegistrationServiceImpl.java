@@ -298,7 +298,9 @@ public class HelperRegistrationServiceImpl implements HelperRegistrationService 
             if (!"0".equals(cmtFrontResponse.getErrorCode()) || !"0".equals(cmtBackResponse.getErrorCode())) {
                 throw new BadRequestException("National ID error, please take a photo again!");
             }
-
+            HelperInformation existedHelperInfo = helperInformationRepository.findByNationId(cmtFrontResponse.getData().get(0).getId());
+            if (!Objects.isNull(existedHelperInfo))
+                throw new BadRequestException("National ID existed in system, please take a other photo again!");
             HelperInformation helperInformation = mappingCMTToHelperInformation(cmtFrontResponse.getData().get(0),
                     cmtBackResponse.getData().get(0),
                     imgAvatarLink);

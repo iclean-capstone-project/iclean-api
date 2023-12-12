@@ -23,8 +23,10 @@ public interface HelperInformationRepository extends JpaRepository<HelperInforma
             "WHERE info.user.userId = ?1")
     HelperInformation findByUserId(Integer userId);
 
+    HelperInformation findByNationId(String nationId);
     @Query("SELECT hi FROM HelperInformation hi " +
-            "WHERE hi.helperStatus IN ?1 ")
+            "WHERE hi.helperStatus IN ?1 " +
+            "ORDER BY hi.createAt desc")
     Page<HelperInformation> findAllByStatus(List<HelperStatusEnum> helperStatusEnums, Pageable pageable);
 
     @Query("SELECT count(*) FROM HelperInformation hi " +
@@ -40,7 +42,8 @@ public interface HelperInformationRepository extends JpaRepository<HelperInforma
 
     @Query("SELECT hi FROM HelperInformation hi " +
             "WHERE hi.managerId = ?1 " +
-            "AND hi.helperStatus IN ?2")
+            "AND hi.helperStatus IN ?2 " +
+            "ORDER BY hi.createAt desc")
     Page<HelperInformation> findAllByStatus(Integer managerId, List<HelperStatusEnum> helperStatusEnums, Pageable pageable);
     @Query("SELECT hi FROM HelperInformation hi " +
             "WHERE hi.managerId = ?1 " +

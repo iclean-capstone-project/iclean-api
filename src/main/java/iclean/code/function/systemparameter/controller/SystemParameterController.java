@@ -10,6 +10,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
+import java.util.List;
 
 @RestController
 @RequestMapping(value = "api/v1/system-parameter")
@@ -27,7 +28,7 @@ public class SystemParameterController {
 
     @PutMapping
     @PreAuthorize("hasAnyAuthority('admin')")
-    public ResponseEntity<ResponseObject> updateSystemParameter(@RequestBody @Valid UpdateSystemParameter systemParameter) {
+    public ResponseEntity<ResponseObject> updateSystemParameter(@RequestBody @Valid List<UpdateSystemParameter> systemParameter) {
         return systemParameterService.updateSystemParameter(systemParameter);
     }
 }

@@ -13,6 +13,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Service
 public class SystemParameterServiceImpl implements SystemParameterService {
 
@@ -33,14 +36,18 @@ public class SystemParameterServiceImpl implements SystemParameterService {
     }
 
     @Override
-    public ResponseEntity<ResponseObject> updateSystemParameter(UpdateSystemParameter systemParameter) {
+    public ResponseEntity<ResponseObject> updateSystemParameter(List<UpdateSystemParameter> systemParameter) {
         try {
-//            SystemParameter systemParameterForUpdate = findSystemParameter(systemId);
-//            systemParameterForUpdate.setUpdateAt(Utils.getLocalDateTimeNow());
-//            systemParameterForUpdate.setUpdateVersion(systemParameter.getUpdateVersion());
-//
-//            SystemParameter update = modelMapper.map(systemParameterForUpdate, SystemParameter.class);
-//            systemParameterRepository.save(update);
+            List<SystemParameter> systemParametersForUpdate = new ArrayList<>();
+            for (UpdateSystemParameter updateSystemParameter : systemParameter) {
+                SystemParameter systemParameterForUpdate = findSystemParameter(updateSystemParameter.getParameterId());
+                systemParameterForUpdate.setUpdateAt(Utils.getLocalDateTimeNow());
+                systemParameterForUpdate.setParameterValue(updateSystemParameter.getParameterValue());
+                systemParameterForUpdate.setUpdateVersion(updateSystemParameter.getUpdateVersion());
+                SystemParameter update = modelMapper.map(systemParameterForUpdate, SystemParameter.class);
+                systemParametersForUpdate.add(update);
+            }
+            systemParameterRepository.saveAll(systemParametersForUpdate);
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseObject(HttpStatus.OK.toString()
                             , "Update SystemParameter Successfully!", null));
