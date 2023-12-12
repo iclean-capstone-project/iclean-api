@@ -508,6 +508,57 @@ public class HelperRegistrationServiceImpl implements HelperRegistrationService 
         }
     }
 
+    @Override
+    public ResponseEntity<ResponseObject> assignManageToRegistration() {
+        try{
+            List<HelperInformation> helperInformations = helperInformationRepository.findAllHelperInformationHaveNoManager();
+            if(helperInformations.isEmpty()){
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new ResponseObject(HttpStatus.NOT_FOUND.toString(),
+                                Utils.getDateTimeNowAsString() + " ---->> All registration already manage",
+                                null));
+            }
+            List<User> managers = userRepository.findAllManager();
+            if (managers.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new ResponseObject(HttpStatus.NOT_FOUND.toString(),
+                                Utils.getDateTimeNowAsString() + " ---->> No manager at this time!",
+                                null));
+            }
+            int countManager = managers.size();
+            int i = 0;
+            for (HelperInformation helperInformation :
+                    helperInformations
+            ) {
+                helperInformation.setManagerId(managers.get(i++).getUserId());
+                if (i == countManager) i = 0;
+            }
+
+            helperInformationRepository.saveAll(helperInformations);
+            return ResponseEntity.status(HttpStatus.OK)
+                    .body(new ResponseObject(HttpStatus.OK.toString(),
+                            "Set manager for registration successfully",
+                            null));
+        } catch (Exception ex){
+            if (ex instanceof NotFoundException) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new ResponseObject(HttpStatus.NOT_FOUND.toString(),
+                                ex.getMessage(),
+                                null));
+            }
+            if (ex instanceof UserNotHavePermissionException) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(new ResponseObject(HttpStatus.FORBIDDEN.toString(),
+                                ex.getMessage(),
+                                null));
+            }
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString(),
+                            "Something wrong occur!",
+                            null));
+        }
+    }
+
     private User findUserById(Integer id) {
         return userRepository
                 .findById(id)

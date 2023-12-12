@@ -20,4 +20,6 @@ public interface HelperRegistrationService {
     ResponseEntity<ResponseObject> getHelperInformation(Integer id);
     ResponseEntity<ResponseObject> acceptHelperInformation(Integer userId, Integer id);
     ResponseEntity<ResponseObject> confirmHelperInformation(Integer managerId, Integer id, ConfirmHelperRequest request);
+    ResponseEntity<ResponseObject> assignManageToRegistration();
+
 }

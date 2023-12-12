@@ -49,20 +49,25 @@ public class GoogleMapServiceImpl implements GoogleMapService {
         return distance;
     }
 
-    private Double calculateDistance(Position reference, Position position) {
-        double earthRadius = 6371;
+    public Double calculateDistance(Position reference, Position position) {
+        double earthRadius = 6371.0; // Radius of the Earth in meters
 
-        double dLat = Math.toRadians(reference.getLongitude() - position.getLongitude());
-        double dLng = Math.toRadians(reference.getLatitude() - position.getLatitude());
+        double dLat = Math.toRadians(reference.getLatitude() - position.getLatitude());
+        double dLng = Math.toRadians(reference.getLongitude() - position.getLongitude());
 
         double a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-                Math.cos(Math.toRadians(reference.getLatitude())) *
-                        Math.cos(Math.toRadians(position.getLatitude())) *
+                Math.cos(Math.toRadians(reference.getLatitude())) * Math.cos(Math.toRadians(position.getLatitude())) *
                         Math.sin(dLng / 2) * Math.sin(dLng / 2);
 
         double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
-        return earthRadius * c;
+        // Calculate distance using the Haversine formula
+        double distance = earthRadius * c;
+
+        // Round to two decimal places
+        distance = Math.round(distance * 100.0) / 100.0;
+
+        return distance;
     }
     @Override
     public List<BookingDetail> checkDistance(List<BookingDetail> positionList, Position position, double maxDistance) {

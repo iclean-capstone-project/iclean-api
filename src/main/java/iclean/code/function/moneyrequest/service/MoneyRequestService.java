@@ -14,4 +14,6 @@ public interface MoneyRequestService {
     ResponseEntity<ResponseObject> validateMoneyRequest(ValidateMoneyRequest request);
 
     ResponseEntity<ResponseObject> resendOtp(String phoneNumber);
+
+    ResponseEntity<ResponseObject> sendMoneyToHelper(int bookingDetailId);
 }

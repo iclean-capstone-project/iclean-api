@@ -70,4 +70,8 @@ public interface HelperInformationRepository extends JpaRepository<HelperInforma
             "LEFT JOIN u.addresses addr " +
             "WHERE addr.addressId IN ?1 ")
     List<HelperInformation> findAllByAddressIds(List<Integer> addressIds);
+
+    @Query("SELECT hi FROM HelperInformation hi " +
+            "WHERE hi.managerId is null")
+    List<HelperInformation> findAllHelperInformationHaveNoManager();
 }

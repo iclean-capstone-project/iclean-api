@@ -30,12 +30,14 @@ public interface BookingDetailRepository extends JpaRepository<BookingDetail, In
     @Query(value = "SELECT bookingDetail FROM BookingDetail bookingDetail " +
             "LEFT JOIN bookingDetail.booking booking " +
             "WHERE bookingDetail.serviceUnit.service.serviceId = ?1 " +
-            "AND booking.bookingStatus = ?2 ")
+            "AND booking.bookingStatus = ?2 " +
+            "ORDER BY  bookingDetail.booking.orderDate desc")
     Optional<BookingDetail> findByServiceIdAndBookingStatus(Integer id, BookingStatusEnum bookingStatusEnum);
 
     @Query(value = "SELECT bookingDetail FROM BookingDetail bookingDetail " +
             "WHERE bookingDetail.bookingDetailId = ?1 " +
-            "AND bookingDetail.bookingDetailStatus = ?2 ")
+            "AND bookingDetail.bookingDetailStatus = ?2 " +
+            "ORDER BY  bookingDetail.booking.orderDate desc")
     Optional<BookingDetail> findByBookingDetailIdAndBookingStatus(Integer id, BookingDetailStatusEnum bookingDetailStatusEnum);
 
     @Query("SELECT NEW iclean.code.data.dto.response.feedback.PointFeedbackOfHelper(AVG(bd.rate), " +
@@ -70,7 +72,8 @@ public interface BookingDetailRepository extends JpaRepository<BookingDetail, In
             "WHERE u.userId = ?1 " +
             "AND bd.bookingDetailStatus IN ?2 " +
             "AND bd.bookingDetailStatus != ?3 " +
-            "AND bdh.bookingDetailHelperStatus IN ?4")
+            "AND bdh.bookingDetailHelperStatus IN ?4 " +
+            "ORDER BY  bd.booking.orderDate desc")
     Page<BookingDetail> findByHelperId(Integer userId, List<BookingDetailStatusEnum> bookingDetailStatusEnums, BookingDetailStatusEnum noBookingStatusEnum,
             List<BookingDetailHelperStatusEnum> bookingDetailHelperStatusEnums, Pageable pageable);
 
@@ -89,14 +92,19 @@ public interface BookingDetailRepository extends JpaRepository<BookingDetail, In
 
     @Query("SELECT bd FROM BookingDetail bd WHERE bd.booking.renter.userId = ?1 " +
             "AND bd.bookingDetailStatus IN ?2 " +
-            "AND bd.bookingDetailStatus != ?3")
+            "AND bd.bookingDetailStatus != ?3" +
+            "ORDER BY  bd.booking.orderDate desc")
     Page<BookingDetail> findByRenterId(Integer userId, List<BookingDetailStatusEnum> bookingDetailStatusEnums, BookingDetailStatusEnum noBookingStatusEnum, Pageable pageable);
 
-    @Query("SELECT bd FROM BookingDetail bd WHERE bd.bookingDetailStatus IN ?1 AND bd.bookingDetailStatus != ?2")
+    @Query("SELECT bd FROM BookingDetail bd " +
+            "WHERE bd.bookingDetailStatus IN ?1 " +
+            "AND bd.bookingDetailStatus != ?2 " +
+            "ORDER BY  bd.booking.orderDate desc")
     Page<BookingDetail> findAllByBookingStatus(List<BookingDetailStatusEnum> bookingDetailStatusEnums, BookingDetailStatusEnum noBookingStatusEnum, Pageable pageable);
 
     @Query("SELECT bd FROM BookingDetail bd " +
-            "WHERE bd.bookingDetailStatus != ?1")
+            "WHERE bd.bookingDetailStatus != ?1" +
+            "ORDER BY  bd.booking.orderDate desc")
     Page<BookingDetail> findAllBooking(BookingDetailStatusEnum bookingStatusEnum, Pageable pageable);
 
     @Query("SELECT bd FROM BookingDetail bd " +

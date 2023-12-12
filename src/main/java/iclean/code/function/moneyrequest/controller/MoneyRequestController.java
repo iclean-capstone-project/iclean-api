@@ -82,5 +82,9 @@ public class MoneyRequestController {
     public ResponseEntity<ResponseObject> validateRequest(@RequestBody @Valid ValidateMoneyRequest request) {
         return moneyRequestService.validateMoneyRequest(request);
     }
-
+    @PostMapping("sendMoney/{bookingDetailId}")
+    @PreAuthorize("hasAnyAuthority('manager', 'admin')")
+    public ResponseEntity<ResponseObject> sendMoneyToHelper(@PathVariable Integer bookingDetailId) {
+        return moneyRequestService.sendMoneyToHelper(bookingDetailId);
+    }
 }

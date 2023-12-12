@@ -36,4 +36,6 @@ public interface BookingService {
     ResponseEntity<ResponseObject> resendBooking(CheckOutCartRequest request, Integer id, Integer renterId);
 
     ResponseEntity<ResponseObject> getBookingNow(CreateBookingRequestNow request, Integer renterId);
+
+     ResponseEntity<ResponseObject> setBookingForManager();
 }

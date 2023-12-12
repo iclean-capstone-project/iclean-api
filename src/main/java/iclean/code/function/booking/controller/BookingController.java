@@ -244,4 +244,10 @@ public class BookingController {
     public ResponseEntity<ResponseObject> deleteServiceOnCart(Authentication authentication, @PathVariable Integer id) {
         return bookingService.deleteServiceOnCart(JwtUtils.decodeToAccountId(authentication), id);
     }
+
+    @PostMapping("set-booking-manager")
+    @PreAuthorize("hasAnyAuthority('manager', 'admin')")
+    public ResponseEntity<ResponseObject> setBookingForManager() {
+        return bookingService.setBookingForManager();
+    }
 }
