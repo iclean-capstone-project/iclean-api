@@ -235,38 +235,41 @@ public class MoneyRequestServiceImpl implements MoneyRequestService {
     }
 
     @Override
-    public ResponseEntity<ResponseObject> sendMoneyToHelper(int bookingDetailId) {
+    public ResponseEntity<ResponseObject> sendMoneyToHelper(int bookingId) {
         try {
-            BookingDetail bookingDetail = findBookingDetailsById(bookingDetailId);
-            if(!Objects.equals(bookingDetail.getBookingDetailStatus(), BookingDetailStatusEnum.FINISHED)){
+            List<BookingDetail> bookingDetails = bookingDetailRepository.findAllByBookingIdHaveFinished(bookingId, BookingDetailStatusEnum.FINISHED);
+            if(bookingDetails.isEmpty()){
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString(),
-                                "Booking not finished! Cannot send money",
+                                "Booking have not finished",
                                 null));
             }
-
-            BookingDetailHelper bookingDetailHelper = bookingDetailHelperRepository.findByBookingDetailIdAndActiveLimit(bookingDetail.getBookingDetailId(),
-                    BookingDetailHelperStatusEnum.ACTIVE);
-            if (bookingDetailHelper == null) {
-                throw new BadRequestException();
-            }
-            if (bookingDetail.getWorkDate() != null && bookingDetail.getWorkEnd() != null) {
-                LocalDateTime endDateTime = LocalDateTime.of(bookingDetail.getWorkDate(), bookingDetail.getWorkEnd());
-                if (!checkInTimeToSendMoney(endDateTime)) {
+            for (BookingDetail bookingDetail: bookingDetails
+                 ) {
+                BookingDetailHelper bookingDetailHelper = bookingDetailHelperRepository.findByBookingDetailIdAndActiveLimit(bookingDetail.getBookingDetailId(),
+                        BookingDetailHelperStatusEnum.ACTIVE);
+                if (bookingDetailHelper == null) {
                     throw new BadRequestException();
                 }
+                if (bookingDetail.getWorkDate() != null && bookingDetail.getWorkEnd() != null) {
+                    LocalDateTime endDateTime = LocalDateTime.of(bookingDetail.getWorkDate(), bookingDetail.getWorkEnd());
+                    if (!checkInTimeToSendMoney(endDateTime)) {
+                        throw new BadRequestException();
+                    }
+                }
+                createTransaction(new TransactionRequest(
+                        bookingDetail.getPriceHelper(),
+                        String.format(MessageVariable.PAYMENT_FOR_HELPER, bookingDetail.getBooking().getBookingCode(),
+                                bookingDetail.getServiceUnit().getService().getServiceName()),
+                        bookingDetailHelper.getServiceRegistration().getHelperInformation().getUser().getUserId(),
+                        TransactionTypeEnum.DEPOSIT.name(),
+                        WalletTypeEnum.MONEY.name(),
+                        bookingDetail.getBooking().getBookingId()
+                ));
+                bookingDetail.setPriceHelper(0D);
             }
-            createTransaction(new TransactionRequest(
-                    bookingDetail.getPriceHelper(),
-                    String.format(MessageVariable.PAYMENT_FOR_HELPER, bookingDetail.getBooking().getBookingCode(),
-                            bookingDetail.getServiceUnit().getService().getServiceName()),
-                    bookingDetailHelper.getServiceRegistration().getHelperInformation().getUser().getUserId(),
-                    TransactionTypeEnum.DEPOSIT.name(),
-                    WalletTypeEnum.MONEY.name(),
-                    bookingDetail.getBooking().getBookingId()
-            ));
-            bookingDetail.setPriceHelper(0D);
-            bookingDetailRepository.save(bookingDetail);
+
+            bookingDetailRepository.saveAll(bookingDetails);
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseObject(HttpStatus.OK.toString(),
                             Utils.getDateTimeNowAsString() + " ----> Auto Send Money Successful!",
