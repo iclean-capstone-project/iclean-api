@@ -5,5 +5,5 @@ import lombok.Data;
 @Data
 public class GetReportTypeResponse {
     private int reportTypeId;
-    private String reportDetail;
+    private String reportName;
 }
