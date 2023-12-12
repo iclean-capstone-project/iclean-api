@@ -18,8 +18,4 @@ public class UpdateSystemParameter {
 
     @Column(name = "parameter_value")
     private String parameterValue;
-
-    @NotNull(message = "updateVersion not null")
-    @NotBlank(message = "updateVersion not blank")
-    private String updateVersion;
 }

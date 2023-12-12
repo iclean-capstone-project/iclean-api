@@ -235,6 +235,11 @@ public class ReportServiceImpl implements ReportService {
                                 "Booking already have report!", null));
             }
             BookingDetail bookingDetail = findBookingDetail(reportRequest.getBookingDetailId());
+            if(!BookingDetailStatusEnum.FINISHED.equals(bookingDetail.getBookingDetailStatus())){
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString(),
+                                "Cannot report booking has not finished yet", null));
+            }
             bookingDetail.setBookingDetailStatus(BookingDetailStatusEnum.REPORTED);
             if (!Objects.equals(bookingDetail.getBooking().getRenter().getUserId(), renterId))
                 throw new UserNotHavePermissionException("User cannot do this action");
@@ -339,20 +344,25 @@ public class ReportServiceImpl implements ReportService {
                 Double percent = 0D;
                 double moneyRefund = 0D;
                 double pointRefund = 0D;
-                if (transactionMoney != null) {
-                    if (report.getBookingDetail().getPriceDetail() < transactionMoney.getAmount()) {
-                        percent = report.getBookingDetail().getPriceDetail() / transactionMoney.getAmount()
-                                * reportRequest.getRefundPercent() / 100;
-                        moneyRefund = transactionMoney.getAmount() * percent;
-                    } else {
-                        percent = transactionMoney.getAmount() / report.getBookingDetail().getPriceDetail()
-                                * reportRequest.getRefundPercent() / 100;
-                        moneyRefund = percent * transactionMoney.getAmount();
-                    }
+                if(Objects.isNull(transactionPoint)){
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                            .body(new ResponseObject(HttpStatus.NOT_FOUND.toString(),
+                                    MessageVariable.NOT_HAVE_TRANSACTION_POINT, null));
                 }
-                if (transactionPoint != null) {
-                    pointRefund = transactionPoint.getAmount() * percent;
+                if(Objects.isNull(transactionMoney)){
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                            .body(new ResponseObject(HttpStatus.NOT_FOUND.toString(),
+                                    MessageVariable.NOT_HAVE_TRANSACTION_MONEY, null));
                 }
+                if (report.getBookingDetail().getPriceDetail() < transactionMoney.getAmount()) {
+                    percent = report.getBookingDetail().getPriceDetail() / transactionMoney.getAmount()
+                            * reportRequest.getRefundPercent() / 100;
+                } else {
+                    percent = transactionMoney.getAmount() / report.getBookingDetail().getPriceDetail()
+                            * reportRequest.getRefundPercent() / 100;
+                }
+                moneyRefund = transactionMoney.getAmount() * percent;
+                pointRefund = transactionPoint.getAmount() * percent;
                 if (moneyRefund > 0) {
                     createTransaction(new TransactionRequest(moneyRefund, String.format(MessageVariable.REFUND_CANCEL_BOOKING,
                             report.getBookingDetail().getBooking().getBookingCode()),
