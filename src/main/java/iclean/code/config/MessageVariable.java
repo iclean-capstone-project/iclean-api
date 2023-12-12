@@ -52,4 +52,5 @@ public class MessageVariable {
     public static final String NOT_HAVE_TRANSACTION_MONEY = "Không tìm thấy hóa đơn thanh toán tiền dịch vụ";
     public static final String NOT_HAVE_TRANSACTION_POINT = "Không tìm thấy hóa đơn thanh toán điểm dịch vụ";
 
+    public static final String ALREADY_REPORTED = "Bạn đã báo cáo, vui lòng đợi nhân viên duyệt!";
 }

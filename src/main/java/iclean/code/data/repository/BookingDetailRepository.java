@@ -24,6 +24,7 @@ public interface BookingDetailRepository extends JpaRepository<BookingDetail, In
             "LEFT JOIN bdh.serviceRegistration sr WHERE " +
             "sr.helperInformation.user.userId = ?1 " +
             "AND bookingDetail.serviceUnit.service.serviceId = ?2 " +
+            "AND bookingDetail.feedback is not null " +
             "ORDER BY bookingDetail.feedbackTime DESC ")
     Page<BookingDetail> findByServiceIdAndHelperId(Integer helperId, Integer serviceId, Pageable pageable);
 

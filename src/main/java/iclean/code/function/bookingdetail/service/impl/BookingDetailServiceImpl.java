@@ -766,6 +766,10 @@ public class BookingDetailServiceImpl implements BookingDetailService {
                 response.setRejectionReasonContent(bookingDetail.getBooking().getRejectionReason().getRejectionContent());
                 response.setRejectionReasonDescription(bookingDetail.getBooking().getRjReasonDescription());
             }
+            response.setReported(false);
+            if (Objects.nonNull(bookingDetail.getReport())) {
+                response.setReported(true);
+            }
             response.setServiceId(bookingDetail.getServiceUnit().getService().getServiceId());
             response.setServiceUnitId(bookingDetail.getServiceUnit().getServiceUnitId());
             response.setServiceIcon(bookingDetail.getServiceUnit().getService().getServiceImage());
@@ -1314,6 +1318,10 @@ public class BookingDetailServiceImpl implements BookingDetailService {
                 .map(detail -> {
                             GetBookingDetailResponse response = modelMapper.map(detail, GetBookingDetailResponse.class);
                             response.setStatus(detail.getBookingDetailStatus().name());
+                            response.setReported(false);
+                            if (Objects.nonNull(detail.getReport())) {
+                                response.setReported(true);
+                            }
                             response.setRenterName(detail.getBooking().getRenter().getFullName());
                             response.setLongitude(detail.getBooking().getLongitude());
                             response.setLatitude(detail.getBooking().getLatitude());
