@@ -29,6 +29,7 @@ import iclean.code.exception.BadRequestException;
 import iclean.code.exception.NotFoundException;
 import iclean.code.exception.UserNotHavePermissionException;
 import iclean.code.function.bookingdetail.service.BookingDetailService;
+import iclean.code.function.common.service.FirebaseRealtimeDatabaseService;
 import iclean.code.function.feedback.service.FeedbackService;
 import iclean.code.function.serviceprice.service.ServicePriceService;
 import iclean.code.function.common.service.FCMService;
@@ -109,7 +110,8 @@ public class BookingDetailServiceImpl implements BookingDetailService {
     private TransactionRepository transactionRepository;
 
     @Autowired
-    private RejectionReasonRepository rejectionReasonRepository;
+    private FirebaseRealtimeDatabaseService firebaseRealtimeDatabaseService;
+
     @Value("${iclean.app.max.distance.length}")
     private Double delayMinutes;
 
@@ -340,6 +342,8 @@ public class BookingDetailServiceImpl implements BookingDetailService {
                 bookingDetailStatusHistoryRepository.save(bookingDetailStatusHistory);
                 bookingDetailRepository.save(bookingDetail);
                 updateBookingIfSameStatusBookingDetail(bookingDetail.getBooking());
+                firebaseRealtimeDatabaseService.sendMessage(bookingDetail.getBookingDetailId().toString(),
+                        request.getQrCode());
                 return ResponseEntity.status(HttpStatus.OK)
                         .body(new ResponseObject(HttpStatus.OK.toString(),
                                 "Validate booking successful, helper can start to do this service", null));
