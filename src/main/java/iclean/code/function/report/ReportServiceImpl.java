@@ -232,7 +232,7 @@ public class ReportServiceImpl implements ReportService {
             if (reportRepository.findReportByBookingDetailBookingDetailId(reportRequest.getBookingDetailId()) != null) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString(),
-                                "Booking already have report!", null));
+                                MessageVariable.ALREADY_REPORTED, null));
             }
             BookingDetail bookingDetail = findBookingDetail(reportRequest.getBookingDetailId());
             if(!BookingDetailStatusEnum.FINISHED.equals(bookingDetail.getBookingDetailStatus())){

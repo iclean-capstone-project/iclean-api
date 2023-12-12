@@ -32,4 +32,5 @@ public class GetBookingDetailDetailResponse {
     private GetTransactionBookingResponse transaction;
     private GetFeedbackResponse feedback;
     private List<GetBookingStatusHistoryResponse> statuses;
+    private Boolean reported;
 }
