@@ -689,8 +689,8 @@ public class BookingDetailServiceImpl implements BookingDetailService {
                                                             Pageable pageable) {
         try {
             Page<BookingDetail> bookingDetails;
-            Sort order = Sort.by(Sort.Order.desc("booking.orderDate"));
-            pageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), order);
+//            Sort order = Sort.by(Sort.Order.desc("booking.orderDate"));
+//            pageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), order);
             List<BookingDetailStatusEnum> bookingDetailStatusEnums = null;
             if (!(statuses == null || statuses.isEmpty())) {
                 bookingDetailStatusEnums = statuses
@@ -1024,6 +1024,17 @@ public class BookingDetailServiceImpl implements BookingDetailService {
                     WalletTypeEnum.POINT.name(),
                     bookingDetail.getBooking().getBookingId()
             ));
+            NotificationRequestDto notificationRequestDto = new NotificationRequestDto();
+            notificationRequestDto.setTitle(MessageVariable.TITLE_APP);
+            notificationRequestDto.setBody(String.format(MessageVariable.COMPLETE_BOOKING,
+                    bookingDetail.getServiceUnit().getService().getServiceName(),
+                    bookingDetail.getBooking().getBookingCode()));
+            firebaseRealtimeDatabaseService.sendNotification(bookingDetail.getBooking().getRenter().getPhoneNumber(),
+                    bookingDetail.getBookingDetailId().toString(),
+                    String.format(String.format(MessageVariable.COMPLETE_BOOKING,
+                            bookingDetail.getServiceUnit().getService().getServiceName(),
+                            bookingDetail.getBooking().getBookingCode())));
+            sendMessage(notificationRequestDto, bookingDetail.getBooking().getRenter());
             bookingDetailStatusHistoryRepository.save(bookingDetailStatusHistory);
             bookingDetailRepository.save(bookingDetail);
             updateBookingIfSameStatusBookingDetail(bookingDetail.getBooking());
@@ -1392,6 +1403,7 @@ public class BookingDetailServiceImpl implements BookingDetailService {
             return moneyToPoint;
         }
     }
+
     private void sendMessage(NotificationRequestDto notificationRequestDto, User user) {
         List<DeviceToken> deviceTokens = deviceTokenRepository.findByUserId(user.getUserId());
         if (!deviceTokens.isEmpty()) {
@@ -1405,6 +1417,7 @@ public class BookingDetailServiceImpl implements BookingDetailService {
                 .map(DeviceToken::getFcmToken)
                 .collect(Collectors.toList());
     }
+
     public boolean createTransaction(TransactionRequest request) {
         User user = findAccount(request.getUserId());
         Booking booking = findBookingById(request.getBookingId());

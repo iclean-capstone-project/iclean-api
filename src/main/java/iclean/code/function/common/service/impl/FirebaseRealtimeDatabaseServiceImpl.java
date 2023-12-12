@@ -21,4 +21,15 @@ public class FirebaseRealtimeDatabaseServiceImpl implements FirebaseRealtimeData
 
         ref.push().setValueAsync(data);
     }
+
+    @Override
+    public void sendNotification(String phoneNumber, String bookingDetailId, String message) {
+        DatabaseReference ref = FirebaseDatabase.getInstance().getReference("notificationBooking");
+        Map<String, Object> data = new HashMap<>();
+        data.put("phoneNumber", phoneNumber);
+        data.put("bookingDetailId", bookingDetailId);
+        data.put("message", message);
+
+        ref.push().setValueAsync(data);
+    }
 }
