@@ -344,25 +344,21 @@ public class ReportServiceImpl implements ReportService {
                 Double percent = 0D;
                 double moneyRefund = 0D;
                 double pointRefund = 0D;
-                if(Objects.isNull(transactionPoint)){
-                    return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                            .body(new ResponseObject(HttpStatus.NOT_FOUND.toString(),
-                                    MessageVariable.NOT_HAVE_TRANSACTION_POINT, null));
+
+                if (Objects.nonNull(transactionMoney)) {
+                    if (report.getBookingDetail().getPriceDetail() < transactionMoney.getAmount()) {
+                        percent = report.getBookingDetail().getPriceDetail() / transactionMoney.getAmount()
+                                * reportRequest.getRefundPercent() / 100;
+                    } else {
+                        percent = transactionMoney.getAmount() / report.getBookingDetail().getPriceDetail()
+                                * reportRequest.getRefundPercent() / 100;
+                    }
+                    moneyRefund = transactionMoney.getAmount() * percent;
                 }
-                if(Objects.isNull(transactionMoney)){
-                    return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                            .body(new ResponseObject(HttpStatus.NOT_FOUND.toString(),
-                                    MessageVariable.NOT_HAVE_TRANSACTION_MONEY, null));
+                if (Objects.nonNull(transactionPoint)) {
+                    pointRefund = transactionPoint.getAmount() * percent;
                 }
-                if (report.getBookingDetail().getPriceDetail() < transactionMoney.getAmount()) {
-                    percent = report.getBookingDetail().getPriceDetail() / transactionMoney.getAmount()
-                            * reportRequest.getRefundPercent() / 100;
-                } else {
-                    percent = transactionMoney.getAmount() / report.getBookingDetail().getPriceDetail()
-                            * reportRequest.getRefundPercent() / 100;
-                }
-                moneyRefund = transactionMoney.getAmount() * percent;
-                pointRefund = transactionPoint.getAmount() * percent;
+
                 if (moneyRefund > 0) {
                     createTransaction(new TransactionRequest(moneyRefund, String.format(MessageVariable.REFUND_CANCEL_BOOKING,
                             report.getBookingDetail().getBooking().getBookingCode()),
