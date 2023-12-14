@@ -238,14 +238,14 @@ public class MoneyRequestServiceImpl implements MoneyRequestService {
     public ResponseEntity<ResponseObject> sendMoneyToHelper(int bookingId) {
         try {
             List<BookingDetail> bookingDetails = bookingDetailRepository.findAllByBookingIdHaveFinished(bookingId, BookingDetailStatusEnum.FINISHED);
-            if(bookingDetails.isEmpty()){
+            if (bookingDetails.isEmpty()) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString(),
                                 "Booking have not finished",
                                 null));
             }
-            for (BookingDetail bookingDetail: bookingDetails
-                 ) {
+            for (BookingDetail bookingDetail : bookingDetails
+            ) {
                 BookingDetailHelper bookingDetailHelper = bookingDetailHelperRepository.findByBookingDetailIdAndActiveLimit(bookingDetail.getBookingDetailId(),
                         BookingDetailHelperStatusEnum.ACTIVE);
                 if (bookingDetailHelper == null) {

@@ -104,9 +104,22 @@ public interface BookingDetailRepository extends JpaRepository<BookingDetail, In
     Page<BookingDetail> findAllByBookingStatus(List<BookingDetailStatusEnum> bookingDetailStatusEnums, BookingDetailStatusEnum noBookingStatusEnum, Pageable pageable);
 
     @Query("SELECT bd FROM BookingDetail bd " +
+            "WHERE bd.bookingDetailStatus IN ?1 " +
+            "AND bd.bookingDetailStatus != ?2 " +
+            "AND bd.booking.manager.userId = ?3 " +
+            "ORDER BY  bd.booking.orderDate desc")
+    Page<BookingDetail> findAllByBookingStatusAsManager(List<BookingDetailStatusEnum> bookingDetailStatusEnums, BookingDetailStatusEnum noBookingStatusEnum, int managerId, Pageable pageable);
+
+    @Query("SELECT bd FROM BookingDetail bd " +
             "WHERE bd.bookingDetailStatus != ?1 " +
             "ORDER BY  bd.booking.orderDate desc")
     Page<BookingDetail> findAllBooking(BookingDetailStatusEnum bookingStatusEnum, Pageable pageable);
+
+    @Query("SELECT bd FROM BookingDetail bd " +
+            "WHERE bd.bookingDetailStatus != ?1 " +
+            "AND bd.booking.manager.userId = ?2 " +
+            "ORDER BY  bd.booking.orderDate desc")
+    Page<BookingDetail> findAllBookingAsManager(BookingDetailStatusEnum bookingStatusEnum, int managerId, Pageable pageable);
 
     @Query("SELECT bd FROM BookingDetail bd " +
             "LEFT JOIN bd.bookingDetailHelpers bdh " +
