@@ -890,14 +890,13 @@ public class BookingServiceImpl implements BookingService {
                 }
             }
             for (BookingDetail bookingDetail : booking.getBookingDetails()){
-                if((bookingDetail.getWorkDate().isBefore(Utils.getLocalDateTimeNow().toLocalDate())
-                        || bookingDetail.getWorkStart().isBefore(Utils.getLocalDateTimeNow().toLocalTime()))
+                if(bookingDetail.getWorkDate().isBefore(Utils.getLocalDateTimeNow().toLocalDate())
                         && BookingDetailStatusEnum.ON_CART.equals(bookingDetail.getBookingDetailStatus()))
                 {
                     bookingDetailStatusHistoryRepository.deleteAll(bookingDetail.getBookingDetailStatusHistories());
                     bookingDetailRepository.delete(bookingDetail);
-                    return ResponseEntity.status(HttpStatus.OK)
-                            .body(new ResponseObject(HttpStatus.OK.toString(),
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                            .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString(),
                                     "Have some invalid service on cart! Please reload cart", null));
                 }
             }
