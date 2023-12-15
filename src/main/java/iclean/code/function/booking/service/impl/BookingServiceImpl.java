@@ -748,18 +748,6 @@ public class BookingServiceImpl implements BookingService {
                         booking.setTotalPriceActual(Utils.roundingNumber(booking.getTotalPrice() - minusMoney, 1000D, RoundingMode.DOWN));
                     }
                 }
-                for (BookingDetail bookingDetail : booking.getBookingDetails()){
-                    if((bookingDetail.getWorkDate().isBefore(Utils.getLocalDateTimeNow().toLocalDate())
-                            || bookingDetail.getWorkStart().isBefore(Utils.getLocalDateTimeNow().toLocalTime()))
-                            && BookingDetailStatusEnum.ON_CART.equals(bookingDetail.getBookingDetailStatus()))
-                    {
-                        bookingDetailStatusHistoryRepository.deleteAll(bookingDetail.getBookingDetailStatusHistories());
-                        bookingDetailRepository.delete(bookingDetail);
-                        return ResponseEntity.status(HttpStatus.OK)
-                                .body(new ResponseObject(HttpStatus.OK.toString(),
-                                        "Have some invalid service on cart! Please reload cart", null));
-                    }
-                }
                 GetCartResponseDetail responseDetail = modelMapper.map(booking, GetCartResponseDetail.class);
                 return ResponseEntity.status(HttpStatus.OK)
                         .body(new ResponseObject(HttpStatus.OK.toString(),
@@ -899,6 +887,18 @@ public class BookingServiceImpl implements BookingService {
                     booking.setLocationDescription(addressDefault.getDescription());
                 } else {
                     throw new BadRequestException(MessageVariable.NEED_ADD_LOCATION_FOR_BOOKING);
+                }
+            }
+            for (BookingDetail bookingDetail : booking.getBookingDetails()){
+                if((bookingDetail.getWorkDate().isBefore(Utils.getLocalDateTimeNow().toLocalDate())
+                        || bookingDetail.getWorkStart().isBefore(Utils.getLocalDateTimeNow().toLocalTime()))
+                        && BookingDetailStatusEnum.ON_CART.equals(bookingDetail.getBookingDetailStatus()))
+                {
+                    bookingDetailStatusHistoryRepository.deleteAll(bookingDetail.getBookingDetailStatusHistories());
+                    bookingDetailRepository.delete(bookingDetail);
+                    return ResponseEntity.status(HttpStatus.OK)
+                            .body(new ResponseObject(HttpStatus.OK.toString(),
+                                    "Have some invalid service on cart! Please reload cart", null));
                 }
             }
             User renter = findAccount(userId);
