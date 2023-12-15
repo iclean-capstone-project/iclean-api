@@ -113,6 +113,8 @@ public class BookingServiceImpl implements BookingService {
             String roleUser = userRepository.findByUserId(userId).getRole().getTitle().toUpperCase();
             if (Utils.isNullOrEmpty(roleUser))
                 throw new UserNotHavePermissionException("User do not have permission to do this action");
+            LocalDateTime startDateTime = null;
+            LocalDateTime endDateTime = null;
             RoleEnum roleEnum = RoleEnum.valueOf(roleUser);
             switch (roleEnum) {
                 case EMPLOYEE:
@@ -134,12 +136,34 @@ public class BookingServiceImpl implements BookingService {
 
                     break;
                 case MANAGER:
-                case ADMIN:
-                    LocalDateTime startDateTime = null;
                     if (startDate != null && !startDate.isEmpty()) {
                         startDateTime = Utils.convertStringToLocalDate(startDate).atStartOfDay();
                     }
-                    LocalDateTime endDateTime = null;
+                    if (endDate != null && !endDate.isEmpty()) {
+                        endDateTime = Utils.convertStringToLocalDate(endDate).atStartOfDay().plusDays(1);
+                    }
+                    if (startDateTime == null && endDateTime == null) {
+                        bookings = !(statuses == null || statuses.isEmpty())
+                                ? bookingRepository.findAllByBookingStatusManager(userId, bookingStatusEnums, BookingStatusEnum.ON_CART, pageable)
+                                : bookingRepository.findAllBookingAsManager(userId, BookingStatusEnum.ON_CART, pageable);
+                    } else if (startDateTime != null && endDateTime == null) {
+                        bookings = !(statuses == null || statuses.isEmpty())
+                                ? bookingRepository.findAllByBookingStatusByStartDateTimeAsManager(bookingStatusEnums, startDateTime, BookingStatusEnum.ON_CART, userId, pageable)
+                                : bookingRepository.findAllBookingByStartDateTimeAsManager(BookingStatusEnum.ON_CART, startDateTime, userId, pageable);
+                    } else if (startDateTime == null) {
+                        bookings = !(statuses == null || statuses.isEmpty())
+                                ? bookingRepository.findAllByBookingStatusByEndDateTimeAsManager(bookingStatusEnums, endDateTime, BookingStatusEnum.ON_CART, userId,pageable)
+                                : bookingRepository.findAllBookingByEndDateTimeAsManager(BookingStatusEnum.ON_CART, endDateTime, userId, pageable);
+                    } else {
+                        bookings = !(statuses == null || statuses.isEmpty())
+                                ? bookingRepository.findAllByBookingStatusStartTimeEndTimeAsManager(bookingStatusEnums, startDateTime, endDateTime, BookingStatusEnum.ON_CART, userId, pageable)
+                                : bookingRepository.findAllBookingStartTimeEndTimeAsManager(BookingStatusEnum.ON_CART, startDateTime, endDateTime, userId, pageable);
+                    }
+                    break;
+                case ADMIN:
+                    if (startDate != null && !startDate.isEmpty()) {
+                        startDateTime = Utils.convertStringToLocalDate(startDate).atStartOfDay();
+                    }
                     if (endDate != null && !endDate.isEmpty()) {
                         endDateTime = Utils.convertStringToLocalDate(endDate).atStartOfDay().plusDays(1);
                     }
@@ -160,8 +184,6 @@ public class BookingServiceImpl implements BookingService {
                                 ? bookingRepository.findAllByBookingStatusStartTimeEndTime(bookingStatusEnums, startDateTime, endDateTime, BookingStatusEnum.ON_CART, pageable)
                                 : bookingRepository.findAllBookingStartTimeEndTime(BookingStatusEnum.ON_CART, startDateTime, endDateTime, pageable);
                     }
-
-
                     break;
                 default:
                     throw new UserNotHavePermissionException("User do not have permission to do this action");
@@ -724,6 +746,18 @@ public class BookingServiceImpl implements BookingService {
                         booking.setTotalPriceActual(0D);
                     } else {
                         booking.setTotalPriceActual(Utils.roundingNumber(booking.getTotalPrice() - minusMoney, 1000D, RoundingMode.DOWN));
+                    }
+                }
+                for (BookingDetail bookingDetail : booking.getBookingDetails()){
+                    if((bookingDetail.getWorkDate().isBefore(Utils.getLocalDateTimeNow().toLocalDate())
+                            || bookingDetail.getWorkStart().isBefore(Utils.getLocalDateTimeNow().toLocalTime()))
+                            && BookingDetailStatusEnum.ON_CART.equals(bookingDetail.getBookingDetailStatus()))
+                    {
+                        bookingDetailStatusHistoryRepository.deleteAll(bookingDetail.getBookingDetailStatusHistories());
+                        bookingDetailRepository.delete(bookingDetail);
+                        return ResponseEntity.status(HttpStatus.OK)
+                                .body(new ResponseObject(HttpStatus.OK.toString(),
+                                        "Have some invalid service on cart! Please reload cart", null));
                     }
                 }
                 GetCartResponseDetail responseDetail = modelMapper.map(booking, GetCartResponseDetail.class);

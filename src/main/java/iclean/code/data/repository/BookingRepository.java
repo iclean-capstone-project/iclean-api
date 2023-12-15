@@ -23,6 +23,11 @@ public interface BookingRepository extends JpaRepository<Booking, Integer> {
             "ORDER BY booking.orderDate desc")
     Page<Booking> findAllBooking(BookingStatusEnum bookingStatusEnum, Pageable pageable);
 
+    @Query("SELECT booking FROM Booking booking " +
+            "WHERE booking.manager.userId = ?1 AND booking.bookingStatus != ?2 " +
+            "ORDER BY booking.orderDate desc")
+    Page<Booking> findAllBookingAsManager(int managerId, BookingStatusEnum bookingStatusEnum, Pageable pageable);
+
     @Query("SELECT booking FROM Booking booking WHERE booking.renter.userId = ?1 " +
             "AND booking.bookingStatus IN ?2 " +
             "AND booking.bookingStatus != ?3 " +
@@ -98,8 +103,14 @@ public interface BookingRepository extends JpaRepository<Booking, Integer> {
     @Query("SELECT b FROM Booking b WHERE b.bookingStatus IN ?1 AND b.bookingStatus != ?2 ORDER BY b.orderDate desc")
     Page<Booking> findAllByBookingStatus(List<BookingStatusEnum> bookingStatusEnums, BookingStatusEnum notStatus, Pageable pageable);
 
+    @Query("SELECT b FROM Booking b WHERE b.manager.userId = ?1 AND b.bookingStatus IN ?2 AND b.bookingStatus != ?3 ORDER BY b.orderDate desc")
+    Page<Booking> findAllByBookingStatusManager(int managerId, List<BookingStatusEnum> bookingStatusEnums, BookingStatusEnum notStatus, Pageable pageable);
+
     @Query("SELECT b FROM Booking b WHERE b.bookingStatus IN ?1 AND b.bookingStatus != ?3 AND b.orderDate >= ?2 ORDER BY b.orderDate desc")
     Page<Booking> findAllByBookingStatusByStartDateTime(List<BookingStatusEnum> bookingStatusEnums, LocalDateTime startDateTime, BookingStatusEnum bookingStatusEnum, Pageable pageable);
+
+    @Query("SELECT b FROM Booking b WHERE b.bookingStatus IN ?1 AND b.bookingStatus != ?3 AND b.orderDate >= ?2 AND b.manager.userId = ?4 ORDER BY b.orderDate desc")
+    Page<Booking> findAllByBookingStatusByStartDateTimeAsManager(List<BookingStatusEnum> bookingStatusEnums, LocalDateTime startDateTime, BookingStatusEnum bookingStatusEnum, int managerId, Pageable pageable);
 
     @Query("SELECT booking FROM Booking booking " +
             "WHERE booking.bookingStatus != ?1 " +
@@ -107,8 +118,18 @@ public interface BookingRepository extends JpaRepository<Booking, Integer> {
             "ORDER BY booking.orderDate desc")
     Page<Booking> findAllBookingByStartDateTime(BookingStatusEnum bookingStatusEnum, LocalDateTime startDateTime, Pageable pageable);
 
+    @Query("SELECT booking FROM Booking booking " +
+            "WHERE booking.bookingStatus != ?1 " +
+            "AND booking.orderDate >= ?2 " +
+            "AND booking.manager.userId = ?3" +
+            "ORDER BY booking.orderDate desc")
+    Page<Booking> findAllBookingByStartDateTimeAsManager(BookingStatusEnum bookingStatusEnum, LocalDateTime startDateTime, int managerId, Pageable pageable);
+
     @Query("SELECT b FROM Booking b WHERE b.bookingStatus IN ?1 AND b.bookingStatus != ?3 AND b.orderDate <= ?2 ORDER BY b.orderDate desc")
     Page<Booking> findAllByBookingStatusByEndDateTime(List<BookingStatusEnum> bookingStatusEnums, LocalDateTime endDateTime, BookingStatusEnum bookingStatusEnum, Pageable pageable);
+
+    @Query("SELECT b FROM Booking b WHERE b.bookingStatus IN ?1 AND b.bookingStatus != ?3 AND b.orderDate <= ?2 AND b.manager.userId = ?3 ORDER BY b.orderDate desc")
+    Page<Booking> findAllByBookingStatusByEndDateTimeAsManager(List<BookingStatusEnum> bookingStatusEnums, LocalDateTime endDateTime, BookingStatusEnum bookingStatusEnum, int managerId, Pageable pageable);
 
     @Query("SELECT booking FROM Booking booking " +
             "WHERE booking.bookingStatus != ?1 " +
@@ -116,8 +137,18 @@ public interface BookingRepository extends JpaRepository<Booking, Integer> {
             "ORDER BY booking.orderDate desc")
     Page<Booking> findAllBookingByEndDateTime(BookingStatusEnum bookingStatusEnum, LocalDateTime endDateTime, Pageable pageable);
 
+    @Query("SELECT booking FROM Booking booking " +
+            "WHERE booking.bookingStatus != ?1 " +
+            "AND booking.orderDate <= ?2 " +
+            "AND booking.manager.userId = ?3 " +
+            "ORDER BY booking.orderDate desc")
+    Page<Booking> findAllBookingByEndDateTimeAsManager(BookingStatusEnum bookingStatusEnum, LocalDateTime endDateTime, int managerId, Pageable pageable);
+
     @Query("SELECT b FROM Booking b WHERE b.bookingStatus IN ?1 AND b.bookingStatus != ?4 AND b.orderDate <= ?3 AND b.orderDate >= ?2 ORDER BY b.orderDate desc")
     Page<Booking> findAllByBookingStatusStartTimeEndTime(List<BookingStatusEnum> bookingStatusEnums, LocalDateTime startDateTime, LocalDateTime endDateTime, BookingStatusEnum bookingStatusEnum, Pageable pageable);
+
+    @Query("SELECT b FROM Booking b WHERE b.bookingStatus IN ?1 AND b.bookingStatus != ?4 AND b.orderDate <= ?3 AND b.orderDate >= ?2 AND b.manager.userId = ?5 ORDER BY b.orderDate desc")
+    Page<Booking> findAllByBookingStatusStartTimeEndTimeAsManager(List<BookingStatusEnum> bookingStatusEnums, LocalDateTime startDateTime, LocalDateTime endDateTime, BookingStatusEnum bookingStatusEnum, int userId, Pageable pageable);
 
     @Query("SELECT booking FROM Booking booking " +
             "WHERE booking.bookingStatus != ?1 " +
@@ -125,4 +156,13 @@ public interface BookingRepository extends JpaRepository<Booking, Integer> {
             "AND booking.orderDate >= ?2 " +
             "ORDER BY booking.orderDate desc")
     Page<Booking> findAllBookingStartTimeEndTime(BookingStatusEnum bookingStatusEnum, LocalDateTime startDateTime, LocalDateTime endDateTime, Pageable pageable);
+
+    @Query("SELECT booking FROM Booking booking " +
+            "WHERE booking.bookingStatus != ?1 " +
+            "AND booking.orderDate <= ?3 " +
+            "AND booking.orderDate >= ?2 " +
+            "AND booking.manager.userId = ?4" +
+            "ORDER BY booking.orderDate desc")
+    Page<Booking> findAllBookingStartTimeEndTimeAsManager(BookingStatusEnum bookingStatusEnum, LocalDateTime startDateTime, LocalDateTime endDateTime, int managerId, Pageable pageable);
+
 }
