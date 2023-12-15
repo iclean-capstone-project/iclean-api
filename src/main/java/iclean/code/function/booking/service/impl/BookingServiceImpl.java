@@ -45,6 +45,7 @@ import org.springframework.transaction.support.DefaultTransactionDefinition;
 
 import java.math.RoundingMode;
 import java.time.DayOfWeek;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -890,14 +891,13 @@ public class BookingServiceImpl implements BookingService {
                 }
             }
             for (BookingDetail bookingDetail : booking.getBookingDetails()){
-                if(bookingDetail.getWorkDate().isBefore(Utils.getLocalDateTimeNow().toLocalDate())
+                LocalDateTime dateTime = LocalDateTime.of(bookingDetail.getWorkDate(), bookingDetail.getWorkStart());
+                if(Utils.getLocalDateTimeNow().isAfter(dateTime)
                         && BookingDetailStatusEnum.ON_CART.equals(bookingDetail.getBookingDetailStatus()))
                 {
-                    bookingDetailStatusHistoryRepository.deleteAll(bookingDetail.getBookingDetailStatusHistories());
-                    bookingDetailRepository.delete(bookingDetail);
                     return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                             .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString(),
-                                    "Have some invalid service on cart! Please reload cart", null));
+                                    "Have some invalid service on cart! Please re-check cart", null));
                 }
             }
             User renter = findAccount(userId);
