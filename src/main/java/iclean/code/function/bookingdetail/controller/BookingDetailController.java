@@ -130,7 +130,8 @@ public class BookingDetailController {
                                                             @RequestParam(name = "size", defaultValue = "10") int size,
                                                             @RequestParam(name = "statuses", required = false)
                                                             @ValidInputList(value = "(?i)(rejected|not_yet|approved|waiting" +
-                                                            "|in_process|finished|no_money)", message = "Booking Status is not valid")
+                                                            "|in_process|finished|reported|CANCEL_BY_RENTER|CANCEL_BY_HELPER|" +
+                                                                    "CANCEL_BY_SYSTEM)", message = "Booking Status is not valid")
                                                             List<String> statuses,
                                                             @RequestParam(name = "isHelper", defaultValue = "false")
                                                             Boolean isHelper,
