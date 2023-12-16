@@ -1055,6 +1055,11 @@ public class BookingDetailServiceImpl implements BookingDetailService {
                             "Checkout booking successful!", null));
         } catch (Exception e) {
             log.error(e.getMessage());
+            if (e instanceof BadRequestException) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString(),
+                                e.getMessage(), null));
+            }
             if (e instanceof NotFoundException) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body(new ResponseObject(HttpStatus.NOT_FOUND.toString(),

@@ -88,10 +88,10 @@ public class ReportController {
                                                        @NotNull(message = "Detail cannot be null")
                                                        @NotBlank(message = "Detail cannot be empty")
                                                        String detail,
-                                                       @RequestPart(name = "files", required = false)
-                                                       List<MultipartFile> files, Authentication authentication) {
+                                                       @RequestPart(name = "images", required = false)
+                                                       List<MultipartFile> images, Authentication authentication) {
         return reportService.createReport(new CreateReportRequest(Integer.parseInt(bookingDetailId),
-                Integer.parseInt(reportTypeId), detail, files), JwtUtils.decodeToAccountId(authentication));
+                Integer.parseInt(reportTypeId), detail, images), JwtUtils.decodeToAccountId(authentication));
     }
 
     @PutMapping(value = "{reportId}")

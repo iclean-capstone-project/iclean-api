@@ -32,7 +32,7 @@ public class SystemParameterServiceImpl implements SystemParameterService {
                     .body(new ResponseObject(HttpStatus.NOT_FOUND.toString(), "All SystemParameter", "SystemParameter list is empty"));
         }
         return ResponseEntity.status(HttpStatus.OK)
-                .body(new ResponseObject(HttpStatus.OK.toString(), "All SystemParameter", systemParameterRepository.findAll()));
+                .body(new ResponseObject(HttpStatus.OK.toString(), "All System Parameter", systemParameterRepository.findAll()));
     }
 
     @Override
