@@ -23,6 +23,7 @@ public class MessageVariable {
     public static final String TOO_FAR = "Dịch vụ số #%s quá xa để có thể nhận";
     public static final String ALREADY_CANCEL_BOOKING = "Dịch vụ số #%s đã được hủy trước đó!";
     public static final String REFUND_CANCEL_BOOKING = "Hoàn tiền cho dịch vụ #%s";
+    public static final String REFUND_CANCEL_BOOKING_HELPER = "Phạt tiền cho dịch vụ #%s";
     public static final String REFUND_POINT_CANCEL_BOOKING = "Hoàn điểm cho dịch vụ #%s";
     public static final String DUPLICATE_BOOKING = "Cùng địa điểm với dịch vụ #%s";
     public static final String ALREADY_HAVE_BOOKING_AT_THIS_TIME = "Bạn đã nhận một dịch vụ khác tại thời gian này!";

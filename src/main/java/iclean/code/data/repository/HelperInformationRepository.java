@@ -65,7 +65,8 @@ public interface HelperInformationRepository extends JpaRepository<HelperInforma
                                                                       ServiceHelperStatusEnum serviceHelperStatusEnum, BookingDetailHelperStatusEnum bookingDetailHelperStatusEnum);
 
     @Query("SELECT hi FROM HelperInformation hi " +
-            "WHERE hi.managerId = ?1 ")
+            "WHERE hi.managerId = ?1 " +
+            "ORDER BY hi.createAt DESC")
     Page<HelperInformation> findAllByManagerId(Integer managerId, Pageable pageable);
 
     @Query("SELECT hi FROM HelperInformation hi " +
@@ -77,4 +78,12 @@ public interface HelperInformationRepository extends JpaRepository<HelperInforma
     @Query("SELECT hi FROM HelperInformation hi " +
             "WHERE hi.managerId is null")
     List<HelperInformation> findAllHelperInformationHaveNoManager();
+
+    @Query("SELECT hi FROM HelperInformation hi " +
+            "LEFT JOIN hi.serviceRegistrations sr " +
+            "LEFT JOIN sr.bookingDetailHelpers bdh " +
+            "LEFT JOIN bdh.bookingDetail bd " +
+            "WHERE bd.bookingDetailId = ?1 " +
+            "AND bdh.bookingDetailHelperStatus = ?2")
+    HelperInformation findHelperInformationByBookingDetailsIdAndBookingDetailsHelperIsActive (int bookingDetailsId, BookingDetailHelperStatusEnum bookingDetailHelperStatusEnum);
 }
