@@ -732,7 +732,7 @@ public class BookingDetailServiceImpl implements BookingDetailService {
                 default:
                     throw new UserNotHavePermissionException("User do not have permission to do this action");
             }
-            PageResponseObject pageResponseObject = getResponseObjectResponseEntity(bookingDetails);
+            PageResponseObject pageResponseObject = getResponseObjectResponseEntity(bookingDetails, isHelper);
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseObject(HttpStatus.OK.toString(),
                             "Booking History Response!", pageResponseObject));
@@ -1083,6 +1083,7 @@ public class BookingDetailServiceImpl implements BookingDetailService {
             response.setValue(bookingDetail.getServiceUnit().getUnit().getUnitDetail());
             response.setEquivalent(bookingDetail.getServiceUnit().getUnit().getUnitValue());
             response.setPrice(bookingDetail.getPriceHelper());
+            response.setNote(bookingDetail.getNote());
             response.setCurrentStatus(bookingDetail.getBookingDetailStatus().name());
             GetAddressResponseBooking addressResponseBooking = modelMapper.map(bookingDetail.getBooking(), GetAddressResponseBooking.class);
             GetRenterResponse getRenterResponse = null;
@@ -1312,7 +1313,7 @@ public class BookingDetailServiceImpl implements BookingDetailService {
                 new DateTimeRange(oldBookingStartTime, oldBookingEndTime));
     }
 
-    private PageResponseObject getResponseObjectResponseEntity(Page<BookingDetail> bookingDetails) {
+    private PageResponseObject getResponseObjectResponseEntity(Page<BookingDetail> bookingDetails, Boolean ishleper) {
         List<GetBookingDetailResponse> dtoList = bookingDetails
                 .stream()
                 .map(detail -> {
@@ -1321,6 +1322,11 @@ public class BookingDetailServiceImpl implements BookingDetailService {
                             response.setReported(false);
                             if (Objects.nonNull(detail.getReport())) {
                                 response.setReported(true);
+                            }
+                            if (ishleper){
+                                response.setPrice(detail.getPriceHelper());
+                            } else {
+                                response.setPrice(detail.getPriceDetail());
                             }
                             response.setRenterName(detail.getBooking().getRenter().getFullName());
                             response.setLongitude(detail.getBooking().getLongitude());

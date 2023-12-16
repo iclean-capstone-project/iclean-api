@@ -4,17 +4,18 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class ReportResultResponse {
+public class ReportHelperResultResponse {
     private String to;
     private String bookingCode;
     private String contentReport;
-    private String status;
     private String solution;
-    private Double moneyRefund;
-    private Double pointRefund;
-    private String renterName;
+    private String helperName;
     private String managerName;
+    private Double moneyPen;
+    private LocalDateTime createAt;
 }

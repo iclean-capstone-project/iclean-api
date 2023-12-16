@@ -4,13 +4,14 @@ import iclean.code.data.dto.request.helperinformation.AcceptHelperRequest;
 import iclean.code.data.dto.request.helperinformation.CancelHelperRequestSendMail;
 import iclean.code.data.dto.request.helperinformation.ConfirmHelperRequestSendMail;
 import iclean.code.data.dto.request.others.SendMailRequest;
+import iclean.code.data.dto.response.report.ReportHelperResultResponse;
+import iclean.code.data.dto.response.report.ReportResultResponse;
 import iclean.code.data.enumjava.EmailEnum;
 import iclean.code.data.enumjava.SendMailOptionEnum;
 import iclean.code.function.common.service.EmailSenderService;
 import iclean.code.utils.Utils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
@@ -36,6 +37,9 @@ public class EmailSenderServiceImpl implements EmailSenderService {
 
     @Value("classpath:template-report-result")
     private Resource resourceReportResult;
+
+    @Value("classpath:template-report-result-helper")
+    private Resource resourceReportResultHelper;
 
     @Value("classpath:template-accept-helper")
     private Resource resourceAcceptHelper;
@@ -65,7 +69,7 @@ public class EmailSenderServiceImpl implements EmailSenderService {
                     context.setVariable("manager_name", confirmHelperRequestSendMail.getManagerName());
                     context.setVariable("company_name", EmailEnum.COMPANY_NAME.getValue());
                     context.setVariable("list_of_jobs", confirmHelperRequestSendMail.getListOfJobs());
-                    helper.setSubject(EmailEnum.ACCEPT_HELPER_TITLE.getValue() + EmailEnum.COMPANY_NAME.getValue());
+                    helper.setSubject(EmailEnum.CONFIRM_HELPER_TITLE.getValue() + EmailEnum.COMPANY_NAME.getValue());
                     htmlContent = templateEngine.process(Objects.requireNonNull(resourceConfirmHelper.getFilename()), context);
                     break;
                 case ACCEPT_HELPER:
@@ -91,12 +95,32 @@ public class EmailSenderServiceImpl implements EmailSenderService {
                     htmlContent = templateEngine.process(Objects.requireNonNull(resourceRejectHelper.getFilename()), context);
                     break;
                 case REPORT_RESULT:
-                    SendMailRequest mail = (SendMailRequest) mailRequest;
-                    context.setVariable("name", mail.getRenterFullName());
-                    context.setVariable("bookingId", mail.getBookingId());
+                    ReportResultResponse mail = (ReportResultResponse) mailRequest;
+                    helper.setTo(mail.getTo());
+                    context.setVariable("renter_name", mail.getRenterName());
+                    context.setVariable("booking_code", mail.getBookingCode());
+                    context.setVariable("content_report", mail.getContentReport());
+                    context.setVariable("solution", mail.getSolution());
                     context.setVariable("status", mail.getStatus());
-                    helper.setSubject(EmailEnum.REPORT_RESULT_TITLE.getValue() + mail.getBookingId());
+                    context.setVariable("money_refund", mail.getMoneyRefund());
+                    context.setVariable("point_refund", mail.getPointRefund());
+                    context.setVariable("manager_name", mail.getManagerName());
+                    helper.setSubject(EmailEnum.REPORT_RESULT_TITLE.getValue() + mail.getBookingCode());
                     htmlContent = templateEngine.process(Objects.requireNonNull(resourceReportResult.getFilename()), context);
+                    break;
+                case REPORT_RESULT_HELPER:
+                    ReportHelperResultResponse mailResultHelper = (ReportHelperResultResponse) mailRequest;
+                    helper.setTo(mailResultHelper.getTo());
+                    context.setVariable("helper_name", mailResultHelper.getHelperName());
+                    context.setVariable("bookingCode", mailResultHelper.getBookingCode());
+                    context.setVariable("createAt",Utils.getLocalDateAsString(mailResultHelper.getCreateAt().toLocalDate()) + " vào lúc: " +
+                            Utils.getLocalTimeAsString(mailResultHelper.getCreateAt().toLocalTime()));
+                    context.setVariable("content_report", mailResultHelper.getContentReport());
+                    context.setVariable("solution", mailResultHelper.getSolution());
+                    context.setVariable("money_pen", mailResultHelper.getMoneyPen());
+                    context.setVariable("manager_name", mailResultHelper.getManagerName());
+                    helper.setSubject(EmailEnum.REPORT_RESULT_TITLE.getValue() + mailResultHelper.getBookingCode());
+                    htmlContent = templateEngine.process(Objects.requireNonNull(resourceReportResultHelper.getFilename()), context);
                     break;
                 default:
                     SendMailRequest mailRe = (SendMailRequest) mailRequest;

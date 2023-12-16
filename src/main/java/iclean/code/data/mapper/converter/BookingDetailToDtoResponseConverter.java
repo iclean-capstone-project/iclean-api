@@ -28,7 +28,6 @@ public class BookingDetailToDtoResponseConverter implements Converter<BookingDet
         response.setServiceUnitId(source.getServiceUnit().getServiceUnitId());
         response.setValue(source.getServiceUnit().getUnit().getUnitDetail());
         response.setEquivalent(source.getServiceUnit().getUnit().getUnitValue());
-        response.setPrice(source.getPriceDetail());
         response.setStatus(source.getBookingDetailStatus().name());
         return response;
     }

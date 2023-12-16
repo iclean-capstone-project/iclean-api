@@ -105,6 +105,14 @@ public class ServicePriceServiceImpl implements ServicePriceService {
                         continue;
                     }
 
+                    if (Utils.isAfterOrEqual(startTime, endTimeDefault)) { //
+                        Double numberHour = Utils.minusLocalTime(startTime, endTime);
+                        totalPrice += servicePrice.getPrice() * numberHour;
+                        startTime = Utils.plusLocalTime(startTime, numberHour);
+                        i++;
+                        continue;
+                    }
+
                     if (Utils.isAfterOrEqual(startTime, servicePrice.getEndTime())) {
                         Double numberHour = Utils.minusLocalTime(startTime, endTime);
                         if (numberHour >= 4) {
@@ -203,6 +211,14 @@ public class ServicePriceServiceImpl implements ServicePriceService {
                     if (Utils.isAfterOrEqual(startTime, startTimeDefault) && Utils.isBeforeOrEqual(startTime, endTimeDefault)) { //
                         Double numberHour = Utils.minusLocalTime(startTime, endTime);
                         totalPriceHelper += serviceUnit.getDefaultPrice() * numberHour * serviceUnit.getHelperCommission() / 100;
+                        startTime = Utils.plusLocalTime(startTime, numberHour);
+                        i++;
+                        continue;
+                    }
+
+                    if (Utils.isAfterOrEqual(startTime, endTimeDefault)) { //
+                        Double numberHour = Utils.minusLocalTime(startTime, endTime);
+                        totalPriceHelper += servicePrice.getPrice() * numberHour;
                         startTime = Utils.plusLocalTime(startTime, numberHour);
                         i++;
                         continue;
