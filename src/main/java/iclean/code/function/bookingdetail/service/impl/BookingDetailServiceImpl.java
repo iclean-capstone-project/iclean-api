@@ -770,6 +770,9 @@ public class BookingDetailServiceImpl implements BookingDetailService {
             response.setReported(false);
             if (Objects.nonNull(bookingDetail.getReport())) {
                 response.setReported(true);
+                response.setRefundMoney(bookingDetail.getReport().getRefundMoney());
+                response.setRefundPoint(bookingDetail.getReport().getRefundPoint());
+                response.setPenaltyMoney(bookingDetail.getReport().getPenaltyMoney());
             }
             response.setServiceId(bookingDetail.getServiceUnit().getService().getServiceId());
             response.setServiceUnitId(bookingDetail.getServiceUnit().getServiceUnitId());
