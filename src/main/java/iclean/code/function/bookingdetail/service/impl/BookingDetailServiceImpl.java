@@ -1008,6 +1008,9 @@ public class BookingDetailServiceImpl implements BookingDetailService {
     public ResponseEntity<ResponseObject> checkoutBookingDetail(Integer id, Integer helperId) {
         try {
             BookingDetail bookingDetail = findBookingDetail(id);
+            if (bookingDetail.getBookingDetailStatus() != BookingDetailStatusEnum.IN_PROCESS) {
+                throw new BadRequestException(MessageVariable.CANNOT_CHECK_OUT);
+            }
             isPermissionForHelper(helperId, bookingDetail);
             LocalDateTime startDateTime = LocalDateTime.of(bookingDetail.getWorkDate(), bookingDetail.getWorkStart());
             String checkValue = checkInTimeToEndWork(startDateTime);
@@ -1268,9 +1271,11 @@ public class BookingDetailServiceImpl implements BookingDetailService {
     private void isPermissionForHelper(Integer userId, BookingDetail bookingDetail) throws UserNotHavePermissionException {
         List<BookingDetailHelper> helpers = bookingDetailHelperRepository.findByBookingDetailIdAndActive(bookingDetail.getBookingDetailId(),
                 BookingDetailHelperStatusEnum.ACTIVE);
-        User helper = helpers.get(0).getServiceRegistration().getHelperInformation().getUser();
-        if (!Objects.equals(helper.getUserId(), userId))
-            throw new UserNotHavePermissionException("User do not have permission to do this action");
+        if (!helpers.isEmpty()) {
+            User helper = helpers.get(0).getServiceRegistration().getHelperInformation().getUser();
+            if (!Objects.equals(helper.getUserId(), userId))
+                throw new UserNotHavePermissionException("User do not have permission to do this action");
+        }
     }
 
     private void sendNotificationForUser(NotificationRequestDto request, List<Integer> userIds) {
