@@ -1329,6 +1329,9 @@ public class BookingDetailServiceImpl implements BookingDetailService {
                             response.setReported(false);
                             if (Objects.nonNull(detail.getReport())) {
                                 response.setReported(true);
+                                response.setRefundMoney(detail.getReport().getRefundMoney());
+                                response.setRefundPoint(detail.getReport().getRefundPoint());
+                                response.setPenaltyMoney(detail.getReport().getPenaltyMoney());
                             }
                             if (ishleper){
                                 response.setPrice(detail.getPriceHelperDefault());
