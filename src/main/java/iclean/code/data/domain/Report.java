@@ -34,6 +34,15 @@ public class Report {
 
     private Double refund;
 
+    @Column(name = "refund_money")
+    private Double refundMoney = 0D;
+
+    @Column(name = "refund_point")
+    private Double refundPoint = 0D;
+
+    @Column(name = "penalty_money")
+    private Double penaltyMoney = 0D;
+
     @Column(name = "create_at")
     private LocalDateTime createAt = Utils.getLocalDateTimeNow();
 

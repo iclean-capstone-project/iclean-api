@@ -2,6 +2,7 @@ package iclean.code.data.dto.response.bookingdetail;
 
 import lombok.Data;
 
+import javax.persistence.Column;
 import java.time.LocalDateTime;
 
 @Data
@@ -20,6 +21,9 @@ public class GetBookingDetailResponse {
     private String value;
     private Double equivalent;
     private Double price;
+    private Double refundMoney;
+    private Double refundPoint;
+    private Double penaltyMoney;
     private String status;
     private Double latitude;
     private Double longitude;

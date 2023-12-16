@@ -67,6 +67,7 @@ public interface BookingDetailRepository extends JpaRepository<BookingDetail, In
 
     @Query("SELECT bd FROM BookingDetail bd " +
             "LEFT JOIN bd.bookingDetailHelpers bdh " +
+            "LEFT JOIN bd.report r " +
             "LEFT JOIN bdh.serviceRegistration sr " +
             "LEFT JOIN sr.helperInformation hi " +
             "LEFT JOIN hi.user u " +
@@ -80,6 +81,7 @@ public interface BookingDetailRepository extends JpaRepository<BookingDetail, In
 
     @Query("SELECT bd FROM BookingDetail bd " +
             "LEFT JOIN bd.bookingDetailHelpers bdh " +
+            "LEFT JOIN bd.report r " +
             "LEFT JOIN bdh.serviceRegistration sr " +
             "LEFT JOIN sr.helperInformation hi " +
             "LEFT JOIN hi.user u " +

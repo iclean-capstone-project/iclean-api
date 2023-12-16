@@ -415,6 +415,9 @@ public class ReportServiceImpl implements ReportService {
                     reportHelperResultResponse.setHelperName(helperReported.getFullName());
                     emailSenderService.sendEmailTemplate(SendMailOptionEnum.REPORT_RESULT_HELPER, reportHelperResultResponse);
                 }
+                report.setPenaltyMoney(moneyPen);
+                report.setRefundMoney(moneyRefund);
+                report.setRefundPoint(pointRefund);
             }
             Notification notification = new Notification();
             notification.setUser(renter);
