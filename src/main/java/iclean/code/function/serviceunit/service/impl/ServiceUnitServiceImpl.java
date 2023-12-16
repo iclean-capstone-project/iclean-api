@@ -181,7 +181,13 @@ public class ServiceUnitServiceImpl implements ServiceUnitService {
             List<ServiceUnit> serviceUnits = serviceUnitRepository.findByService(serviceId, sort);
             List<GetServiceUnitResponse> dtoList = serviceUnits
                     .stream()
-                    .map(serviceUnit -> modelMapper.map(serviceUnit, GetServiceUnitResponse.class))
+                    .map(serviceUnit ->  {
+                        GetServiceUnitResponse response =  modelMapper.map(serviceUnit, GetServiceUnitResponse.class);
+                        response.setUnitId(serviceUnit.getUnit().getUnitId());
+                        response.setUnitDetail(serviceUnit.getUnit().getUnitDetail());
+                        response.setUnitValue(serviceUnit.getUnit().getUnitValue());
+                        return response;
+                    })
                     .collect(Collectors.toList());
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseObject(HttpStatus.OK.toString(),
@@ -205,6 +211,9 @@ public class ServiceUnitServiceImpl implements ServiceUnitService {
             ServiceUnit serviceUnit = findById(serviceUnitId);
             List<ServicePrice> servicePrices = servicePriceRepository.findByServiceUnitId(serviceUnitId);
             GetServiceUnitDetailResponse data = modelMapper.map(serviceUnit, GetServiceUnitDetailResponse.class);
+            data.setUnitId(serviceUnit.getUnit().getUnitId());
+            data.setUnitDetail(serviceUnit.getUnit().getUnitDetail());
+            data.setUnitValue(serviceUnit.getUnit().getUnitValue());
             List<GetServicePriceResponse> responses = servicePrices
                     .stream()
                     .map((element -> {

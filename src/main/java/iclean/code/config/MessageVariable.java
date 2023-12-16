@@ -53,4 +53,5 @@ public class MessageVariable {
     public static final String NOT_HAVE_TRANSACTION_POINT = "Không tìm thấy hóa đơn thanh toán điểm dịch vụ";
 
     public static final String ALREADY_REPORTED = "Bạn đã báo cáo, vui lòng đợi nhân viên duyệt!";
+    public static final String CANNOT_CHECK_OUT = "Không thể checkout một dịch vụ khi chưa bắt đầu";
 }

@@ -10,6 +10,9 @@ import java.util.List;
 public class GetServiceUnitDetailResponse {
     private Integer serviceUnitId;
     private Double defaultPrice;
+    private Integer unitId;
+    private String unitDetail;
+    private Double unitValue;
     private Double helperCommission;
     private Boolean isDeleted;
     private LocalDateTime createAt;
