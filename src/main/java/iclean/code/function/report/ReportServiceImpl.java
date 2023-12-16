@@ -396,6 +396,7 @@ public class ReportServiceImpl implements ReportService {
                     moneyPen = previousMoneyHelper - minusMoneyHelper;
                     reportHelperResultResponse.setMoneyPen(moneyPen);
                     bookingDetail.setPriceHelper(minusMoneyHelper);
+                    bookingDetail.setPriceHelperDefault(minusMoneyHelper);
                     createTransaction(new TransactionRequest(minusMoneyHelper, String.format(MessageVariable.REFUND_CANCEL_BOOKING_HELPER,
                             report.getBookingDetail().getBooking().getBookingCode()),
                             helperReported.getUser().getUserId(),

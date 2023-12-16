@@ -298,6 +298,7 @@ public class BookingDetailServiceImpl implements BookingDetailService {
 
             bookingDetail.setPriceDetail(priceDetail);
             bookingDetail.setPriceHelper(priceHelper);
+            bookingDetail.setPriceHelperDefault(priceHelper);
             bookingDetailRepository.save(bookingDetail);
 
             return ResponseEntity.status(HttpStatus.OK)
@@ -981,6 +982,7 @@ public class BookingDetailServiceImpl implements BookingDetailService {
             bookingDetail.setBooking(booking);
             bookingDetail.setPriceDetail(priceDetail);
             bookingDetail.setPriceHelper(priceHelper);
+            bookingDetail.setPriceHelperDefault(priceHelper);
             bookingDetail.setWorkStart(request.getStartTime().toLocalTime());
             bookingDetail.setWorkDate(request.getStartTime().toLocalDate());
             bookingDetail.setBookingDetailStatus(BookingDetailStatusEnum.NOT_YET);
@@ -1324,7 +1326,7 @@ public class BookingDetailServiceImpl implements BookingDetailService {
                                 response.setReported(true);
                             }
                             if (ishleper){
-                                response.setPrice(detail.getPriceHelper());
+                                response.setPrice(detail.getPriceHelperDefault());
                             } else {
                                 response.setPrice(detail.getPriceDetail());
                             }

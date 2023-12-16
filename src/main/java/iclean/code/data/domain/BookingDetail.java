@@ -29,6 +29,9 @@ public class BookingDetail {
     @Column(name = "price_helper")
     private Double priceHelper;
 
+    @Column(name = "price_helper_default")
+    private Double priceHelperDefault;
+
     @Column(name = "booking_detail_status")
     private BookingDetailStatusEnum bookingDetailStatus;
 

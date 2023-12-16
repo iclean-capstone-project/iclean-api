@@ -307,6 +307,7 @@ public class BookingServiceImpl implements BookingService {
             bookingDetail.setBooking(booking);
             bookingDetail.setPriceDetail(priceDetail);
             bookingDetail.setPriceHelper(priceHelper);
+            bookingDetail.setPriceHelperDefault(priceHelper);
             bookingDetail.setWorkStart(request.getStartTime().toLocalTime());
             bookingDetail.setWorkDate(request.getStartTime().toLocalDate());
             bookingDetail.setBookingDetailStatus(BookingDetailStatusEnum.NOT_YET);
@@ -526,6 +527,7 @@ public class BookingServiceImpl implements BookingService {
             bookingDetail.setBooking(booking);
             bookingDetail.setPriceDetail(priceDetail);
             bookingDetail.setPriceHelper(priceHelper);
+            bookingDetail.setPriceHelperDefault(priceHelper);
             bookingDetail.setWorkStart(request.getStartTime().toLocalTime());
             bookingDetail.setWorkDate(request.getStartTime().toLocalDate());
             bookingDetail.setBookingDetailStatus(BookingDetailStatusEnum.ON_CART);
@@ -700,6 +702,7 @@ public class BookingServiceImpl implements BookingService {
             bookingDetail.setBooking(booking);
             bookingDetail.setPriceDetail(priceDetail);
             bookingDetail.setPriceHelper(priceHelper);
+            bookingDetail.setPriceHelperDefault(priceHelper);
             bookingDetail.setWorkStart(request.getStartTime().toLocalTime());
             bookingDetail.setWorkDate(request.getStartTime().toLocalDate());
             bookingDetail.setBookingDetailStatus(BookingDetailStatusEnum.ON_CART);
