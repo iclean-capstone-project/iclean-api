@@ -25,6 +25,7 @@ import javax.validation.constraints.Min;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
+import java.util.ArrayList;
 import java.util.List;
 
 @RestController
@@ -88,8 +89,22 @@ public class ReportController {
                                                        @NotNull(message = "Detail cannot be null")
                                                        @NotBlank(message = "Detail cannot be empty")
                                                        String detail,
-                                                       @RequestPart(name = "images", required = false)
-                                                       List<MultipartFile> images, Authentication authentication) {
+                                                       @RequestPart(name = "image_1", required = false)
+                                                       MultipartFile images_1,
+                                                       @RequestPart(name = "image_2", required = false)
+                                                       MultipartFile images_2,
+                                                       @RequestPart(name = "image_3", required = false)
+                                                       MultipartFile images_3, Authentication authentication) {
+        List<MultipartFile> images = new ArrayList<>();
+        if (images_1 != null) {
+            images.add(images_1);
+        }
+        if (images_2 != null) {
+            images.add(images_2);
+        }
+        if (images_3 != null) {
+            images.add(images_3);
+        }
         return reportService.createReport(new CreateReportRequest(Integer.parseInt(bookingDetailId),
                 Integer.parseInt(reportTypeId), detail, images), JwtUtils.decodeToAccountId(authentication));
     }

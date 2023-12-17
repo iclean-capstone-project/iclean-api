@@ -95,7 +95,7 @@ public class ServiceController {
                                                         @NotNull(message = "File is required")
                                                         @RequestPart MultipartFile serviceAvatar,
                                                         @RequestPart List<MultipartFile> serviceFileImages) {
-        return serviceService.createService(new CreateServiceRequest(serviceName, description, serviceAvatar));
+        return serviceService.createService(new CreateServiceRequest(serviceName, description, serviceAvatar, serviceFileImages));
     }
 
     @PutMapping(value = "{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)

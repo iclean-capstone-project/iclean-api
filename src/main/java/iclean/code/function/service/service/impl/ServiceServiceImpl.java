@@ -1,6 +1,7 @@
 package iclean.code.function.service.service.impl;
 
 import iclean.code.data.domain.Service;
+import iclean.code.data.domain.ServiceImage;
 import iclean.code.data.dto.common.ResponseObject;
 import iclean.code.data.dto.request.service.CreateServiceRequest;
 import iclean.code.data.dto.request.service.UpdateServiceRequest;
@@ -9,6 +10,7 @@ import iclean.code.data.dto.response.service.GetServiceDetailForHelperResponse;
 import iclean.code.data.dto.response.service.GetServiceDetailResponse;
 import iclean.code.data.dto.response.service.GetServiceResponse;
 import iclean.code.data.enumjava.DeleteStatusEnum;
+import iclean.code.data.repository.ServiceImageRepository;
 import iclean.code.data.repository.ServiceRepository;
 import iclean.code.exception.NotFoundException;
 import iclean.code.function.service.service.ServiceService;
@@ -19,7 +21,9 @@ import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -29,6 +33,9 @@ public class ServiceServiceImpl implements ServiceService {
 
     @Autowired
     private ServiceRepository serviceRepository;
+
+    @Autowired
+    private ServiceImageRepository serviceImageRepository;
 
     @Autowired
     private StorageService storageService;
@@ -59,11 +66,21 @@ public class ServiceServiceImpl implements ServiceService {
     public ResponseEntity<ResponseObject> createService(CreateServiceRequest request) {
         try {
             Service service = modelMapper.map(request, Service.class);
-            String jobImgLink = storageService.uploadFile(request.getImgService());
+            String jobImgLink = storageService.uploadFile(request.getAvatarService());
+            List<ServiceImage> serviceImages = new ArrayList<>();
+            for (MultipartFile file :
+                    request.getImages()) {
+                ServiceImage serviceImage = new ServiceImage();
+                serviceImage.setService(service);
+                String imageLink = storageService.uploadFile(file);
+                serviceImage.setServiceImage(imageLink);
+                serviceImages.add(serviceImage);
+            }
             service.setServiceImage(jobImgLink);
             service.setCreateAt(Utils.getLocalDateTimeNow());
 
             serviceRepository.save(service);
+            serviceImageRepository.saveAll(serviceImages);
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseObject(HttpStatus.OK.toString(),
                             "Create Service Successfully!", null));
