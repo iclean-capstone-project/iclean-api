@@ -1154,6 +1154,7 @@ public class BookingDetailServiceImpl implements BookingDetailService {
                             .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString(),
                                     MessageVariable.NEED_ADD_LOCATION, null));
                 }
+                response.setNote(bookingDetail.getNote());
                 response.setBookingDetailId(bookingDetail.getBookingDetailId());
                 response.setServiceUnitId(bookingDetail.getServiceUnit().getServiceUnitId());
                 response.setEquivalent(bookingDetail.getServiceUnit().getUnit().getUnitValue());
