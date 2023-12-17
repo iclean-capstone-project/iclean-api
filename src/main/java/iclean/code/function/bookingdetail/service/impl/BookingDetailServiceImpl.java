@@ -167,9 +167,46 @@ public class BookingDetailServiceImpl implements BookingDetailService {
                 case NOT_YET:
                     bookingDetail.setBookingDetailStatus(BookingDetailStatusEnum.CANCEL_BY_RENTER);
                     bookingDetailRepository.save(bookingDetail);
+                    NotificationRequestDto notificationRequestDto = new NotificationRequestDto();
+                    notificationRequestDto.setBody(String.format(MessageVariable.RENTER_CANCEL_BOOKING_TITLE,
+                            bookingDetail.getBooking().getBookingCode()));
+                    notificationRequestDto.setTitle(MessageVariable.TITLE_APP);
+                    sendNotificationForUser(notificationRequestDto, renterId);
                     break;
                 default:
                     throw new BadRequestException(String.format(MessageVariable.CANNOT_CANCEL_BOOKING, bookingDetail.getBooking().getBookingCode()));
+            }
+            int bookingId = bookingDetail.getBooking().getBookingId();
+            String  bookingCode = bookingDetail.getBooking().getBookingCode();
+
+            Transaction transaction = transactionRepository.findByBookingIdAndWalletTypeAndTransactionTypeAndUserId(
+                    bookingId,
+                    WalletTypeEnum.POINT,
+                    TransactionTypeEnum.WITHDRAW,
+                    renterId);
+            if (transaction != null) {
+                createTransaction(new TransactionRequest(
+                        transaction.getAmount(),
+                        String.format(MessageVariable.REFUND_POINT_CANCEL_BOOKING, bookingCode),
+                        renterId,
+                        TransactionTypeEnum.DEPOSIT.name(),
+                        WalletTypeEnum.POINT.name(),
+                        bookingId));
+            }
+
+            Transaction transactionMoney = transactionRepository.findByBookingIdAndWalletTypeAndTransactionTypeAndUserId(
+                    bookingId,
+                    WalletTypeEnum.MONEY,
+                    TransactionTypeEnum.WITHDRAW,
+                    renterId);
+            if (transactionMoney != null) {
+                createTransaction(new TransactionRequest(
+                        transactionMoney.getAmount(),
+                        String.format(MessageVariable.REFUND_REJECT_BOOKING, bookingCode),
+                        renterId,
+                        TransactionTypeEnum.DEPOSIT.name(),
+                        WalletTypeEnum.MONEY.name(),
+                        bookingId));
             }
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseObject(HttpStatus.OK.toString(),
@@ -204,6 +241,7 @@ public class BookingDetailServiceImpl implements BookingDetailService {
             findByHelperId(helperId);
             isPermissionForHelper(helperId, bookingDetail);
             Booking booking = bookingDetail.getBooking();
+            NotificationRequestDto notificationRequestDto = new NotificationRequestDto();
             switch (bookingDetail.getBookingDetailStatus()) {
                 case WAITING:
                     String checkTime = checkInTime(LocalDateTime.of(bookingDetail.getWorkDate(), bookingDetail.getWorkStart()),
@@ -211,7 +249,6 @@ public class BookingDetailServiceImpl implements BookingDetailService {
                     if (!Utils.isNullOrEmpty(checkTime)) {
                         throw new BadRequestException(String.format(checkTime, bookingDetail.getServiceUnit().getService().getServiceName()));
                     }
-                    NotificationRequestDto notificationRequestDto = new NotificationRequestDto();
                     notificationRequestDto.setBody(String.format(MessageVariable.HELPER_CANCEL_BOOKING,
                             booking.getBookingCode()));
                     notificationRequestDto.setTitle(MessageVariable.TITLE_APP);
@@ -222,9 +259,48 @@ public class BookingDetailServiceImpl implements BookingDetailService {
                 case APPROVED:
                     Optional<BookingDetailHelper> bookingDetailHelper = bookingDetailHelperRepository.findByBookingDetailIdAndHelperId(detailId, helperId);
                     bookingDetailHelper.ifPresent(detailHelper -> bookingDetailHelperRepository.delete(detailHelper));
+                    notificationRequestDto.setBody(String.format(MessageVariable.HELPER_CANCEL_BOOKING,
+                            booking.getBookingCode()));
+                    notificationRequestDto.setTitle(MessageVariable.TITLE_APP);
+                    sendNotificationForUser(notificationRequestDto, booking.getRenter().getUserId());
+                    bookingDetail.setBookingDetailStatus(BookingDetailStatusEnum.CANCEL_BY_HELPER);
+                    bookingDetailRepository.save(bookingDetail);
                     break;
                 default:
                     throw new BadRequestException(String.format(MessageVariable.CANNOT_CANCEL_BOOKING, booking.getBookingCode()));
+            }
+            int bookingId = bookingDetail.getBooking().getBookingId();
+            String  bookingCode = bookingDetail.getBooking().getBookingCode();
+            int renterId = booking.getRenter().getUserId();
+
+            Transaction transaction = transactionRepository.findByBookingIdAndWalletTypeAndTransactionTypeAndUserId(
+                    bookingId,
+                    WalletTypeEnum.POINT,
+                    TransactionTypeEnum.WITHDRAW,
+                    renterId);
+            if (transaction != null) {
+                createTransaction(new TransactionRequest(
+                        transaction.getAmount(),
+                        String.format(MessageVariable.REFUND_POINT_CANCEL_BOOKING, bookingCode),
+                        renterId,
+                        TransactionTypeEnum.DEPOSIT.name(),
+                        WalletTypeEnum.POINT.name(),
+                        bookingId));
+            }
+
+            Transaction transactionMoney = transactionRepository.findByBookingIdAndWalletTypeAndTransactionTypeAndUserId(
+                    bookingId,
+                    WalletTypeEnum.MONEY,
+                    TransactionTypeEnum.WITHDRAW,
+                    renterId);
+            if (transactionMoney != null) {
+                createTransaction(new TransactionRequest(
+                        transactionMoney.getAmount(),
+                        String.format(MessageVariable.REFUND_REJECT_BOOKING, bookingCode),
+                        renterId,
+                        TransactionTypeEnum.DEPOSIT.name(),
+                        WalletTypeEnum.MONEY.name(),
+                        bookingId));
             }
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseObject(HttpStatus.OK.toString(),
@@ -1096,6 +1172,9 @@ public class BookingDetailServiceImpl implements BookingDetailService {
             response.setValue(bookingDetail.getServiceUnit().getUnit().getUnitDetail());
             response.setEquivalent(bookingDetail.getServiceUnit().getUnit().getUnitValue());
             response.setPrice(bookingDetail.getPriceHelper());
+            response.setRefundMoney(bookingDetail.getReport().getRefundMoney());
+            response.setRefundPoint(bookingDetail.getReport().getRefundPoint());
+            response.setPenaltyMoney(bookingDetail.getReport().getPenaltyMoney());
             response.setNote(bookingDetail.getNote());
             response.setCurrentStatus(bookingDetail.getBookingDetailStatus().name());
             GetAddressResponseBooking addressResponseBooking = modelMapper.map(bookingDetail.getBooking(), GetAddressResponseBooking.class);
@@ -1342,7 +1421,7 @@ public class BookingDetailServiceImpl implements BookingDetailService {
                                 response.setRefundPoint(detail.getReport().getRefundPoint());
                                 response.setPenaltyMoney(detail.getReport().getPenaltyMoney());
                             }
-                            if (ishleper){
+                            if (ishleper) {
                                 response.setPrice(detail.getPriceHelperDefault());
                             } else {
                                 response.setPrice(detail.getPriceDetail());

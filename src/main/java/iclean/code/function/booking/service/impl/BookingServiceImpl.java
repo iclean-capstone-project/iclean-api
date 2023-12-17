@@ -1223,8 +1223,13 @@ public class BookingServiceImpl implements BookingService {
             isPermission(renterId, booking);
 
             switch (booking.getBookingStatus()) {
-                case NOT_YET:
-                case NO_MONEY:
+                case REJECTED:
+                    throw new BadRequestException(String.format(MessageVariable.CANNOT_CANCEL_BOOKING, booking.getBookingCode()));
+                case CANCELED:
+                    throw new BadRequestException(String.format(MessageVariable.ALREADY_CANCEL_BOOKING, booking.getBookingCode()));
+                case FINISHED:
+                    throw new BadRequestException(String.format(MessageVariable.CANCEL_COMPLETE_BOOKING, booking.getBookingCode()));
+                default:
                     Transaction transaction = transactionRepository.findByBookingIdAndWalletTypeAndTransactionTypeAndUserId(
                             bookingId,
                             WalletTypeEnum.POINT,
@@ -1268,14 +1273,10 @@ public class BookingServiceImpl implements BookingService {
                     bookingDetailRepository.saveAll(bookingDetails);
                     bookingRepository.save(booking);
                     break;
-                case CANCELED:
-                    throw new BadRequestException(String.format(MessageVariable.ALREADY_CANCEL_BOOKING, booking.getBookingCode()));
-                default:
-                    throw new BadRequestException(String.format(MessageVariable.CANNOT_CANCEL_BOOKING, booking.getBookingCode()));
             }
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseObject(HttpStatus.OK.toString(),
-                            "Make a payment booking successful", null));
+                            "Cancel booking successful", null));
         } catch (Exception e) {
             log.error(e.getMessage());
             if (e instanceof UserNotHavePermissionException) {
