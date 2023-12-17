@@ -234,19 +234,4 @@ public class BookingDetailController {
     public ResponseEntity<ResponseObject> getBookingsAround(Authentication authentication) {
         return bookingDetailService.getBookingsAround(JwtUtils.decodeToAccountId(authentication));
     }
-
-//    @PostMapping("resend/{id}")
-//    @Operation(summary = "Resend a booking detail when complete or cancel by renter", description = "Return message success or fail")
-//    @ApiResponses(value = {
-//            @ApiResponse(responseCode = "200", description = "Booking Information"),
-//            @ApiResponse(responseCode = "401", description = "Unauthorized - Login please"),
-//            @ApiResponse(responseCode = "403", description = "Forbidden - You don't have permission to access on this api"),
-//            @ApiResponse(responseCode = "400", description = "Bad request - Missing some field required")
-//    })
-//    @PreAuthorize("hasAuthority('employee')")
-//    public ResponseEntity<ResponseObject> resendBookingDetail(Authentication authentication,
-//                                                              @RequestBody ResendBookingDetailRequest request,
-//                                                              @PathVariable Integer id) {
-//        return bookingDetailService.resendBookingDetail(JwtUtils.decodeToAccountId(authentication), request, id);
-//    }
 }

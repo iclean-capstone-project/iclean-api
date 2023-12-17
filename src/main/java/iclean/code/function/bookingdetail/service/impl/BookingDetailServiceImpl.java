@@ -177,7 +177,7 @@ public class BookingDetailServiceImpl implements BookingDetailService {
                     throw new BadRequestException(String.format(MessageVariable.CANNOT_CANCEL_BOOKING, bookingDetail.getBooking().getBookingCode()));
             }
             int bookingId = bookingDetail.getBooking().getBookingId();
-            String  bookingCode = bookingDetail.getBooking().getBookingCode();
+            String bookingCode = bookingDetail.getBooking().getBookingCode();
 
             Transaction transaction = transactionRepository.findByBookingIdAndWalletTypeAndTransactionTypeAndUserId(
                     bookingId,
@@ -270,7 +270,7 @@ public class BookingDetailServiceImpl implements BookingDetailService {
                     throw new BadRequestException(String.format(MessageVariable.CANNOT_CANCEL_BOOKING, booking.getBookingCode()));
             }
             int bookingId = bookingDetail.getBooking().getBookingId();
-            String  bookingCode = bookingDetail.getBooking().getBookingCode();
+            String bookingCode = bookingDetail.getBooking().getBookingCode();
             int renterId = booking.getRenter().getUserId();
 
             Transaction transaction = transactionRepository.findByBookingIdAndWalletTypeAndTransactionTypeAndUserId(
@@ -1171,11 +1171,14 @@ public class BookingDetailServiceImpl implements BookingDetailService {
             response.setServiceName(bookingDetail.getServiceUnit().getService().getServiceName());
             response.setValue(bookingDetail.getServiceUnit().getUnit().getUnitDetail());
             response.setEquivalent(bookingDetail.getServiceUnit().getUnit().getUnitValue());
-            response.setPrice(bookingDetail.getPriceHelper());
-            response.setRefundMoney(bookingDetail.getReport().getRefundMoney());
-            response.setRefundPoint(bookingDetail.getReport().getRefundPoint());
-            response.setPenaltyMoney(bookingDetail.getReport().getPenaltyMoney());
             response.setNote(bookingDetail.getNote());
+            response.setIsReported(bookingDetail.getReport() != null);
+            if (Objects.nonNull(bookingDetail.getReport())) {
+                response.setRefundMoney(bookingDetail.getReport().getRefundMoney());
+                response.setRefundPoint(bookingDetail.getReport().getRefundPoint());
+                response.setPenaltyMoney(bookingDetail.getReport().getPenaltyMoney());
+            }
+            response.setPrice(bookingDetail.getPriceHelperDefault());
             response.setCurrentStatus(bookingDetail.getBookingDetailStatus().name());
             GetAddressResponseBooking addressResponseBooking = modelMapper.map(bookingDetail.getBooking(), GetAddressResponseBooking.class);
             GetRenterResponse getRenterResponse = null;

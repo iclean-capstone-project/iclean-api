@@ -17,11 +17,11 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.validation.Valid;
-import javax.validation.constraints.Min;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
@@ -31,6 +31,7 @@ import java.util.List;
 @RestController
 @RequestMapping("api/v1/report")
 @Tag(name = "Report")
+@Validated
 public class ReportController {
 
     @Autowired
@@ -77,7 +78,7 @@ public class ReportController {
             @ApiResponse(responseCode = "403", description = "Forbidden - You don't have permission to access on this api"),
             @ApiResponse(responseCode = "400", description = "Bad request - Missing some field required")
     })
-    @PreAuthorize("hasAnyAuthority('renter', 'helper')")
+    @PreAuthorize("hasAnyAuthority('renter', 'employee')")
     public ResponseEntity<ResponseObject> createReport(@RequestPart(name = "bookingDetailId")
                                                        @Pattern(regexp = "^\\d+$", message = "Booking Detail ID is required number")
                                                        String bookingDetailId,
