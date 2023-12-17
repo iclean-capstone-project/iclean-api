@@ -37,15 +37,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.transaction.TransactionStatus;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.DefaultTransactionDefinition;
 
 import java.math.RoundingMode;
 import java.time.DayOfWeek;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -97,8 +92,6 @@ public class BookingServiceImpl implements BookingService {
     GoogleMapService googleMapService;
     @Autowired
     private ModelMapper modelMapper;
-    @Autowired
-    private PlatformTransactionManager transactionManager;
 
     @Override
     public ResponseEntity<ResponseObject> getBookings(Integer userId, Pageable pageable, List<String> statuses, Boolean isHelper, String startDate, String endDate) {
@@ -253,8 +246,8 @@ public class BookingServiceImpl implements BookingService {
 
 
     @Override
+    @Transactional
     public ResponseEntity<ResponseObject> createBookingNow(CreateBookingRequestNow request, Integer renterId) {
-        TransactionStatus status = transactionManager.getTransaction(new DefaultTransactionDefinition());
         try {
             ObjectMapper objectMapper = new ObjectMapper();
             Booking booking = new Booking();
@@ -354,14 +347,12 @@ public class BookingServiceImpl implements BookingService {
             bookingDetailStatusHistoryRepository.save(bookingDetailStatusHistory);
             bookingRepository.save(booking);
             bookingDetailRepository.save(bookingDetail);
-            transactionManager.commit(status);
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseObject(HttpStatus.OK.toString(),
                             "Create Booking Successfully!", null));
 
         } catch (Exception e) {
             log.error(e.getMessage());
-            transactionManager.rollback(status);
             if (e instanceof BadRequestException) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString(),
@@ -644,7 +635,6 @@ public class BookingServiceImpl implements BookingService {
     @Override
     public ResponseEntity<ResponseObject> createServiceToCart(AddBookingRequest request,
                                                               Integer userId) {
-        TransactionStatus status = transactionManager.getTransaction(new DefaultTransactionDefinition());
         try {
             Booking booking = bookingRepository.findCartByRenterId(userId, BookingStatusEnum.ON_CART);
             LocalDateTime currentTime = Utils.getLocalDateTimeNow();
@@ -714,14 +704,12 @@ public class BookingServiceImpl implements BookingService {
                 bookingDetailStatusHistoryRepository.save(bookingDetailStatusHistory);
             }
 
-            transactionManager.commit(status);
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseObject(HttpStatus.OK.toString(),
                             "Create Booking Successfully!", null));
 
         } catch (Exception e) {
             log.error(e.getMessage());
-            transactionManager.rollback(status);
             if (e instanceof NotFoundException) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body(new ResponseObject(HttpStatus.NOT_FOUND.toString(),
@@ -1409,7 +1397,6 @@ public class BookingServiceImpl implements BookingService {
         }
     }
 
-    @Transactional(propagation = Propagation.REQUIRED)
     public boolean createTransaction(TransactionRequest request) throws BadRequestException {
         User user = findAccount(request.getUserId());
         Booking booking = findBookingById(request.getBookingId());

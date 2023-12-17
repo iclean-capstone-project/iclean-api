@@ -27,7 +27,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
 
@@ -48,8 +47,6 @@ public class ServiceUnitServiceImpl implements ServiceUnitService {
     private UnitRepository unitRepository;
     @Autowired
     private ServicePriceRepository servicePriceRepository;
-    @Autowired
-    private PlatformTransactionManager transactionManager;
     @Autowired
     private ModelMapper modelMapper;
     @Override
@@ -84,7 +81,6 @@ public class ServiceUnitServiceImpl implements ServiceUnitService {
 
     @Override
     public ResponseEntity<ResponseObject> createServiceUnit(CreateServiceUnitRequest request) {
-        TransactionStatus status = transactionManager.getTransaction(new DefaultTransactionDefinition());
         try {
             ServiceUnit serviceUnit = new ServiceUnit();
             modelMapper.map(request, serviceUnit);
@@ -108,13 +104,11 @@ public class ServiceUnitServiceImpl implements ServiceUnitService {
             }
             servicePriceRepository.saveAll(createServicePrices);
             serviceUnitRepository.save(serviceUnit);
-            transactionManager.commit(status);
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseObject(HttpStatus.OK.toString(),
                             "Create Service Unit Successfully!", null));
 
         } catch (Exception e) {
-            transactionManager.rollback(status);
             log.error(e.getMessage());
             if (e instanceof NotFoundException) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
@@ -129,7 +123,6 @@ public class ServiceUnitServiceImpl implements ServiceUnitService {
 
     @Override
     public ResponseEntity<ResponseObject> updateServiceUnit(Integer id, UpdateServiceUnitRequest request) {
-        TransactionStatus status = transactionManager.getTransaction(new DefaultTransactionDefinition());
         try {
             ServiceUnit serviceUnit = findById(id);
             modelMapper.map(request, serviceUnit);
@@ -155,13 +148,11 @@ public class ServiceUnitServiceImpl implements ServiceUnitService {
             servicePriceRepository.saveAll(servicePrices);
             servicePriceRepository.saveAll(createServicePrices);
             serviceUnitRepository.save(serviceUnit);
-            transactionManager.commit(status);
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseObject(HttpStatus.OK.toString(),
                             "Update Service Unit Successfully!", null));
 
         } catch (Exception e) {
-            transactionManager.rollback(status);
             log.error(e.getMessage());
             if (e instanceof NotFoundException) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)

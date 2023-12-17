@@ -48,6 +48,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -235,10 +236,11 @@ public class BookingDetailServiceImpl implements BookingDetailService {
     }
 
     @Override
+    @Transactional(rollbackFor = BadRequestException.class)
     public ResponseEntity<ResponseObject> cancelBookingDetailByHelper(Integer helperId, Integer detailId) {
         try {
             BookingDetail bookingDetail = findById(detailId);
-            findByHelperId(helperId);
+            findByHelperId(helperId, bookingDetail.getBookingDetailId());
             isPermissionForHelper(helperId, bookingDetail);
             Booking booking = bookingDetail.getBooking();
             NotificationRequestDto notificationRequestDto = new NotificationRequestDto();
@@ -1486,8 +1488,8 @@ public class BookingDetailServiceImpl implements BookingDetailService {
         return data.get(0);
     }
 
-    private BookingDetailHelper findByHelperId(int id) throws UserNotHavePermissionException {
-        return bookingDetailHelperRepository.findByHelperId(id).orElseThrow(() ->
+    private BookingDetailHelper findByHelperId(int id, int bookingDetailId) throws UserNotHavePermissionException {
+        return bookingDetailHelperRepository.findByHelperId(id, bookingDetailId).orElseThrow(() ->
                 new UserNotHavePermissionException("Helper do not to have permission to action this booking!"));
     }
 

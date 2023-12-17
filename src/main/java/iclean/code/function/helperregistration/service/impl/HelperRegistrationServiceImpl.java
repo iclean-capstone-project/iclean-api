@@ -32,7 +32,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
 import org.springframework.web.multipart.MultipartFile;
@@ -66,8 +65,6 @@ public class HelperRegistrationServiceImpl implements HelperRegistrationService 
     private ExternalApiService externalApiService;
     @Autowired
     private StorageService storageService;
-    @Autowired
-    private PlatformTransactionManager transactionManager;
     @Autowired
     private ModelMapper modelMapper;
 
@@ -273,7 +270,6 @@ public class HelperRegistrationServiceImpl implements HelperRegistrationService 
     @Override
     public ResponseEntity<ResponseObject> createHelperRegistration(HelperRegistrationRequest helperRegistrationRequest,
                                                                    Integer renterId) {
-        TransactionStatus status = transactionManager.getTransaction(new DefaultTransactionDefinition());
         try {
             HelperInformation helperInformationCheck = helperInformationRepository.findByUserId(renterId);
             if (Objects.nonNull(helperInformationCheck)) {
@@ -345,14 +341,12 @@ public class HelperRegistrationServiceImpl implements HelperRegistrationService 
                 attachments.add(backCMT);
             }
             attachmentRepository.saveAll(attachments);
-            transactionManager.commit(status);
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseObject(HttpStatus.OK.toString(),
                             "Register become helper successful - please waiting for our response email!",
                             null));
         } catch (Exception e) {
             log.error(e.getMessage());
-            transactionManager.rollback(status);
             if (e instanceof BadRequestException) {
                 ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString(),

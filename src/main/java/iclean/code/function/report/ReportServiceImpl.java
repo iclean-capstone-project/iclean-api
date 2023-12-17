@@ -38,9 +38,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.transaction.TransactionStatus;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -95,9 +92,6 @@ public class ReportServiceImpl implements ReportService {
 
     @Autowired
     private StorageService storageService;
-
-    @Autowired
-    private PlatformTransactionManager transactionManager;
 
     @Autowired
     private ModelMapper modelMapper;
@@ -293,7 +287,6 @@ public class ReportServiceImpl implements ReportService {
 
     @Override
     public ResponseEntity<ResponseObject> updateReport(int reportId, UpdateReportRequest reportRequest, Integer managerId) {
-        TransactionStatus status = transactionManager.getTransaction(new DefaultTransactionDefinition());
         try {
             User manager = findById(managerId);
             ReportResultResponse reportResultResponse = new ReportResultResponse();
@@ -377,11 +370,11 @@ public class ReportServiceImpl implements ReportService {
                             TransactionTypeEnum.DEPOSIT.name(),
                             WalletTypeEnum.POINT.name()));
                 }
-                if (renter.getEmail() != null && !renter.getEmail().isEmpty()) {
-                    reportResultResponse.setTo(renter.getEmail());
-                    reportResultResponse.setRenterName(renter.getFullName());
-                    emailSenderService.sendEmailTemplate(SendMailOptionEnum.REPORT_RESULT, reportResultResponse);
-                }
+//                if (renter.getEmail() != null && !renter.getEmail().isEmpty()) {
+//                    reportResultResponse.setTo(renter.getEmail());
+//                    reportResultResponse.setRenterName(renter.getFullName());
+//                    emailSenderService.sendEmailTemplate(SendMailOptionEnum.REPORT_RESULT, reportResultResponse);
+//                }
                 double minusMoneyHelper = 0D;
                 double moneyPen = 0D;
                 double previousMoneyHelper = bookingDetail.getPriceHelper();
@@ -426,14 +419,12 @@ public class ReportServiceImpl implements ReportService {
             notificationRepository.save(notification);
             reportRepository.save(report);
             bookingDetailRepository.save(bookingDetail);
-            transactionManager.commit(status);
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseObject(HttpStatus.OK.toString(),
                             "Update Report Successfully!", null));
 
         } catch (Exception e) {
             log.error(e.getMessage());
-            transactionManager.rollback(status);
             if (e instanceof NotFoundException) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body(new ResponseObject(HttpStatus.NOT_FOUND.toString(),
