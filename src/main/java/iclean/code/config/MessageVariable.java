@@ -49,10 +49,10 @@ public class MessageVariable {
     public static final String CANNOT_REGISTER_HELPER_ALREADY_HAVE = "Bạn đã đăng ký nhân viên trước đó";
     public static final String GET_POINT = "Nhận điểm thưởng đặt dịch vụ!";
     public static final String COMPLETE_BOOKING = "Dịch vụ %s thuộc đơn #%s đã được nhân viên hoàn thành";
+    public static final String CANCEL_COMPLETE_BOOKING = "Dịch vụ %s thuộc đơn #%s đã được nhân viên hoàn thành, bạn không thể hủy!";
     public static final String BOOKING_CANCELED = "Dịch vụ không khả dụng! Vui lòng tải lại trang";
     public static final String NOT_HAVE_TRANSACTION_MONEY = "Không tìm thấy hóa đơn thanh toán tiền dịch vụ";
     public static final String NOT_HAVE_TRANSACTION_POINT = "Không tìm thấy hóa đơn thanh toán điểm dịch vụ";
-
     public static final String ALREADY_REPORTED = "Bạn đã báo cáo, vui lòng đợi nhân viên duyệt!";
     public static final String CANNOT_CHECK_OUT = "Không thể checkout một dịch vụ khi chưa bắt đầu";
 }
