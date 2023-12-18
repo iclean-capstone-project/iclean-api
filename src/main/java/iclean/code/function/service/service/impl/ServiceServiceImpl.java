@@ -83,7 +83,7 @@ public class ServiceServiceImpl implements ServiceService {
             serviceImageRepository.saveAll(serviceImages);
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseObject(HttpStatus.OK.toString(),
-                            "Create Service Successfully!", null));
+                            "Create Service Successfully!", service.getServiceId()));
 
         } catch (Exception e) {
             log.error(e.getMessage());

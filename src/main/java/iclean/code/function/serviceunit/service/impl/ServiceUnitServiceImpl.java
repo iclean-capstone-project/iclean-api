@@ -102,8 +102,8 @@ public class ServiceUnitServiceImpl implements ServiceUnitService {
                 servicePrice.setServiceUnit(serviceUnit);
                 createServicePrices.add(servicePrice);
             }
-            servicePriceRepository.saveAll(createServicePrices);
             serviceUnitRepository.save(serviceUnit);
+            servicePriceRepository.saveAll(createServicePrices);
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseObject(HttpStatus.OK.toString(),
                             "Create Service Unit Successfully!", null));

@@ -251,12 +251,6 @@ public class MoneyRequestServiceImpl implements MoneyRequestService {
                 if (bookingDetailHelper == null) {
                     throw new BadRequestException();
                 }
-                if (bookingDetail.getWorkDate() != null && bookingDetail.getWorkEnd() != null) {
-                    LocalDateTime endDateTime = LocalDateTime.of(bookingDetail.getWorkDate(), bookingDetail.getWorkEnd());
-                    if (!checkInTimeToSendMoney(endDateTime)) {
-                        throw new BadRequestException();
-                    }
-                }
                 createTransaction(new TransactionRequest(
                         bookingDetail.getPriceHelper(),
                         String.format(MessageVariable.PAYMENT_FOR_HELPER, bookingDetail.getBooking().getBookingCode(),
