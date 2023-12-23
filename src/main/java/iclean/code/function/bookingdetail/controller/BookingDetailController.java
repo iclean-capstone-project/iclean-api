@@ -6,7 +6,6 @@ import iclean.code.data.dto.common.ResponseObject;
 import iclean.code.data.dto.request.booking.CreateBookingHelperRequest;
 import iclean.code.data.dto.request.booking.QRCodeValidate;
 import iclean.code.data.dto.request.bookingdetail.HelperChoiceRequest;
-import iclean.code.data.dto.request.bookingdetail.ResendBookingDetailRequest;
 import iclean.code.data.dto.response.bookingdetail.UpdateBookingDetailRequest;
 import iclean.code.function.bookingdetail.service.BookingDetailService;
 import iclean.code.utils.validator.ValidInputList;
@@ -130,7 +129,8 @@ public class BookingDetailController {
                                                             @RequestParam(name = "size", defaultValue = "10") int size,
                                                             @RequestParam(name = "statuses", required = false)
                                                             @ValidInputList(value = "(?i)(rejected|not_yet|approved|waiting" +
-                                                            "|in_process|finished|no_money)", message = "Booking Status is not valid")
+                                                            "|in_process|finished|reported|CANCEL_BY_RENTER|CANCEL_BY_HELPER|" +
+                                                                    "CANCEL_BY_SYSTEM)", message = "Booking Status is not valid")
                                                             List<String> statuses,
                                                             @RequestParam(name = "isHelper", defaultValue = "false")
                                                             Boolean isHelper,
@@ -233,20 +233,5 @@ public class BookingDetailController {
     @PreAuthorize("hasAuthority('employee')")
     public ResponseEntity<ResponseObject> getBookingsAround(Authentication authentication) {
         return bookingDetailService.getBookingsAround(JwtUtils.decodeToAccountId(authentication));
-    }
-
-    @PostMapping("resend/{id}")
-    @Operation(summary = "Resend a booking detail when complete or cancel by renter", description = "Return message success or fail")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Booking Information"),
-            @ApiResponse(responseCode = "401", description = "Unauthorized - Login please"),
-            @ApiResponse(responseCode = "403", description = "Forbidden - You don't have permission to access on this api"),
-            @ApiResponse(responseCode = "400", description = "Bad request - Missing some field required")
-    })
-    @PreAuthorize("hasAuthority('employee')")
-    public ResponseEntity<ResponseObject> resendBookingDetail(Authentication authentication,
-                                                              @RequestBody ResendBookingDetailRequest request,
-                                                              @PathVariable Integer id) {
-        return bookingDetailService.resendBookingDetail(JwtUtils.decodeToAccountId(authentication), request, id);
     }
 }

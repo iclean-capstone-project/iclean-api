@@ -13,6 +13,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Service
 public class SystemParameterServiceImpl implements SystemParameterService {
 
@@ -29,35 +32,25 @@ public class SystemParameterServiceImpl implements SystemParameterService {
                     .body(new ResponseObject(HttpStatus.NOT_FOUND.toString(), "All SystemParameter", "SystemParameter list is empty"));
         }
         return ResponseEntity.status(HttpStatus.OK)
-                .body(new ResponseObject(HttpStatus.OK.toString(), "All SystemParameter", systemParameterRepository.findAll()));
+                .body(new ResponseObject(HttpStatus.OK.toString(), "All System Parameter", systemParameterRepository.findAll()));
     }
 
     @Override
-    public ResponseEntity<ResponseObject> getSystemParameterById(int systemId) {
+    public ResponseEntity<ResponseObject> updateSystemParameter(List<UpdateSystemParameter> systemParameter) {
         try {
-            if (systemParameterRepository.findById(systemId).isEmpty()) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(new ResponseObject(HttpStatus.NOT_FOUND.toString(), "SystemParameter", "Image booking is not exist"));
+            List<SystemParameter> systemParametersForUpdate = new ArrayList<>();
+            for (UpdateSystemParameter updateSystemParameter : systemParameter) {
+                SystemParameter systemParameterForUpdate = findSystemParameter(updateSystemParameter.getParameterId());
+                systemParameterForUpdate.setUpdateAt(Utils.getLocalDateTimeNow());
+                systemParameterForUpdate.setParameterValue(updateSystemParameter.getParameterValue());
+                String[] versionParts = systemParameterForUpdate.getUpdateVersion().split("\\.");
+                int patchVersion = Integer.parseInt(versionParts[1]);
+                String version = versionParts[0] + "." + ++patchVersion;
+                systemParameterForUpdate.setUpdateVersion(version);
+                SystemParameter update = modelMapper.map(systemParameterForUpdate, SystemParameter.class);
+                systemParametersForUpdate.add(update);
             }
-            return ResponseEntity.status(HttpStatus.OK)
-                    .body(new ResponseObject(HttpStatus.OK.toString(), "SystemParameter", systemParameterRepository.findById(systemId)));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString()
-                            , "Something wrong occur!", null));
-        }
-    }
-
-    @Override
-    public ResponseEntity<ResponseObject> updateSystemParameter(int systemId, UpdateSystemParameter systemParameter) {
-        try {
-            SystemParameter systemParameterForUpdate = findSystemParameter(systemId);
-                    //modelMapper.map(systemParameter, SystemParameter.class);
-            systemParameterForUpdate.setUpdateAt(Utils.getLocalDateTimeNow());
-            systemParameterForUpdate.setUpdateVersion(systemParameter.getUpdateVersion());
-
-            SystemParameter update = modelMapper.map(systemParameterForUpdate, SystemParameter.class);
-            systemParameterRepository.save(update);
+            systemParameterRepository.saveAll(systemParametersForUpdate);
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseObject(HttpStatus.OK.toString()
                             , "Update SystemParameter Successfully!", null));
@@ -65,8 +58,8 @@ public class SystemParameterServiceImpl implements SystemParameterService {
         } catch (Exception e) {
             if (e instanceof NotFoundException) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(new ResponseObject(HttpStatus.NOT_FOUND.toString()
-                                , "Something wrong occur!", e.getMessage()));
+                        .body(new ResponseObject(HttpStatus.NOT_FOUND.toString(),
+                                e.getMessage(), null));
             }
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new ResponseObject(HttpStatus.INTERNAL_SERVER_ERROR.toString()

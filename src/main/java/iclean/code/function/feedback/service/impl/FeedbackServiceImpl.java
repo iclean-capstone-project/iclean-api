@@ -76,9 +76,7 @@ public class FeedbackServiceImpl implements FeedbackService {
         return userRepository.findById(id).orElseThrow(() -> new NotFoundException("User is not found"));
     }
     private boolean isPermission(Integer userId, BookingDetail bookingDetail) throws UserNotHavePermissionException {
-        User user = findUser(userId);
-        if (!Objects.equals(bookingDetail.getBooking().getRenter().getUserId(), userId) ||
-                !Objects.equals(user.getRole().getRoleId(), RoleEnum.MANAGER.getValue()))
+        if (!Objects.equals(bookingDetail.getBooking().getRenter().getUserId(), userId))
             throw new UserNotHavePermissionException("User do not have permission to do this action");
         return true;
     }

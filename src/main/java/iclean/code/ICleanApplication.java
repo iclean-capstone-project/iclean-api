@@ -12,7 +12,6 @@ import javax.annotation.PostConstruct;
 
 @SpringBootApplication
 @EnableScheduling
-@EnableTransactionManagement
 public class ICleanApplication {
 	@Autowired
 	private TwilioConfig twilioConfig;

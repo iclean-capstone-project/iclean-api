@@ -23,6 +23,7 @@ public class MessageVariable {
     public static final String TOO_FAR = "Dịch vụ số #%s quá xa để có thể nhận";
     public static final String ALREADY_CANCEL_BOOKING = "Dịch vụ số #%s đã được hủy trước đó!";
     public static final String REFUND_CANCEL_BOOKING = "Hoàn tiền cho dịch vụ #%s";
+    public static final String REFUND_CANCEL_BOOKING_HELPER = "Phạt tiền cho dịch vụ #%s";
     public static final String REFUND_POINT_CANCEL_BOOKING = "Hoàn điểm cho dịch vụ #%s";
     public static final String DUPLICATE_BOOKING = "Cùng địa điểm với dịch vụ #%s";
     public static final String ALREADY_HAVE_BOOKING_AT_THIS_TIME = "Bạn đã nhận một dịch vụ khác tại thời gian này!";
@@ -45,4 +46,13 @@ public class MessageVariable {
     public static final String NOT_ON_TIME_TO_END_WORK = "Bạn chưa đủ điều kiện hoàn thành công việc hiện tại!";
     public static final String CANCEL_BOOKING_BY_SYSTEM = "Dịch vụ số #%s - %s đã bị hủy bởi hệ thống do người làm không check in, chúng tôi rất xin lỗi về sự cố này!";
     public static final String NOT_ENOUGH_MONEY = "Không đủ tiền để thanh toán!";
+    public static final String CANNOT_REGISTER_HELPER_ALREADY_HAVE = "Bạn đã đăng ký nhân viên trước đó";
+    public static final String GET_POINT = "Nhận điểm thưởng đặt dịch vụ!";
+    public static final String COMPLETE_BOOKING = "Dịch vụ %s thuộc đơn #%s đã được nhân viên hoàn thành";
+    public static final String CANCEL_COMPLETE_BOOKING = "Dịch vụ %s thuộc đơn #%s đã được nhân viên hoàn thành, bạn không thể hủy!";
+    public static final String BOOKING_CANCELED = "Dịch vụ không khả dụng! Vui lòng tải lại trang";
+    public static final String NOT_HAVE_TRANSACTION_MONEY = "Không tìm thấy hóa đơn thanh toán tiền dịch vụ";
+    public static final String NOT_HAVE_TRANSACTION_POINT = "Không tìm thấy hóa đơn thanh toán điểm dịch vụ";
+    public static final String ALREADY_REPORTED = "Bạn đã báo cáo, vui lòng đợi nhân viên duyệt!";
+    public static final String CANNOT_CHECK_OUT = "Không thể checkout một dịch vụ khi chưa bắt đầu";
 }

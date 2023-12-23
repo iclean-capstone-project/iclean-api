@@ -9,9 +9,6 @@ import java.util.List;
 
 public interface ServicePriceService {
     ResponseEntity<ResponseObject> getServicePriceActive(GetServicePriceRequest request);
-
     Double getServicePrice(GetServicePriceRequest request);
     Double getServiceHelperPrice(GetServicePriceRequest request);
-    ResponseEntity<ResponseObject> createServicePrice(List<ServicePriceRequest> requests, Integer serviceUnitId);
-    ResponseEntity<ResponseObject> getServicePrice(Integer serviceUnitId);
 }

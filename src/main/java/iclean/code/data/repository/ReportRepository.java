@@ -14,10 +14,9 @@ public interface ReportRepository extends JpaRepository<Report, Integer> {
     @Query("SELECT report FROM Report report " +
             "WHERE report.bookingDetail.booking.manager.userId = ?1 " +
             "AND report.bookingDetail.booking.renter.fullName LIKE ?2 " +
-            "ORDER BY report.reportStatus ASC, " +
-            "report.createAt ASC ")
+            "ORDER BY report.createAt DESC ")
     Page<Report> findReportsAsManager(Integer managerId, String renterName, Pageable pageable);
 
-    @Query("SELECT report FROM Report report WHERE report.bookingDetail.booking.renter.fullName LIKE ?1")
+    @Query("SELECT report FROM Report report WHERE report.bookingDetail.booking.renter.fullName LIKE ?1 ORDER BY report.createAt DESC")
     Page<Report> findAllReportByRenterName(String renterName, Pageable pageable);
 }

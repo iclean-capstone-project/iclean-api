@@ -12,6 +12,7 @@ import iclean.code.data.dto.request.bookingdetail.HelperChoiceRequest;
 import iclean.code.data.dto.request.bookingdetail.ResendBookingDetailRequest;
 import iclean.code.data.dto.request.security.ValidateOTPRequest;
 import iclean.code.data.dto.request.serviceprice.GetServicePriceRequest;
+import iclean.code.data.dto.request.transaction.TransactionRequest;
 import iclean.code.data.dto.request.workschedule.DateTimeRange;
 import iclean.code.data.dto.response.PageResponseObject;
 import iclean.code.data.dto.response.booking.GetBookingResponseForHelper;
@@ -28,6 +29,7 @@ import iclean.code.exception.BadRequestException;
 import iclean.code.exception.NotFoundException;
 import iclean.code.exception.UserNotHavePermissionException;
 import iclean.code.function.bookingdetail.service.BookingDetailService;
+import iclean.code.function.common.service.FirebaseRealtimeDatabaseService;
 import iclean.code.function.feedback.service.FeedbackService;
 import iclean.code.function.serviceprice.service.ServicePriceService;
 import iclean.code.function.common.service.FCMService;
@@ -46,6 +48,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -68,6 +71,9 @@ public class BookingDetailServiceImpl implements BookingDetailService {
 
     @Value("${iclean.app.max.update.and.cancel.minutes}")
     private long maxUpdateMinutes;
+
+    @Value("${iclean.app.money.to.point}")
+    private long moneyToPoint;
 
     @Value("${iclean.app.max.end.time.minutes}")
     private long maxEndTimeMinutes;
@@ -94,7 +100,7 @@ public class BookingDetailServiceImpl implements BookingDetailService {
     private BookingDetailStatusHistoryRepository bookingDetailStatusHistoryRepository;
 
     @Autowired
-    private BookingEmployeeRepository bookingEmployeeRepository;
+    private WalletRepository walletRepository;
 
     @Autowired
     private ServiceUnitRepository serviceUnitRepository;
@@ -105,7 +111,8 @@ public class BookingDetailServiceImpl implements BookingDetailService {
     private TransactionRepository transactionRepository;
 
     @Autowired
-    private RejectionReasonRepository rejectionReasonRepository;
+    private FirebaseRealtimeDatabaseService firebaseRealtimeDatabaseService;
+
     @Value("${iclean.app.max.distance.length}")
     private Double delayMinutes;
 
@@ -161,9 +168,46 @@ public class BookingDetailServiceImpl implements BookingDetailService {
                 case NOT_YET:
                     bookingDetail.setBookingDetailStatus(BookingDetailStatusEnum.CANCEL_BY_RENTER);
                     bookingDetailRepository.save(bookingDetail);
+                    NotificationRequestDto notificationRequestDto = new NotificationRequestDto();
+                    notificationRequestDto.setBody(String.format(MessageVariable.RENTER_CANCEL_BOOKING_TITLE,
+                            bookingDetail.getBooking().getBookingCode()));
+                    notificationRequestDto.setTitle(MessageVariable.TITLE_APP);
+                    sendNotificationForUser(notificationRequestDto, renterId);
                     break;
                 default:
                     throw new BadRequestException(String.format(MessageVariable.CANNOT_CANCEL_BOOKING, bookingDetail.getBooking().getBookingCode()));
+            }
+            int bookingId = bookingDetail.getBooking().getBookingId();
+            String bookingCode = bookingDetail.getBooking().getBookingCode();
+
+            Transaction transaction = transactionRepository.findByBookingIdAndWalletTypeAndTransactionTypeAndUserId(
+                    bookingId,
+                    WalletTypeEnum.POINT,
+                    TransactionTypeEnum.WITHDRAW,
+                    renterId);
+            if (transaction != null) {
+                createTransaction(new TransactionRequest(
+                        transaction.getAmount(),
+                        String.format(MessageVariable.REFUND_POINT_CANCEL_BOOKING, bookingCode),
+                        renterId,
+                        TransactionTypeEnum.DEPOSIT.name(),
+                        WalletTypeEnum.POINT.name(),
+                        bookingId));
+            }
+
+            Transaction transactionMoney = transactionRepository.findByBookingIdAndWalletTypeAndTransactionTypeAndUserId(
+                    bookingId,
+                    WalletTypeEnum.MONEY,
+                    TransactionTypeEnum.WITHDRAW,
+                    renterId);
+            if (transactionMoney != null) {
+                createTransaction(new TransactionRequest(
+                        transactionMoney.getAmount(),
+                        String.format(MessageVariable.REFUND_REJECT_BOOKING, bookingCode),
+                        renterId,
+                        TransactionTypeEnum.DEPOSIT.name(),
+                        WalletTypeEnum.MONEY.name(),
+                        bookingId));
             }
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseObject(HttpStatus.OK.toString(),
@@ -192,12 +236,14 @@ public class BookingDetailServiceImpl implements BookingDetailService {
     }
 
     @Override
+    @Transactional(rollbackFor = BadRequestException.class)
     public ResponseEntity<ResponseObject> cancelBookingDetailByHelper(Integer helperId, Integer detailId) {
         try {
             BookingDetail bookingDetail = findById(detailId);
-            findByHelperId(helperId);
+            findByHelperId(helperId, bookingDetail.getBookingDetailId());
             isPermissionForHelper(helperId, bookingDetail);
             Booking booking = bookingDetail.getBooking();
+            NotificationRequestDto notificationRequestDto = new NotificationRequestDto();
             switch (bookingDetail.getBookingDetailStatus()) {
                 case WAITING:
                     String checkTime = checkInTime(LocalDateTime.of(bookingDetail.getWorkDate(), bookingDetail.getWorkStart()),
@@ -205,7 +251,6 @@ public class BookingDetailServiceImpl implements BookingDetailService {
                     if (!Utils.isNullOrEmpty(checkTime)) {
                         throw new BadRequestException(String.format(checkTime, bookingDetail.getServiceUnit().getService().getServiceName()));
                     }
-                    NotificationRequestDto notificationRequestDto = new NotificationRequestDto();
                     notificationRequestDto.setBody(String.format(MessageVariable.HELPER_CANCEL_BOOKING,
                             booking.getBookingCode()));
                     notificationRequestDto.setTitle(MessageVariable.TITLE_APP);
@@ -216,9 +261,48 @@ public class BookingDetailServiceImpl implements BookingDetailService {
                 case APPROVED:
                     Optional<BookingDetailHelper> bookingDetailHelper = bookingDetailHelperRepository.findByBookingDetailIdAndHelperId(detailId, helperId);
                     bookingDetailHelper.ifPresent(detailHelper -> bookingDetailHelperRepository.delete(detailHelper));
+                    notificationRequestDto.setBody(String.format(MessageVariable.HELPER_CANCEL_BOOKING,
+                            booking.getBookingCode()));
+                    notificationRequestDto.setTitle(MessageVariable.TITLE_APP);
+                    sendNotificationForUser(notificationRequestDto, booking.getRenter().getUserId());
+                    bookingDetail.setBookingDetailStatus(BookingDetailStatusEnum.CANCEL_BY_HELPER);
+                    bookingDetailRepository.save(bookingDetail);
                     break;
                 default:
                     throw new BadRequestException(String.format(MessageVariable.CANNOT_CANCEL_BOOKING, booking.getBookingCode()));
+            }
+            int bookingId = bookingDetail.getBooking().getBookingId();
+            String bookingCode = bookingDetail.getBooking().getBookingCode();
+            int renterId = booking.getRenter().getUserId();
+
+            Transaction transaction = transactionRepository.findByBookingIdAndWalletTypeAndTransactionTypeAndUserId(
+                    bookingId,
+                    WalletTypeEnum.POINT,
+                    TransactionTypeEnum.WITHDRAW,
+                    renterId);
+            if (transaction != null) {
+                createTransaction(new TransactionRequest(
+                        transaction.getAmount(),
+                        String.format(MessageVariable.REFUND_POINT_CANCEL_BOOKING, bookingCode),
+                        renterId,
+                        TransactionTypeEnum.DEPOSIT.name(),
+                        WalletTypeEnum.POINT.name(),
+                        bookingId));
+            }
+
+            Transaction transactionMoney = transactionRepository.findByBookingIdAndWalletTypeAndTransactionTypeAndUserId(
+                    bookingId,
+                    WalletTypeEnum.MONEY,
+                    TransactionTypeEnum.WITHDRAW,
+                    renterId);
+            if (transactionMoney != null) {
+                createTransaction(new TransactionRequest(
+                        transactionMoney.getAmount(),
+                        String.format(MessageVariable.REFUND_REJECT_BOOKING, bookingCode),
+                        renterId,
+                        TransactionTypeEnum.DEPOSIT.name(),
+                        WalletTypeEnum.MONEY.name(),
+                        bookingId));
             }
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseObject(HttpStatus.OK.toString(),
@@ -292,6 +376,7 @@ public class BookingDetailServiceImpl implements BookingDetailService {
 
             bookingDetail.setPriceDetail(priceDetail);
             bookingDetail.setPriceHelper(priceHelper);
+            bookingDetail.setPriceHelperDefault(priceHelper);
             bookingDetailRepository.save(bookingDetail);
 
             return ResponseEntity.status(HttpStatus.OK)
@@ -336,6 +421,8 @@ public class BookingDetailServiceImpl implements BookingDetailService {
                 bookingDetailStatusHistoryRepository.save(bookingDetailStatusHistory);
                 bookingDetailRepository.save(bookingDetail);
                 updateBookingIfSameStatusBookingDetail(bookingDetail.getBooking());
+                firebaseRealtimeDatabaseService.sendMessage(bookingDetail.getBookingDetailId().toString(),
+                        request.getQrCode());
                 return ResponseEntity.status(HttpStatus.OK)
                         .body(new ResponseObject(HttpStatus.OK.toString(),
                                 "Validate booking successful, helper can start to do this service", null));
@@ -564,6 +651,8 @@ public class BookingDetailServiceImpl implements BookingDetailService {
                                         responseForHelper.setIsApplied(true);
                                         responseForHelper.setNoteMessage(String.format(MessageVariable.DUPLICATE_BOOKING, booking.getBooking().getBookingCode()));
                                     }
+                                    responseForHelper.setDistance(googleMapService.calculateDistance(new Position(booking.getBooking().getLongitude(), booking.getBooking().getLatitude())
+                                            , new Position(address.getLongitude(), address.getLatitude())));
                                     return responseForHelper;
                                 }
                         )
@@ -679,8 +768,8 @@ public class BookingDetailServiceImpl implements BookingDetailService {
                                                             Pageable pageable) {
         try {
             Page<BookingDetail> bookingDetails;
-            Sort order = Sort.by(Sort.Order.desc("booking.orderDate"));
-            pageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), order);
+//            Sort order = Sort.by(Sort.Order.desc("booking.orderDate"));
+//            pageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), order);
             List<BookingDetailStatusEnum> bookingDetailStatusEnums = null;
             if (!(statuses == null || statuses.isEmpty())) {
                 bookingDetailStatusEnums = statuses
@@ -722,7 +811,7 @@ public class BookingDetailServiceImpl implements BookingDetailService {
                 default:
                     throw new UserNotHavePermissionException("User do not have permission to do this action");
             }
-            PageResponseObject pageResponseObject = getResponseObjectResponseEntity(bookingDetails);
+            PageResponseObject pageResponseObject = getResponseObjectResponseEntity(bookingDetails, isHelper);
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseObject(HttpStatus.OK.toString(),
                             "Booking History Response!", pageResponseObject));
@@ -755,6 +844,13 @@ public class BookingDetailServiceImpl implements BookingDetailService {
             if (bookingDetail.getBooking().getRejectionReason() != null && bookingDetail.getBooking().getRjReasonDescription() != null) {
                 response.setRejectionReasonContent(bookingDetail.getBooking().getRejectionReason().getRejectionContent());
                 response.setRejectionReasonDescription(bookingDetail.getBooking().getRjReasonDescription());
+            }
+            response.setReported(false);
+            if (Objects.nonNull(bookingDetail.getReport())) {
+                response.setReported(true);
+                response.setRefundMoney(bookingDetail.getReport().getRefundMoney());
+                response.setRefundPoint(bookingDetail.getReport().getRefundPoint());
+                response.setPenaltyMoney(bookingDetail.getReport().getPenaltyMoney());
             }
             response.setServiceId(bookingDetail.getServiceUnit().getService().getServiceId());
             response.setServiceUnitId(bookingDetail.getServiceUnit().getServiceUnitId());
@@ -967,6 +1063,7 @@ public class BookingDetailServiceImpl implements BookingDetailService {
             bookingDetail.setBooking(booking);
             bookingDetail.setPriceDetail(priceDetail);
             bookingDetail.setPriceHelper(priceHelper);
+            bookingDetail.setPriceHelperDefault(priceHelper);
             bookingDetail.setWorkStart(request.getStartTime().toLocalTime());
             bookingDetail.setWorkDate(request.getStartTime().toLocalDate());
             bookingDetail.setBookingDetailStatus(BookingDetailStatusEnum.NOT_YET);
@@ -994,6 +1091,9 @@ public class BookingDetailServiceImpl implements BookingDetailService {
     public ResponseEntity<ResponseObject> checkoutBookingDetail(Integer id, Integer helperId) {
         try {
             BookingDetail bookingDetail = findBookingDetail(id);
+            if (bookingDetail.getBookingDetailStatus() != BookingDetailStatusEnum.IN_PROCESS) {
+                throw new BadRequestException(MessageVariable.CANNOT_CHECK_OUT);
+            }
             isPermissionForHelper(helperId, bookingDetail);
             LocalDateTime startDateTime = LocalDateTime.of(bookingDetail.getWorkDate(), bookingDetail.getWorkStart());
             String checkValue = checkInTimeToEndWork(startDateTime);
@@ -1005,6 +1105,26 @@ public class BookingDetailServiceImpl implements BookingDetailService {
             BookingDetailStatusHistory bookingDetailStatusHistory = new BookingDetailStatusHistory();
             bookingDetailStatusHistory.setBookingDetailStatus(BookingDetailStatusEnum.FINISHED);
             bookingDetailStatusHistory.setBookingDetail(bookingDetail);
+            double point = bookingDetail.getPriceDetail() / getMoneyToPoint();
+            createTransaction(new TransactionRequest(
+                    point,
+                    String.format(MessageVariable.GET_POINT),
+                    bookingDetail.getBooking().getRenter().getUserId(),
+                    TransactionTypeEnum.DEPOSIT.name(),
+                    WalletTypeEnum.POINT.name(),
+                    bookingDetail.getBooking().getBookingId()
+            ));
+            NotificationRequestDto notificationRequestDto = new NotificationRequestDto();
+            notificationRequestDto.setTitle(MessageVariable.TITLE_APP);
+            notificationRequestDto.setBody(String.format(MessageVariable.COMPLETE_BOOKING,
+                    bookingDetail.getServiceUnit().getService().getServiceName(),
+                    bookingDetail.getBooking().getBookingCode()));
+            firebaseRealtimeDatabaseService.sendNotification(bookingDetail.getBooking().getRenter().getPhoneNumber(),
+                    bookingDetail.getBookingDetailId().toString(),
+                    String.format(String.format(MessageVariable.COMPLETE_BOOKING,
+                            bookingDetail.getServiceUnit().getService().getServiceName(),
+                            bookingDetail.getBooking().getBookingCode())));
+            sendMessage(notificationRequestDto, bookingDetail.getBooking().getRenter());
             bookingDetailStatusHistoryRepository.save(bookingDetailStatusHistory);
             bookingDetailRepository.save(bookingDetail);
             updateBookingIfSameStatusBookingDetail(bookingDetail.getBooking());
@@ -1013,6 +1133,11 @@ public class BookingDetailServiceImpl implements BookingDetailService {
                             "Checkout booking successful!", null));
         } catch (Exception e) {
             log.error(e.getMessage());
+            if (e instanceof BadRequestException) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString(),
+                                e.getMessage(), null));
+            }
             if (e instanceof NotFoundException) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body(new ResponseObject(HttpStatus.NOT_FOUND.toString(),
@@ -1048,7 +1173,14 @@ public class BookingDetailServiceImpl implements BookingDetailService {
             response.setServiceName(bookingDetail.getServiceUnit().getService().getServiceName());
             response.setValue(bookingDetail.getServiceUnit().getUnit().getUnitDetail());
             response.setEquivalent(bookingDetail.getServiceUnit().getUnit().getUnitValue());
-            response.setPrice(bookingDetail.getPriceHelper());
+            response.setNote(bookingDetail.getNote());
+            response.setIsReported(bookingDetail.getReport() != null);
+            if (Objects.nonNull(bookingDetail.getReport())) {
+                response.setRefundMoney(bookingDetail.getReport().getRefundMoney());
+                response.setRefundPoint(bookingDetail.getReport().getRefundPoint());
+                response.setPenaltyMoney(bookingDetail.getReport().getPenaltyMoney());
+            }
+            response.setPrice(bookingDetail.getPriceHelperDefault());
             response.setCurrentStatus(bookingDetail.getBookingDetailStatus().name());
             GetAddressResponseBooking addressResponseBooking = modelMapper.map(bookingDetail.getBooking(), GetAddressResponseBooking.class);
             GetRenterResponse getRenterResponse = null;
@@ -1092,11 +1224,21 @@ public class BookingDetailServiceImpl implements BookingDetailService {
     @Override
     public ResponseEntity<ResponseObject> getCurrentBookingDetail(Integer helperId) {
         try {
+            Address address = null;
             List<BookingDetail> bookingDetails = bookingDetailRepository.findCurrentByHelperId(helperId, BookingDetailStatusEnum.IN_PROCESS, BookingDetailHelperStatusEnum.ACTIVE);
             BookingDetail bookingDetail = null;
             GetBookingResponseForHelper response = new GetBookingResponseForHelper();
             if (bookingDetails != null && !bookingDetails.isEmpty()) {
                 bookingDetail = bookingDetails.get(0);
+                List<Address> addresses = addressRepository.findByUserIdAnAndIsDefault(bookingDetail.getBooking().getRenter().getUserId());
+                if (!addresses.isEmpty()) {
+                    address = addresses.get(0);
+                } else {
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                            .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString(),
+                                    MessageVariable.NEED_ADD_LOCATION, null));
+                }
+                response.setNote(bookingDetail.getNote());
                 response.setBookingDetailId(bookingDetail.getBookingDetailId());
                 response.setServiceUnitId(bookingDetail.getServiceUnit().getServiceUnitId());
                 response.setEquivalent(bookingDetail.getServiceUnit().getUnit().getUnitValue());
@@ -1111,6 +1253,8 @@ public class BookingDetailServiceImpl implements BookingDetailService {
                 response.setLongitude(bookingDetail.getBooking().getLongitude());
                 response.setLatitude(bookingDetail.getBooking().getLatitude());
                 response.setIsApplied(true);
+                response.setDistance(googleMapService.calculateDistance(new Position(bookingDetail.getBooking().getLongitude(), bookingDetail.getBooking().getLatitude())
+                        , new Position(address.getLongitude(), address.getLatitude())));
             }
 
             return ResponseEntity.status(HttpStatus.OK)
@@ -1223,9 +1367,11 @@ public class BookingDetailServiceImpl implements BookingDetailService {
     private void isPermissionForHelper(Integer userId, BookingDetail bookingDetail) throws UserNotHavePermissionException {
         List<BookingDetailHelper> helpers = bookingDetailHelperRepository.findByBookingDetailIdAndActive(bookingDetail.getBookingDetailId(),
                 BookingDetailHelperStatusEnum.ACTIVE);
-        User helper = helpers.get(0).getServiceRegistration().getHelperInformation().getUser();
-        if (!Objects.equals(helper.getUserId(), userId))
-            throw new UserNotHavePermissionException("User do not have permission to do this action");
+        if (!helpers.isEmpty()) {
+            User helper = helpers.get(0).getServiceRegistration().getHelperInformation().getUser();
+            if (!Objects.equals(helper.getUserId(), userId))
+                throw new UserNotHavePermissionException("User do not have permission to do this action");
+        }
     }
 
     private void sendNotificationForUser(NotificationRequestDto request, List<Integer> userIds) {
@@ -1267,12 +1413,24 @@ public class BookingDetailServiceImpl implements BookingDetailService {
                 new DateTimeRange(oldBookingStartTime, oldBookingEndTime));
     }
 
-    private PageResponseObject getResponseObjectResponseEntity(Page<BookingDetail> bookingDetails) {
+    private PageResponseObject getResponseObjectResponseEntity(Page<BookingDetail> bookingDetails, Boolean ishleper) {
         List<GetBookingDetailResponse> dtoList = bookingDetails
                 .stream()
                 .map(detail -> {
                             GetBookingDetailResponse response = modelMapper.map(detail, GetBookingDetailResponse.class);
                             response.setStatus(detail.getBookingDetailStatus().name());
+                            response.setReported(false);
+                            if (Objects.nonNull(detail.getReport())) {
+                                response.setReported(true);
+                                response.setRefundMoney(detail.getReport().getRefundMoney());
+                                response.setRefundPoint(detail.getReport().getRefundPoint());
+                                response.setPenaltyMoney(detail.getReport().getPenaltyMoney());
+                            }
+                            if (ishleper) {
+                                response.setPrice(detail.getPriceHelperDefault());
+                            } else {
+                                response.setPrice(detail.getPriceDetail());
+                            }
                             response.setRenterName(detail.getBooking().getRenter().getFullName());
                             response.setLongitude(detail.getBooking().getLongitude());
                             response.setLatitude(detail.getBooking().getLatitude());
@@ -1330,8 +1488,8 @@ public class BookingDetailServiceImpl implements BookingDetailService {
         return data.get(0);
     }
 
-    private BookingDetailHelper findByHelperId(int id) throws UserNotHavePermissionException {
-        return bookingDetailHelperRepository.findByHelperId(id).orElseThrow(() ->
+    private BookingDetailHelper findByHelperId(int id, int bookingDetailId) throws UserNotHavePermissionException {
+        return bookingDetailHelperRepository.findByHelperId(id, bookingDetailId).orElseThrow(() ->
                 new UserNotHavePermissionException("Helper do not to have permission to action this booking!"));
     }
 
@@ -1354,6 +1512,84 @@ public class BookingDetailServiceImpl implements BookingDetailService {
         }
     }
 
+    private long getMoneyToPoint() {
+        SystemParameter systemParameter = systemParameterRepository.findSystemParameterByParameterField(SystemParameterField.MONEY_TO_POINT);
+        try {
+            return Long.parseLong(systemParameter.getParameterValue());
+        } catch (Exception e) {
+            return moneyToPoint;
+        }
+    }
+
+    private void sendMessage(NotificationRequestDto notificationRequestDto, User user) {
+        List<DeviceToken> deviceTokens = deviceTokenRepository.findByUserId(user.getUserId());
+        if (!deviceTokens.isEmpty()) {
+            notificationRequestDto.setTarget(convertToListFcmToken(deviceTokens));
+            fcmService.sendPnsToTopic(notificationRequestDto);
+        }
+    }
+
+    private List<String> convertToListFcmToken(List<DeviceToken> deviceTokens) {
+        return deviceTokens.stream()
+                .map(DeviceToken::getFcmToken)
+                .collect(Collectors.toList());
+    }
+
+    public boolean createTransaction(TransactionRequest request) {
+        User user = findAccount(request.getUserId());
+        Booking booking = findBookingById(request.getBookingId());
+        if (request.getBookingId() != null) {
+            request.setNote(String.format(request.getNote(), booking.getBookingCode()));
+        }
+        NotificationRequestDto notificationRequestDto = new NotificationRequestDto();
+        notificationRequestDto.setTitle(MessageVariable.TITLE_APP);
+        Wallet wallet = walletRepository.getWalletByUserIdAndType(request.getUserId(),
+                WalletTypeEnum.valueOf(request.getWalletType().toUpperCase()));
+        if (wallet == null) {
+            wallet = new Wallet();
+            wallet.setUser(user);
+            wallet.setBalance(0D);
+            wallet.setWalletTypeEnum(WalletTypeEnum.valueOf(request.getWalletType().toUpperCase()));
+        }
+
+        wallet.setUpdateAt(Utils.getLocalDateTimeNow());
+        TransactionTypeEnum transactionTypeEnum = TransactionTypeEnum.valueOf(request.getTransactionType().toUpperCase());
+        switch (transactionTypeEnum) {
+            case DEPOSIT:
+                wallet.setBalance(wallet.getBalance() + request.getBalance());
+                notificationRequestDto.setBody(request.getNote());
+                sendMessage(notificationRequestDto, user);
+                break;
+            case TRANSFER:
+                break;
+            case WITHDRAW:
+                if (wallet.getBalance() < request.getBalance()) {
+                    return false;
+                }
+                wallet.setBalance(wallet.getBalance() - request.getBalance());
+                notificationRequestDto.setBody(request.getNote());
+                sendMessage(notificationRequestDto, user);
+                break;
+        }
+        Wallet walletUpdate = walletRepository.save(wallet);
+        Transaction transaction = mappingForCreate(request);
+        transaction.setWallet(walletUpdate);
+        transactionRepository.save(transaction);
+        return true;
+    }
+
+    private Transaction mappingForCreate(TransactionRequest request) {
+        Transaction transaction = modelMapper.map(request, Transaction.class);
+        Booking booking = findBookingById(request.getBookingId());
+        transaction.setAmount(request.getBalance());
+        transaction.setBooking(booking);
+        transaction.setTransactionCode(Utils.generateRandomCode());
+        transaction.setCreateAt(Utils.getLocalDateTimeNow());
+        transaction.setTransactionStatusEnum(TransactionStatusEnum.SUCCESS);
+        transaction.setTransactionTypeEnum(TransactionTypeEnum.valueOf(request.getTransactionType().toUpperCase()));
+        return transaction;
+    }
+
     private long getDifferEndMinutes() {
         SystemParameter systemParameter = systemParameterRepository.findSystemParameterByParameterField(SystemParameterField.MAX_END_TIME_MINUTES);
         try {
@@ -1366,6 +1602,11 @@ public class BookingDetailServiceImpl implements BookingDetailService {
     private BookingDetail findBookingDetail(int id) {
         return bookingDetailRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException(String.format("Booking Detail ID %s is not exist!", id)));
+    }
+
+    private Booking findBookingById(int id) {
+        return bookingRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException(String.format("Booking ID %s is not exist!", id)));
     }
 
     private User findAccount(int userId) {

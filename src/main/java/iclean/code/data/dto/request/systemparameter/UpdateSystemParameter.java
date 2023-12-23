@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import javax.persistence.Column;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 
@@ -13,7 +14,8 @@ import javax.validation.constraints.NotNull;
 @NoArgsConstructor
 @AllArgsConstructor
 public class UpdateSystemParameter {
-    @NotNull(message = "updateVersion not null")
-    @NotBlank(message = "updateVersion not blank")
-    private String updateVersion;
+    private Integer parameterId;
+
+    @Column(name = "parameter_value")
+    private String parameterValue;
 }

@@ -5,7 +5,6 @@ import iclean.code.data.dto.common.PageRequestBuilder;
 import iclean.code.data.dto.common.ResponseObject;
 import iclean.code.data.dto.request.booking.*;
 import iclean.code.data.dto.response.booking.GetBookingResponse;
-import iclean.code.exception.BadRequestException;
 import iclean.code.function.booking.service.BookingService;
 import iclean.code.utils.validator.ValidInputList;
 import iclean.code.utils.validator.ValidSortFields;
@@ -18,7 +17,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -243,5 +241,11 @@ public class BookingController {
     @PreAuthorize("hasAnyAuthority('renter', 'employee')")
     public ResponseEntity<ResponseObject> deleteServiceOnCart(Authentication authentication, @PathVariable Integer id) {
         return bookingService.deleteServiceOnCart(JwtUtils.decodeToAccountId(authentication), id);
+    }
+
+    @PostMapping("setBookingForManager")
+    @PreAuthorize("hasAnyAuthority('admin')")
+    public ResponseEntity<ResponseObject> setBookingForManager() {
+        return bookingService.setBookingForManager();
     }
 }

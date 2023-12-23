@@ -8,13 +8,10 @@ import org.springframework.http.ResponseEntity;
 
 public interface ServiceUnitService {
     ResponseEntity<ResponseObject> getServiceUnitsForRenter(Integer serviceId);
-
     ResponseEntity<ResponseObject> createServiceUnit(CreateServiceUnitRequest request);
-
     ResponseEntity<ResponseObject> updateServiceUnit(Integer id, UpdateServiceUnitRequest request);
-
     ResponseEntity<ResponseObject> getServiceUnits(Integer serviceId, Sort sort);
-
+    ResponseEntity<ResponseObject> getServiceUnit(Integer serviceUnitId);
     ResponseEntity<ResponseObject> deleteServiceUnit(Integer id);
 
 }

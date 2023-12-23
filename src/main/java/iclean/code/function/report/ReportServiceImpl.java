@@ -6,6 +6,7 @@ import iclean.code.data.dto.common.ResponseObject;
 import iclean.code.data.dto.request.authen.NotificationRequestDto;
 import iclean.code.data.dto.request.report.CreateReportRequest;
 import iclean.code.data.dto.request.transaction.TransactionRequest;
+import iclean.code.data.dto.response.report.ReportHelperResultResponse;
 import iclean.code.data.dto.response.report.ReportResultResponse;
 import iclean.code.data.dto.request.report.UpdateReportRequest;
 import iclean.code.data.dto.response.PageResponseObject;
@@ -37,6 +38,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.DefaultTransactionDefinition;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
@@ -83,7 +85,10 @@ public class ReportServiceImpl implements ReportService {
     private ReportTypeRepository reportTypeRepository;
 
     @Autowired
-    private BookingAttachmentRepository bookingAttachmentRepository;
+    private ReportAttachmentRepository reportAttachmentRepository;
+
+    @Autowired
+    private HelperInformationRepository helperInformationRepository;
 
     @Autowired
     private StorageService storageService;
@@ -225,9 +230,14 @@ public class ReportServiceImpl implements ReportService {
             if (reportRepository.findReportByBookingDetailBookingDetailId(reportRequest.getBookingDetailId()) != null) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString(),
-                                "Booking already have report!", null));
+                                MessageVariable.ALREADY_REPORTED, null));
             }
             BookingDetail bookingDetail = findBookingDetail(reportRequest.getBookingDetailId());
+            if (!BookingDetailStatusEnum.FINISHED.equals(bookingDetail.getBookingDetailStatus())) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString(),
+                                "Cannot report booking has not finished yet", null));
+            }
             bookingDetail.setBookingDetailStatus(BookingDetailStatusEnum.REPORTED);
             if (!Objects.equals(bookingDetail.getBooking().getRenter().getUserId(), renterId))
                 throw new UserNotHavePermissionException("User cannot do this action");
@@ -235,9 +245,11 @@ public class ReportServiceImpl implements ReportService {
             reportRepository.save(report);
 
             List<String> images = new ArrayList<>(Collections.emptyList());
-            for (MultipartFile file :
-                    reportRequest.getFiles()) {
-                images.add(storageService.uploadFile(file));
+            if (Objects.nonNull(reportRequest.getFiles())) {
+                for (MultipartFile file :
+                        reportRequest.getFiles()) {
+                    images.add(storageService.uploadFile(file));
+                }
             }
             List<ReportAttachment> reportAttachments = new ArrayList<>();
             for (String imageLink :
@@ -247,10 +259,7 @@ public class ReportServiceImpl implements ReportService {
                 reportAttachment.setReport(report);
                 reportAttachments.add(reportAttachment);
             }
-            if (!reportAttachments.isEmpty()) {
-                bookingAttachmentRepository.saveAll(reportAttachments);
-            }
-
+            reportAttachmentRepository.saveAll(reportAttachments);
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseObject(HttpStatus.OK.toString(),
                             "Create Report Successfully!", null));
@@ -281,6 +290,7 @@ public class ReportServiceImpl implements ReportService {
         try {
             User manager = findById(managerId);
             ReportResultResponse reportResultResponse = new ReportResultResponse();
+            ReportHelperResultResponse reportHelperResultResponse = new ReportHelperResultResponse();
             Report report = findReport(reportId);
             BookingDetail bookingDetail = report.getBookingDetail();
             bookingDetail.setBookingDetailStatus(BookingDetailStatusEnum.FINISHED);
@@ -294,6 +304,7 @@ public class ReportServiceImpl implements ReportService {
 
             User renter = report.getBookingDetail().getBooking().getRenter();
             String solution = "";
+            String solutionForHelper = "";
             reportResultResponse.setContentReport(report.getDetail());
             reportResultResponse.setBookingCode(report.getBookingDetail().getBooking().getBookingCode());
             if (reportRequest.getRefundPercent() == 0) {
@@ -320,11 +331,7 @@ public class ReportServiceImpl implements ReportService {
                 reportResultResponse.setStatus(ReportStatusEnum.PROCESSED.name());
                 reportResultResponse.setSolution(solution);
                 reportResultResponse.setManagerName(manager.getFullName());
-                if (renter.getEmail() != null && !renter.getEmail().isEmpty()) {
-                    reportResultResponse.setTo(renter.getEmail());
-                    reportResultResponse.setRenterName(renter.getFullName());
-                    emailSenderService.sendEmailTemplate(SendMailOptionEnum.REPORT_RESULT, reportResultResponse);
-                }
+
                 Transaction transactionMoney = transactionRepository.findByBookingIdAndWalletTypeAndTransactionTypeAndUserId(report.getBookingDetail().getBooking().getBookingId(),
                         WalletTypeEnum.MONEY, TransactionTypeEnum.WITHDRAW, report.getBookingDetail().getBooking().getRenter().getUserId());
                 Transaction transactionPoint = transactionRepository.findByBookingIdAndWalletTypeAndTransactionTypeAndUserId(report.getBookingDetail().getBooking().getBookingId(),
@@ -332,27 +339,30 @@ public class ReportServiceImpl implements ReportService {
                 Double percent = 0D;
                 double moneyRefund = 0D;
                 double pointRefund = 0D;
-                if (transactionMoney != null) {
+
+                if (Objects.nonNull(transactionMoney)) {
                     if (report.getBookingDetail().getPriceDetail() < transactionMoney.getAmount()) {
                         percent = report.getBookingDetail().getPriceDetail() / transactionMoney.getAmount()
                                 * reportRequest.getRefundPercent() / 100;
-                        moneyRefund = transactionMoney.getAmount() * percent;
                     } else {
                         percent = transactionMoney.getAmount() / report.getBookingDetail().getPriceDetail()
                                 * reportRequest.getRefundPercent() / 100;
-                        moneyRefund = percent * transactionMoney.getAmount();
                     }
+                    moneyRefund = transactionMoney.getAmount() * percent;
                 }
-                if (transactionPoint != null) {
+                if (Objects.nonNull(transactionPoint)) {
                     pointRefund = transactionPoint.getAmount() * percent;
                 }
+
                 if (moneyRefund > 0) {
+                    reportResultResponse.setMoneyRefund(moneyRefund);
                     createTransaction(new TransactionRequest(moneyRefund, String.format(MessageVariable.REFUND_CANCEL_BOOKING,
                             report.getBookingDetail().getBooking().getBookingCode()),
                             renter.getUserId(),
                             TransactionTypeEnum.DEPOSIT.name(),
                             WalletTypeEnum.MONEY.name()));
                 }
+                reportResultResponse.setPointRefund(pointRefund);
                 if (pointRefund > 0) {
                     createTransaction(new TransactionRequest(pointRefund, String.format(MessageVariable.REFUND_POINT_CANCEL_BOOKING,
                             report.getBookingDetail().getBooking().getBookingCode()),
@@ -360,6 +370,47 @@ public class ReportServiceImpl implements ReportService {
                             TransactionTypeEnum.DEPOSIT.name(),
                             WalletTypeEnum.POINT.name()));
                 }
+//                if (renter.getEmail() != null && !renter.getEmail().isEmpty()) {
+//                    reportResultResponse.setTo(renter.getEmail());
+//                    reportResultResponse.setRenterName(renter.getFullName());
+//                    emailSenderService.sendEmailTemplate(SendMailOptionEnum.REPORT_RESULT, reportResultResponse);
+//                }
+                double minusMoneyHelper = 0D;
+                double moneyPen = 0D;
+                double previousMoneyHelper = bookingDetail.getPriceHelper();
+                HelperInformation helperReported = helperInformationRepository.findHelperInformationByBookingDetailsIdAndBookingDetailsHelperIsActive(bookingDetail.getBookingDetailId(), BookingDetailHelperStatusEnum.ACTIVE);
+                if (Objects.isNull(helperReported)) {
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                            .body(new ResponseObject(HttpStatus.NOT_FOUND.toString(),
+                                    "Cannot found helper was reported", null));
+                }
+                minusMoneyHelper = bookingDetail.getPriceHelper() - bookingDetail.getPriceHelper() * (reportRequest.getRefundPercent() / 100);
+                if (minusMoneyHelper > 0) {
+                    moneyPen = previousMoneyHelper - minusMoneyHelper;
+                    reportHelperResultResponse.setMoneyPen(moneyPen);
+                    bookingDetail.setPriceHelper(minusMoneyHelper);
+                    bookingDetail.setPriceHelperDefault(minusMoneyHelper);
+                    createTransaction(new TransactionRequest(minusMoneyHelper, String.format(MessageVariable.REFUND_CANCEL_BOOKING_HELPER,
+                            report.getBookingDetail().getBooking().getBookingCode()),
+                            helperReported.getUser().getUserId(),
+                            TransactionTypeEnum.DEPOSIT.name(),
+                            WalletTypeEnum.MONEY.name()));
+                }
+                reportHelperResultResponse.setContentReport(report.getDetail());
+                reportHelperResultResponse.setBookingCode(report.getBookingDetail().getBooking().getBookingCode());
+                solutionForHelper = String.format(MessageVariable.REFUND_CANCEL_BOOKING_HELPER,
+                        report.getBookingDetail().getBooking().getBookingCode());
+                reportHelperResultResponse.setSolution(solutionForHelper);
+                reportHelperResultResponse.setManagerName(manager.getFullName());
+                reportHelperResultResponse.setCreateAt(report.getCreateAt());
+                if (helperReported.getEmail() != null && !helperReported.getEmail().isEmpty()) {
+                    reportHelperResultResponse.setTo(helperReported.getEmail());
+                    reportHelperResultResponse.setHelperName(helperReported.getFullName());
+                    emailSenderService.sendEmailTemplate(SendMailOptionEnum.REPORT_RESULT_HELPER, reportHelperResultResponse);
+                }
+                report.setPenaltyMoney(moneyPen);
+                report.setRefundMoney(moneyRefund);
+                report.setRefundPoint(pointRefund);
             }
             Notification notification = new Notification();
             notification.setUser(renter);
@@ -478,6 +529,7 @@ public class ReportServiceImpl implements ReportService {
         BookingDetail optionalBooking = findBookingDetail(request.getBookingDetailId());
         ReportType optionalReportType = findReportType(request.getReportTypeId());
         Report report = modelMapper.map(request, Report.class);
+        report.setReportId(null);
         report.setDetail(request.getDetail());
         report.setReportStatus(ReportStatusEnum.PROCESSING);
         report.setCreateAt(Utils.getLocalDateTimeNow());

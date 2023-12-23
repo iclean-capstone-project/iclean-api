@@ -37,11 +37,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.transaction.TransactionStatus;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.DefaultTransactionDefinition;
 
 import java.math.RoundingMode;
 import java.time.DayOfWeek;
@@ -96,8 +92,6 @@ public class BookingServiceImpl implements BookingService {
     GoogleMapService googleMapService;
     @Autowired
     private ModelMapper modelMapper;
-    @Autowired
-    private PlatformTransactionManager transactionManager;
 
     @Override
     public ResponseEntity<ResponseObject> getBookings(Integer userId, Pageable pageable, List<String> statuses, Boolean isHelper, String startDate, String endDate) {
@@ -113,6 +107,8 @@ public class BookingServiceImpl implements BookingService {
             String roleUser = userRepository.findByUserId(userId).getRole().getTitle().toUpperCase();
             if (Utils.isNullOrEmpty(roleUser))
                 throw new UserNotHavePermissionException("User do not have permission to do this action");
+            LocalDateTime startDateTime = null;
+            LocalDateTime endDateTime = null;
             RoleEnum roleEnum = RoleEnum.valueOf(roleUser);
             switch (roleEnum) {
                 case EMPLOYEE:
@@ -134,12 +130,34 @@ public class BookingServiceImpl implements BookingService {
 
                     break;
                 case MANAGER:
-                case ADMIN:
-                    LocalDateTime startDateTime = null;
                     if (startDate != null && !startDate.isEmpty()) {
                         startDateTime = Utils.convertStringToLocalDate(startDate).atStartOfDay();
                     }
-                    LocalDateTime endDateTime = null;
+                    if (endDate != null && !endDate.isEmpty()) {
+                        endDateTime = Utils.convertStringToLocalDate(endDate).atStartOfDay().plusDays(1);
+                    }
+                    if (startDateTime == null && endDateTime == null) {
+                        bookings = !(statuses == null || statuses.isEmpty())
+                                ? bookingRepository.findAllByBookingStatusManager(userId, bookingStatusEnums, BookingStatusEnum.ON_CART, pageable)
+                                : bookingRepository.findAllBookingAsManager(userId, BookingStatusEnum.ON_CART, pageable);
+                    } else if (startDateTime != null && endDateTime == null) {
+                        bookings = !(statuses == null || statuses.isEmpty())
+                                ? bookingRepository.findAllByBookingStatusByStartDateTimeAsManager(bookingStatusEnums, startDateTime, BookingStatusEnum.ON_CART, userId, pageable)
+                                : bookingRepository.findAllBookingByStartDateTimeAsManager(BookingStatusEnum.ON_CART, startDateTime, userId, pageable);
+                    } else if (startDateTime == null) {
+                        bookings = !(statuses == null || statuses.isEmpty())
+                                ? bookingRepository.findAllByBookingStatusByEndDateTimeAsManager(bookingStatusEnums, endDateTime, BookingStatusEnum.ON_CART, userId,pageable)
+                                : bookingRepository.findAllBookingByEndDateTimeAsManager(BookingStatusEnum.ON_CART, endDateTime, userId, pageable);
+                    } else {
+                        bookings = !(statuses == null || statuses.isEmpty())
+                                ? bookingRepository.findAllByBookingStatusStartTimeEndTimeAsManager(bookingStatusEnums, startDateTime, endDateTime, BookingStatusEnum.ON_CART, userId, pageable)
+                                : bookingRepository.findAllBookingStartTimeEndTimeAsManager(BookingStatusEnum.ON_CART, startDateTime, endDateTime, userId, pageable);
+                    }
+                    break;
+                case ADMIN:
+                    if (startDate != null && !startDate.isEmpty()) {
+                        startDateTime = Utils.convertStringToLocalDate(startDate).atStartOfDay();
+                    }
                     if (endDate != null && !endDate.isEmpty()) {
                         endDateTime = Utils.convertStringToLocalDate(endDate).atStartOfDay().plusDays(1);
                     }
@@ -160,8 +178,6 @@ public class BookingServiceImpl implements BookingService {
                                 ? bookingRepository.findAllByBookingStatusStartTimeEndTime(bookingStatusEnums, startDateTime, endDateTime, BookingStatusEnum.ON_CART, pageable)
                                 : bookingRepository.findAllBookingStartTimeEndTime(BookingStatusEnum.ON_CART, startDateTime, endDateTime, pageable);
                     }
-
-
                     break;
                 default:
                     throw new UserNotHavePermissionException("User do not have permission to do this action");
@@ -230,8 +246,8 @@ public class BookingServiceImpl implements BookingService {
 
 
     @Override
+    @Transactional
     public ResponseEntity<ResponseObject> createBookingNow(CreateBookingRequestNow request, Integer renterId) {
-        TransactionStatus status = transactionManager.getTransaction(new DefaultTransactionDefinition());
         try {
             ObjectMapper objectMapper = new ObjectMapper();
             Booking booking = new Booking();
@@ -284,6 +300,7 @@ public class BookingServiceImpl implements BookingService {
             bookingDetail.setBooking(booking);
             bookingDetail.setPriceDetail(priceDetail);
             bookingDetail.setPriceHelper(priceHelper);
+            bookingDetail.setPriceHelperDefault(priceHelper);
             bookingDetail.setWorkStart(request.getStartTime().toLocalTime());
             bookingDetail.setWorkDate(request.getStartTime().toLocalDate());
             bookingDetail.setBookingDetailStatus(BookingDetailStatusEnum.NOT_YET);
@@ -326,18 +343,16 @@ public class BookingServiceImpl implements BookingService {
             notification.setUser(renter);
             notificationRepository.save(notification);
             sendMessage(notificationRequestDto, renter);
-
+            bookingDetailStatusHistory.setBookingDetail(bookingDetail);
             bookingDetailStatusHistoryRepository.save(bookingDetailStatusHistory);
             bookingRepository.save(booking);
             bookingDetailRepository.save(bookingDetail);
-            transactionManager.commit(status);
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseObject(HttpStatus.OK.toString(),
                             "Create Booking Successfully!", null));
 
         } catch (Exception e) {
             log.error(e.getMessage());
-            transactionManager.rollback(status);
             if (e instanceof BadRequestException) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString(),
@@ -503,6 +518,7 @@ public class BookingServiceImpl implements BookingService {
             bookingDetail.setBooking(booking);
             bookingDetail.setPriceDetail(priceDetail);
             bookingDetail.setPriceHelper(priceHelper);
+            bookingDetail.setPriceHelperDefault(priceHelper);
             bookingDetail.setWorkStart(request.getStartTime().toLocalTime());
             bookingDetail.setWorkDate(request.getStartTime().toLocalDate());
             bookingDetail.setBookingDetailStatus(BookingDetailStatusEnum.ON_CART);
@@ -578,9 +594,47 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
+    public ResponseEntity<ResponseObject> setBookingForManager() {
+        try {
+            List<Booking> bookings = bookingRepository.findAllWithNoManager();
+            List<User> managers = userRepository.findAllManager();
+            if (bookings.isEmpty()) {
+                //log.info(Utils.getDateTimeNowAsString() + " ----> No booking at this time!");
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new ResponseObject(HttpStatus.NOT_FOUND.toString()
+                                , Utils.getDateTimeNowAsString() + " ----> No booking at this time!", null));
+            }
+            if (managers.isEmpty()) {
+                //log.warn(Utils.getDateTimeNowAsString() + " ----> No manager at this time!");
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new ResponseObject(HttpStatus.NOT_FOUND.toString()
+                                , Utils.getDateTimeNowAsString() + " ----> No manager at this time!", null));
+            }
+
+            int countManager = managers.size();
+            int i = 0;
+            for (Booking booking :
+                    bookings
+            ) {
+                booking.setManager(managers.get(i++));
+                if (i == countManager) i = 0;
+            }
+
+            bookingRepository.saveAll(bookings);
+            return ResponseEntity.status(HttpStatus.OK)
+                    .body(new ResponseObject(HttpStatus.OK.toString(),
+                            Utils.getDateTimeNowAsString() + " ----> Set Manager successful!", null));
+        } catch (Exception e) {
+            log.error(e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString()
+                            , "Something wrong occur!", null));
+        }
+    }
+
+    @Override
     public ResponseEntity<ResponseObject> createServiceToCart(AddBookingRequest request,
                                                               Integer userId) {
-        TransactionStatus status = transactionManager.getTransaction(new DefaultTransactionDefinition());
         try {
             Booking booking = bookingRepository.findCartByRenterId(userId, BookingStatusEnum.ON_CART);
             LocalDateTime currentTime = Utils.getLocalDateTimeNow();
@@ -638,6 +692,7 @@ public class BookingServiceImpl implements BookingService {
             bookingDetail.setBooking(booking);
             bookingDetail.setPriceDetail(priceDetail);
             bookingDetail.setPriceHelper(priceHelper);
+            bookingDetail.setPriceHelperDefault(priceHelper);
             bookingDetail.setWorkStart(request.getStartTime().toLocalTime());
             bookingDetail.setWorkDate(request.getStartTime().toLocalDate());
             bookingDetail.setBookingDetailStatus(BookingDetailStatusEnum.ON_CART);
@@ -649,14 +704,12 @@ public class BookingServiceImpl implements BookingService {
                 bookingDetailStatusHistoryRepository.save(bookingDetailStatusHistory);
             }
 
-            transactionManager.commit(status);
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseObject(HttpStatus.OK.toString(),
                             "Create Booking Successfully!", null));
 
         } catch (Exception e) {
             log.error(e.getMessage());
-            transactionManager.rollback(status);
             if (e instanceof NotFoundException) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body(new ResponseObject(HttpStatus.NOT_FOUND.toString(),
@@ -828,6 +881,16 @@ public class BookingServiceImpl implements BookingService {
                     throw new BadRequestException(MessageVariable.NEED_ADD_LOCATION_FOR_BOOKING);
                 }
             }
+            for (BookingDetail bookingDetail : booking.getBookingDetails()){
+                LocalDateTime dateTime = LocalDateTime.of(bookingDetail.getWorkDate(), bookingDetail.getWorkStart());
+                if(Utils.getLocalDateTimeNow().isAfter(dateTime)
+                        && BookingDetailStatusEnum.ON_CART.equals(bookingDetail.getBookingDetailStatus()))
+                {
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                            .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString(),
+                                    "Have some invalid service on cart! Please re-check cart", null));
+                }
+            }
             User renter = findAccount(userId);
             if (request != null) {
                 booking.setAutoAssign(request.getAutoAssign() != null ? request.getAutoAssign() : booking.getAutoAssign());
@@ -945,6 +1008,11 @@ public class BookingServiceImpl implements BookingService {
     public ResponseEntity<ResponseObject> acceptOrRejectBooking(Integer bookingId, AcceptRejectBookingRequest request, Integer managerId) {
         try {
             Booking booking = findBookingById(bookingId);
+            if (!BookingStatusEnum.NOT_YET.equals(booking.getBookingStatus())){
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString(),
+                                MessageVariable.BOOKING_CANCELED , null));
+            }
             User renter = booking.getRenter();
             booking.setManager(userRepository.findByUserId(managerId));
             BookingStatusEnum bookingStatusEnum = BookingStatusEnum.valueOf(request.getAction().toUpperCase());
@@ -1023,7 +1091,7 @@ public class BookingServiceImpl implements BookingService {
                     bookingDetailHelper.setBookingDetail(bookingDetail);
                     bookingDetailHelper.setBookingDetailHelperStatus(BookingDetailHelperStatusEnum.ACTIVE);
                     if (helperInformation != null) {
-                        bookingDetail.setBookingDetailStatus(bookingDetailStatusEnum);
+                        bookingDetail.setBookingDetailStatus(BookingDetailStatusEnum.WAITING);
                         ServiceRegistration serviceRegistration = serviceRegistrationRepository.findByServiceIdAndUserId(bookingDetail.getServiceUnit().getService().getServiceId(),
                                 helperInformation.getUser().getUserId());
                         bookingDetailHelper.setServiceRegistration(serviceRegistration);
@@ -1143,8 +1211,13 @@ public class BookingServiceImpl implements BookingService {
             isPermission(renterId, booking);
 
             switch (booking.getBookingStatus()) {
-                case NOT_YET:
-                case NO_MONEY:
+                case REJECTED:
+                    throw new BadRequestException(String.format(MessageVariable.CANNOT_CANCEL_BOOKING, booking.getBookingCode()));
+                case CANCELED:
+                    throw new BadRequestException(String.format(MessageVariable.ALREADY_CANCEL_BOOKING, booking.getBookingCode()));
+                case FINISHED:
+                    throw new BadRequestException(String.format(MessageVariable.CANCEL_COMPLETE_BOOKING, booking.getBookingCode()));
+                default:
                     Transaction transaction = transactionRepository.findByBookingIdAndWalletTypeAndTransactionTypeAndUserId(
                             bookingId,
                             WalletTypeEnum.POINT,
@@ -1188,14 +1261,10 @@ public class BookingServiceImpl implements BookingService {
                     bookingDetailRepository.saveAll(bookingDetails);
                     bookingRepository.save(booking);
                     break;
-                case CANCELED:
-                    throw new BadRequestException(String.format(MessageVariable.ALREADY_CANCEL_BOOKING, booking.getBookingCode()));
-                default:
-                    throw new BadRequestException(String.format(MessageVariable.CANNOT_CANCEL_BOOKING, booking.getBookingCode()));
             }
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseObject(HttpStatus.OK.toString(),
-                            "Make a payment booking successful", null));
+                            "Cancel booking successful", null));
         } catch (Exception e) {
             log.error(e.getMessage());
             if (e instanceof UserNotHavePermissionException) {
@@ -1328,7 +1397,6 @@ public class BookingServiceImpl implements BookingService {
         }
     }
 
-    @Transactional(propagation = Propagation.REQUIRED)
     public boolean createTransaction(TransactionRequest request) throws BadRequestException {
         User user = findAccount(request.getUserId());
         Booking booking = findBookingById(request.getBookingId());

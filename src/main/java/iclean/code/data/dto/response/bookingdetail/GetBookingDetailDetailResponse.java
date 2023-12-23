@@ -24,6 +24,9 @@ public class GetBookingDetailDetailResponse {
     private String value;
     private Double equivalent;
     private Double price;
+    private Double refundMoney;
+    private Double refundPoint;
+    private Double penaltyMoney;
     private String currentStatus;
     private String rejectionReasonContent;
     private String rejectionReasonDescription;
@@ -32,4 +35,5 @@ public class GetBookingDetailDetailResponse {
     private GetTransactionBookingResponse transaction;
     private GetFeedbackResponse feedback;
     private List<GetBookingStatusHistoryResponse> statuses;
+    private Boolean reported;
 }

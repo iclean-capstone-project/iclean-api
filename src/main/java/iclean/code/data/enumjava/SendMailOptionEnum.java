@@ -4,5 +4,6 @@ public enum SendMailOptionEnum {
     ACCEPT_HELPER,
     REJECT_HELPER,
     REPORT_RESULT,
-    CONFIRM_HELPER
+    CONFIRM_HELPER,
+    REPORT_RESULT_HELPER
 }

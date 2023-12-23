@@ -12,6 +12,8 @@ import iclean.code.data.dto.response.others.BackCCCD;
 import iclean.code.data.dto.response.others.CMTBackResponse;
 import iclean.code.data.dto.response.others.CMTFrontResponse;
 import iclean.code.data.dto.response.others.FrontCCCD;
+import iclean.code.data.dto.response.service.GetServiceResponse;
+import iclean.code.data.dto.response.serviceregistration.GetServiceOfHelperResponse;
 import iclean.code.data.enumjava.*;
 import iclean.code.data.repository.*;
 import iclean.code.exception.BadRequestException;
@@ -30,6 +32,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.support.DefaultTransactionDefinition;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
@@ -267,12 +271,22 @@ public class HelperRegistrationServiceImpl implements HelperRegistrationService 
     public ResponseEntity<ResponseObject> createHelperRegistration(HelperRegistrationRequest helperRegistrationRequest,
                                                                    Integer renterId) {
         try {
+            HelperInformation helperInformationCheck = helperInformationRepository.findByUserId(renterId);
+            if (Objects.nonNull(helperInformationCheck)) {
+                throw new BadRequestException(MessageVariable.CANNOT_REGISTER_HELPER_ALREADY_HAVE);
+            }
             ObjectMapper objectMapper = new ObjectMapper();
             String imgAvatarLink = null;
             if (helperRegistrationRequest.getAvatar() != null) {
                 imgAvatarLink = storageService.uploadFile(helperRegistrationRequest.getAvatar());
             }
             List<Attachment> attachments = new ArrayList<>();
+
+            Attachment frontCMT = new Attachment();
+            String frontCMTLink = storageService.uploadFile(helperRegistrationRequest.getFrontIdCard());
+            Attachment backCMT = new Attachment();
+            String backCMTLink = storageService.uploadFile(helperRegistrationRequest.getBackIdCard());
+
             String frontResponse = externalApiService.scanNationId(helperRegistrationRequest.getFrontIdCard());
             CMTFrontResponse cmtFrontResponse = objectMapper.readValue(frontResponse, CMTFrontResponse.class);
             String backResponse = externalApiService.scanNationId(helperRegistrationRequest.getBackIdCard());
@@ -280,14 +294,15 @@ public class HelperRegistrationServiceImpl implements HelperRegistrationService 
             if (!"0".equals(cmtFrontResponse.getErrorCode()) || !"0".equals(cmtBackResponse.getErrorCode())) {
                 throw new BadRequestException("National ID error, please take a photo again!");
             }
-
+            HelperInformation existedHelperInfo = helperInformationRepository.findByNationId(cmtFrontResponse.getData().get(0).getId());
+            if (!Objects.isNull(existedHelperInfo))
+                throw new BadRequestException("National ID existed in system, please take a other photo again!");
             HelperInformation helperInformation = mappingCMTToHelperInformation(cmtFrontResponse.getData().get(0),
                     cmtBackResponse.getData().get(0),
                     imgAvatarLink);
-            LocalDate date = Utils.getLocalDateTimeNow().toLocalDate().minusYears(18);
-//            if (Utils.getLocalDateTimeNow().toLocalDate().minusYears(18).isBefore(helperInformation.getDateOfBirth())) {
-//                throw new BadRequestException(MessageVariable.CANNOT_REGISTER_HELPER_NOT_ENOUGH_AGE);
-//            };
+            if (Utils.getLocalDateTimeNow().toLocalDate().minusYears(18).isBefore(helperInformation.getDateOfBirth())) {
+                throw new BadRequestException(MessageVariable.CANNOT_REGISTER_HELPER_NOT_ENOUGH_AGE);
+            }
             User user = findUserById(renterId);
             helperInformation.setUser(user);
             helperInformation.setPhoneNumber(user.getPhoneNumber());
@@ -307,7 +322,6 @@ public class HelperRegistrationServiceImpl implements HelperRegistrationService 
             }
             serviceRegistrationRepository.saveAll(serviceRegistrations);
 
-            List<MultipartFile> attachmentRequest = helperRegistrationRequest.getOthers();
             Attachment avatar = new Attachment();
             if (!Utils.isNullOrEmpty(imgAvatarLink)) {
                 avatar.setAttachmentLink(imgAvatarLink);
@@ -315,33 +329,18 @@ public class HelperRegistrationServiceImpl implements HelperRegistrationService 
                 attachments.add(avatar);
             }
 
-            Attachment frontCMT = new Attachment();
-            String frontCMTLink = storageService.uploadFile(helperRegistrationRequest.getFrontIdCard());
             if (!Utils.isNullOrEmpty(frontCMTLink)) {
                 frontCMT.setAttachmentLink(frontCMTLink);
                 frontCMT.setHelperInformation(helperInformation);
                 attachments.add(frontCMT);
             }
 
-            Attachment backCMT = new Attachment();
-            String backCMTLink = storageService.uploadFile(helperRegistrationRequest.getBackIdCard());
             if (!Utils.isNullOrEmpty(backCMTLink)) {
-                frontCMT.setAttachmentLink(backCMTLink);
-                frontCMT.setHelperInformation(helperInformation);
+                backCMT.setAttachmentLink(backCMTLink);
+                backCMT.setHelperInformation(helperInformation);
                 attachments.add(backCMT);
             }
-            for (MultipartFile element :
-                    attachmentRequest) {
-                Attachment attachment = new Attachment();
-                String fileLink = storageService.uploadFile(element);
-                if (!Utils.isNullOrEmpty(fileLink)) {
-                    attachment.setAttachmentLink(fileLink);
-                    attachment.setHelperInformation(helperInformation);
-                    attachments.add(attachment);
-                }
-            }
             attachmentRepository.saveAll(attachments);
-
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseObject(HttpStatus.OK.toString(),
                             "Register become helper successful - please waiting for our response email!",
@@ -372,6 +371,15 @@ public class HelperRegistrationServiceImpl implements HelperRegistrationService 
         try {
             HelperInformation helperInformation = findHelperInformationById(id);
             GetHelperInformationDetailResponse response = modelMapper.map(helperInformation, GetHelperInformationDetailResponse.class);
+            if(HelperStatusEnum.ONLINE.equals(helperInformation.getHelperStatus())){
+                List<ServiceRegistration> filteredList = helperInformation.getServiceRegistrations().stream()
+                        .filter(serviceRegistration -> serviceRegistration.getServiceHelperStatus().equals(ServiceHelperStatusEnum.ACTIVE))
+                        .collect(Collectors.toList());
+                List<GetServiceOfHelperResponse> serviceOfHelperResponses = filteredList.stream()
+                        .map(service -> modelMapper.map(service, GetServiceOfHelperResponse.class))
+                        .collect(Collectors.toList());
+                response.setServices(serviceOfHelperResponses);
+            }
             response.setPersonalAvatar(helperInformation.getUser().getAvatar());
             List<String> attachments = helperInformation.getAttachments()
                     .stream()
@@ -498,6 +506,57 @@ public class HelperRegistrationServiceImpl implements HelperRegistrationService 
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
                         .body(new ResponseObject(HttpStatus.FORBIDDEN.toString(),
                                 e.getMessage(),
+                                null));
+            }
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ResponseObject(HttpStatus.BAD_REQUEST.toString(),
+                            "Something wrong occur!",
+                            null));
+        }
+    }
+
+    @Override
+    public ResponseEntity<ResponseObject> assignManageToRegistration() {
+        try{
+            List<HelperInformation> helperInformations = helperInformationRepository.findAllHelperInformationHaveNoManager();
+            if(helperInformations.isEmpty()){
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new ResponseObject(HttpStatus.NOT_FOUND.toString(),
+                                Utils.getDateTimeNowAsString() + " ---->> All registration already manage",
+                                null));
+            }
+            List<User> managers = userRepository.findAllManager();
+            if (managers.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new ResponseObject(HttpStatus.NOT_FOUND.toString(),
+                                Utils.getDateTimeNowAsString() + " ---->> No manager at this time!",
+                                null));
+            }
+            int countManager = managers.size();
+            int i = 0;
+            for (HelperInformation helperInformation :
+                    helperInformations
+            ) {
+                helperInformation.setManagerId(managers.get(i++).getUserId());
+                if (i == countManager) i = 0;
+            }
+
+            helperInformationRepository.saveAll(helperInformations);
+            return ResponseEntity.status(HttpStatus.OK)
+                    .body(new ResponseObject(HttpStatus.OK.toString(),
+                            "Set manager for registration successfully",
+                            null));
+        } catch (Exception ex){
+            if (ex instanceof NotFoundException) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new ResponseObject(HttpStatus.NOT_FOUND.toString(),
+                                ex.getMessage(),
+                                null));
+            }
+            if (ex instanceof UserNotHavePermissionException) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(new ResponseObject(HttpStatus.FORBIDDEN.toString(),
+                                ex.getMessage(),
                                 null));
             }
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)

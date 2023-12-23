@@ -17,18 +17,21 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.validation.Valid;
-import javax.validation.constraints.Min;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Pattern;
+import java.util.ArrayList;
 import java.util.List;
 
 @RestController
 @RequestMapping("api/v1/report")
 @Tag(name = "Report")
+@Validated
 public class ReportController {
 
     @Autowired
@@ -75,20 +78,36 @@ public class ReportController {
             @ApiResponse(responseCode = "403", description = "Forbidden - You don't have permission to access on this api"),
             @ApiResponse(responseCode = "400", description = "Bad request - Missing some field required")
     })
-    @PreAuthorize("hasAnyAuthority('renter')")
-    public ResponseEntity<ResponseObject> createReport(@RequestPart(name = "bookingId")
-                                                       @Min(value = 1, message = "Booking ID cannot smaller than 1")
-                                                       Integer bookingId,
+    @PreAuthorize("hasAnyAuthority('renter', 'employee')")
+    public ResponseEntity<ResponseObject> createReport(@RequestPart(name = "bookingDetailId")
+                                                       @Pattern(regexp = "^\\d+$", message = "Booking Detail ID is required number")
+                                                       String bookingDetailId,
                                                        @RequestPart(name = "reportTypeId")
-                                                       @Min(value = 1, message = "Report Type ID cannot smaller than 1")
-                                                       Integer reportTypeId,
+                                                       @Pattern(regexp = "^\\d+$", message = "Report Type ID is required number")
+                                                       String reportTypeId,
+                                                       @RequestPart
                                                        @Length(max = 200, message = "Detail length cannot greater than 200")
                                                        @NotNull(message = "Detail cannot be null")
                                                        @NotBlank(message = "Detail cannot be empty")
                                                        String detail,
-                                                       @RequestPart(name = "files", required = false)
-                                                       List<MultipartFile> files, Authentication authentication) {
-        return reportService.createReport(new CreateReportRequest(bookingId, reportTypeId, detail, files), JwtUtils.decodeToAccountId(authentication));
+                                                       @RequestPart(name = "image_1", required = false)
+                                                       MultipartFile images_1,
+                                                       @RequestPart(name = "image_2", required = false)
+                                                       MultipartFile images_2,
+                                                       @RequestPart(name = "image_3", required = false)
+                                                       MultipartFile images_3, Authentication authentication) {
+        List<MultipartFile> images = new ArrayList<>();
+        if (images_1 != null) {
+            images.add(images_1);
+        }
+        if (images_2 != null) {
+            images.add(images_2);
+        }
+        if (images_3 != null) {
+            images.add(images_3);
+        }
+        return reportService.createReport(new CreateReportRequest(Integer.parseInt(bookingDetailId),
+                Integer.parseInt(reportTypeId), detail, images), JwtUtils.decodeToAccountId(authentication));
     }
 
     @PutMapping(value = "{reportId}")

@@ -22,7 +22,11 @@ public class GetBookingDetailDetailForHelperResponse {
     private String value;
     private Double equivalent;
     private Double price;
+    private Double refundMoney;
+    private Double refundPoint;
+    private Double penaltyMoney;
     private String currentStatus;
+    private Boolean isReported;
     private String rejectionReasonContent;
     private String rejectionReasonDescription;
     private GetAddressResponseBooking address;

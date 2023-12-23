@@ -28,8 +28,9 @@ public interface BookingDetailHelperRepository extends JpaRepository<BookingDeta
             "AND bdh.bookingDetailHelperStatus = ?2")
     BookingDetailHelper findByBookingDetailIdAndActiveLimit(Integer detailId, BookingDetailHelperStatusEnum statusEnum);
     @Query("SELECT bdh FROM BookingDetailHelper bdh " +
-            "WHERE bdh.serviceRegistration.helperInformation.user.userId = ?1 ")
-    Optional<BookingDetailHelper> findByHelperId(Integer helperId);
+            "WHERE bdh.serviceRegistration.helperInformation.user.userId = ?1 " +
+            "AND bdh.bookingDetail.bookingDetailId = ?2")
+    Optional<BookingDetailHelper> findByHelperId(Integer helperId, Integer bookingDetailId);
 
     @Query("SELECT bdh FROM BookingDetailHelper bdh " +
             "WHERE bdh.serviceRegistration.helperInformation.user.userId = ?1 " +

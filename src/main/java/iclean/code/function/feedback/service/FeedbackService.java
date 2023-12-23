@@ -11,6 +11,5 @@ public interface FeedbackService {
     ResponseEntity<ResponseObject> deleteFeedback(Integer id, Integer userId);
     ResponseEntity<ResponseObject> getDetailOfHelper(Integer helperId, Integer serviceId);
     PointFeedbackOfHelper getDetailOfHelperFunction(Integer userId, Integer serviceUnitId);
-
     ResponseEntity<ResponseObject> createAndUpdateFeedback(Integer id, FeedbackRequest request, Integer userId);
 }

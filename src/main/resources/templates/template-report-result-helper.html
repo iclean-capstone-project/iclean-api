@@ -60,22 +60,19 @@
         <h1 th:text="${company_name}"></h1>
     </header>
 </div>
-<h3 th:text="${'Xin chào ' + renter_name + ','}"> ,</h3>
+<h3 th:text="${'Xin chào ' + helper_name + ','}"> ,</h3>
 
 
-<p th:text="${'Tôi hy vọng bạn đang có một ngày tốt lành. Tôi viết email này để gửi đến bạn kết quả report của dịch vụ #' + booking_code +
-'. Đây là một phần quan trọng trong quá trình cải thiện và đáng tin cậy hơn của sản phẩm của chúng tôi.'}"></p>
-<p>Chúng tôi chân thành xin lỗi vì sự bất tiện mà bạn đã phải trải qua gần đây. Chúng tôi nhận thức được rằng có những
-    vấn đề không mong muốn đã ảnh hưởng đến trải nghiệm của bạn khi sử dụng dịch vụ của chúng tôi. Chúng tôi đang nỗ lực
-    hết mình để khắc phục và cải thiện các vấn đề này để đảm bảo rằng bạn sẽ nhận được dịch vụ tốt nhất từ chúng
-    tôi.</p>
-<p th:text="${'Bên dưới là kết quả báo cáo của #' + booking_code +
+<p th:text="${'Tôi hy vọng bạn đang có một ngày tốt lành. Tôi viết email này thông báo đến bạn về việc bạn bị report của dịch vụ #' + bookingCode +
+', ngày ' + createAt + ' . Đây là một phần quan trọng trong quá trình cải thiện và đáng tin cậy hơn của sản phẩm của chúng tôi.'}"></p>
+<p>Dựa trên chính sách và điều khoản sử dụng dịch vụ của chúng tôi, chúng tôi đã quyết định áp đặt một khoản phạt nhỏ như một biện pháp giải quyết
+    và để đảm bảo rằng chúng ta có thể duy trì chất lượng cao trong việc cung cấp dịch vụ
+    . Khoản phạt này được tính dựa trên mức độ ảnh hưởng của sự cố đã xảy ra.</p>
+<p th:text="${'Bên dưới là kết quả báo cáo của #' + bookingCode +
 ':'}"></p>
 <p th:text="${'Nội dung báo cáo:' + content_report }"></p>
-<p th:text="${'Trạng thái: ' + status}"></p>
 <p th:text="${'Cách xử lý: ' + solution}"></p>
-<p th:text="${'Phí hoàn: ' + money_refund}"></p>
-<p th:text="${'Điểm hoàn: ' + point_refund}"></p>
+<p th:text="${'Phí phạt: ' + money_pen}"></p>
 
 <footer>
     <p>Trân trọng,<br th:text="${'Quản lý - ' + manager_name}"></p>

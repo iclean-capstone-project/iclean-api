@@ -1,11 +1,13 @@
 package iclean.code.data.dto.request.serviceunit;
 
+import iclean.code.data.dto.request.serviceprice.ServicePriceRequest;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import org.hibernate.validator.constraints.Range;
 
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
+import java.util.List;
 
 @Data
 public class CreateServiceUnitRequest {
@@ -25,4 +27,6 @@ public class CreateServiceUnitRequest {
     @Schema(example = "1")
     @Min(value = 1, message = "Service id cannot be smaller than 1")
     private Integer serviceId;
+
+    private List<ServicePriceRequest> servicePrices;
 }

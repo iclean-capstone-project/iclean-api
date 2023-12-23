@@ -37,30 +37,4 @@ public class ServicePriceController {
                                                                 @RequestParam String startTime) {
         return servicePriceService.getServicePriceActive(new GetServicePriceRequest(serviceUnitId, startTime));
     }
-
-    @PostMapping("/{serviceUnitId}")
-    @Operation(summary = "Get Service Price", description = "Return Service Price detail")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Return Service Price detail"),
-            @ApiResponse(responseCode = "401", description = "Unauthorized - Login please"),
-            @ApiResponse(responseCode = "403", description = "Forbidden - You don't have permission to access on this api"),
-            @ApiResponse(responseCode = "400", description = "Bad request - Missing some field required")
-    })
-    @PreAuthorize("hasAnyAuthority('admin')")
-    public ResponseEntity<ResponseObject> createNewServicePrices(@RequestBody List<ServicePriceRequest> requests, @PathVariable Integer serviceUnitId) {
-        return servicePriceService.createServicePrice(requests, serviceUnitId);
-    }
-
-    @GetMapping("detail/{serviceUnitId}")
-    @Operation(summary = "Get Service Price", description = "Return Service Price detail")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Return Service Price detail"),
-            @ApiResponse(responseCode = "401", description = "Unauthorized - Login please"),
-            @ApiResponse(responseCode = "403", description = "Forbidden - You don't have permission to access on this api"),
-            @ApiResponse(responseCode = "400", description = "Bad request - Missing some field required")
-    })
-    @PreAuthorize("hasAnyAuthority('admin')")
-    public ResponseEntity<ResponseObject> getServicePrice(@PathVariable Integer serviceUnitId) {
-        return servicePriceService.getServicePrice(serviceUnitId);
-    }
 }

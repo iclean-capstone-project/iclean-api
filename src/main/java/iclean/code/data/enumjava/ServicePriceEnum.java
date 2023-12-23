@@ -3,12 +3,9 @@ package iclean.code.data.enumjava;
 import iclean.code.exception.NotFoundException;
 
 public enum ServicePriceEnum {
-    FIRST(1, "00:00:00", "06:00:00"),
-    SECOND(2, "06:00:00", "10:00:00"),
-    THIRD(3, "10:00:00", "14:00:00"),
-    FOURTH(4, "14:00:00", "18:00:00"),
-    FIFTH(5, "18:00:00", "22:00:00"),
-    SIXTH(6, "22:00:00", "23:59:59");
+    FIRST(1, "07:00:00", "12:00:00"),
+    SECOND(2, "12:00:00", "18:00:00"),
+    THIRD(3, "18:00:00", "21:00:00");
     private final Integer id;
     private final String startDate;
     private final String endDate;
